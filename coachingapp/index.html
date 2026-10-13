@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Schede Palestra</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#085041">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=20">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- SCHERMATA: caricamento -->
+  <div id="screen-loading" class="screen active">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <p>Carico la tua scheda...</p>
+    </div>
+  </div>
+
+  <!-- SCHERMATA: errore link mancante -->
+  <div id="screen-error" class="screen">
+    <div class="center-box">
+      <div class="icon-circle icon-warn">!</div>
+      <p class="title">Link non valido</p>
+      <p class="subtitle" id="error-message">Manca il collegamento alla tua scheda. Contatta il tuo personal trainer per ricevere il link corretto.</p>
+    </div>
+  </div>
+
+  <!-- SCHERMATA: accesso -->
+  <div id="screen-access" class="screen">
+    <div class="center-box">
+      <div class="icon-circle icon-lock">&#128274;</div>
+      <p class="title" id="access-title">Benvenuto</p>
+      <p class="subtitle">Inserisci il codice ricevuto dal tuo personal trainer</p>
+      <input type="text" id="access-code-input" placeholder="Codice di accesso" inputmode="numeric">
+      <button class="btn-primary" id="access-submit">Continua</button>
+      <p class="error-text" id="access-error"></p>
+    </div>
+  </div>
+
+  <!-- SCHERMATA: categorie -->
+  <div id="screen-categorie" class="screen">
+    <div class="page-pad">
+      <p class="greeting" id="greeting-text">Ciao</p>
+      <p class="page-title">Cosa alleni oggi?</p>
+      <div class="category-list">
+        <div class="category-card active" data-category="palestra">
+          <span class="cat-icon">&#127947;</span>
+          <span class="cat-name">Palestra</span>
+          <span class="cat-arrow">&#8250;</span>
+        </div>
+        <div class="category-card disabled">
+          <span class="cat-icon">&#127939;</span>
+          <span class="cat-name">Corsa</span>
+          <span class="cat-soon">presto</span>
+        </div>
+        <div class="category-card disabled">
+          <span class="cat-icon">&#9995;</span>
+          <span class="cat-name">Allenamento funzionale</span>
+          <span class="cat-soon">presto</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHERMATA: blocchi -->
+  <div id="screen-blocchi" class="screen">
+    <div class="page-pad">
+      <div class="top-bar">
+        <span class="back-arrow" data-back="screen-categorie">&#8592;</span>
+        <p class="page-title-inline">Palestra</p>
+      </div>
+      <div class="blocchi-list" id="blocchi-list"></div>
+      <button class="btn-danger" id="reset-blocchi-btn">Reset allenamenti (solo trainer)</button>
+    </div>
+  </div>
+
+  <!-- SCHERMATA: congratulazioni -->
+  <div id="screen-congratulazioni" class="screen">
+    <div class="congrats-box">
+      <div class="congrats-icon">&#127942;</div>
+      <p class="congrats-titolo" id="congrats-titolo">Ottimo lavoro!</p>
+      <p class="congrats-sottotitolo" id="congrats-sottotitolo"></p>
+      <div class="congrats-stats">
+        <div class="congrats-stat">
+          <p class="congrats-stat-num" id="congrats-stat1"></p>
+          <p class="congrats-stat-label">allenamenti del blocco</p>
+        </div>
+        <div class="congrats-stat">
+          <p class="congrats-stat-num" id="congrats-stat2"></p>
+          <p class="congrats-stat-label">del blocco completato</p>
+        </div>
+      </div>
+      <button class="btn-primary" id="congrats-avanti-btn" style="width:100%; max-width:none;">Avanti</button>
+    </div>
+  </div>
+
+  <!-- SCHERMATA: giorni -->
+  <div id="screen-giorni" class="screen">
+    <div class="page-pad">
+      <div class="top-bar">
+        <span class="back-arrow" data-back="screen-blocchi">&#8592;</span>
+        <p class="page-title-inline" id="giorni-title">Blocco</p>
+      </div>
+      <div class="day-list" id="day-list"></div>
+    </div>
+  </div>
+
+  <!-- SCHERMATA: sessioni (i singoli allenamenti di un giorno) -->
+  <div id="screen-sessioni" class="screen">
+    <div class="page-pad">
+      <div class="top-bar">
+        <span class="back-arrow" data-back="screen-giorni">&#8592;</span>
+        <p class="page-title-inline" id="sessioni-title">Giorno</p>
+      </div>
+      <div class="day-list" id="sessioni-list"></div>
+    </div>
+  </div>
+
+  <!-- SCHERMATA: esercizi -->
+  <div id="screen-esercizi" class="screen">
+    <div class="day-header" id="day-header">
+      <span class="back-arrow light" data-back="screen-sessioni">&#8592;</span>
+      <p class="day-header-title" id="day-header-title"></p>
+      <span class="day-header-sessione" id="day-header-sessione"></span>
+      <div class="chip-row" id="day-chips"></div>
+    </div>
+    <div class="page-pad" id="exercise-groups"></div>
+    <div class="page-pad" style="padding-top: 0;">
+      <button class="btn-primary" id="concludi-btn" style="width:100%; max-width:none;">Concludi allenamento</button>
+    </div>
+  </div>
+
+  <!-- SCHERMATA: dettaglio -->
+  <div id="screen-dettaglio" class="screen">
+    <div class="page-pad">
+      <div class="top-bar">
+        <span class="back-arrow" data-back="screen-esercizi">&#8592;</span>
+        <p class="page-title-inline" id="detail-name-top">Esercizio</p>
+      </div>
+      <span class="chip-tecnica" id="chip-tecnica" style="display:none;"></span>
+      <div class="video-box" id="video-box"></div>
+
+      <!-- esercizio singolo -->
+      <div id="single-exercise-body">
+        <div class="desc-toggle" id="desc-toggle">
+          <p class="detail-name" id="detail-name"></p>
+          <span class="desc-hint-wrap">
+            <span class="desc-hint">Descrizione</span>
+            <span class="chevron" id="desc-chevron"></span>
+          </span>
+        </div>
+        <div class="desc-text" id="desc-text"></div>
+        <div class="sets-rec-row">
+          <p class="sets-reps" id="detail-sets-reps"></p>
+          <p class="rec-static" id="rec-static"></p>
+        </div>
+        <div class="nota-banner" id="nota-banner" style="display:none;"></div>
+        <div class="sets-inputs" id="sets-inputs"></div>
+      </div>
+
+      <!-- super-set / tri-set -->
+      <div id="superset-body" style="display:none;"></div>
+
+      <div class="timer-row">
+        <button class="timer-btn" id="timer-btn">Avvia timer</button>
+        <button class="timer-stop-btn" id="timer-stop-btn" style="display:none;"><span class="stop-square"></span></button>
+      </div>
+      <div class="nav-esercizio-row">
+        <button class="btn-indietro" id="indietro-btn">&#8592;</button>
+        <button class="btn-avanti" id="avanti-btn">Avanti</button>
+      </div>
+      <div class="prev-comment-box">
+        <p class="prev-comment-label">Nota della volta scorsa</p>
+        <p class="prev-comment-text" id="prev-comment-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHERMATA: valutazione esercizio -->
+  <div id="screen-valutazione" class="screen">
+    <div class="page-pad">
+      <div class="top-bar">
+        <span class="back-arrow" data-back="screen-dettaglio">&#8592;</span>
+        <p class="page-title-inline">Come è andata?</p>
+      </div>
+      <p class="rpe-label">Livello di fatica percepita</p>
+      <div class="rpe-grid" id="rpe-grid"></div>
+      <div class="comment-box">
+        <p class="comment-label">Commento</p>
+        <textarea id="comment-input" placeholder="Scrivi qui eventuali feedback..."></textarea>
+      </div>
+      <button class="btn-primary" id="prossimo-btn" style="width:100%; max-width:none; margin-top: 18px;">Prossimo esercizio</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="config.js?v=2"></script>
+<script src="app.js?v=30"></script>
+</body>
+</html>
