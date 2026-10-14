@@ -1552,7 +1552,14 @@
           <div class="field"><label>P. IVA</label><input type="text" id="imp-piva" placeholder="Es. 02753720024"></div>
           <div class="field"><label>Iscrizione Albo Biologi n°</label><input type="text" id="imp-albo" placeholder="Es. AA_092973"></div>
           <div class="field"><label>Frase in fondo alla copertina</label><input type="text" id="imp-slogan" placeholder="Es. Il cambiamento inizia da un singolo passo"></div>
-          <div class="field" style="grid-column:1 / -1;"><label>Testo pagina "Introduzione al percorso alimentare" (un punto per paragrafo — lascia una riga vuota fra un punto e l'altro; la prima parola di ogni punto viene evidenziata)</label><textarea id="imp-intro" rows="10" placeholder="Verdura: presente ad ogni pasto principale, meglio se di stagione.&#10;&#10;Frutta: 2-3 porzioni al giorno, lontano dai pasti principali.&#10;Evita succhi di frutta e frutta sciroppata.&#10;&#10;Acqua: almeno 1,5-2 litri al giorno.&#10;&#10;Alcol: da evitare o limitare a occasioni sporadiche.&#10;&#10;Pasto libero/fuori casa: una volta a settimana circa, con equilibrio."></textarea></div>
+          <div class="field" style="grid-column:1 / -1;"><label>Testo pagina "Introduzione al percorso alimentare" (un punto per paragrafo — lascia una riga vuota fra un punto e l'altro; la prima parola di ogni punto viene evidenziata)</label><textarea id="imp-intro" rows="10" oninput="pgAggiornaAnteprimaIntro_()" placeholder="Verdura: presente ad ogni pasto principale, meglio se di stagione.&#10;&#10;Frutta: 2-3 porzioni al giorno, lontano dai pasti principali.&#10;Evita succhi di frutta e frutta sciroppata.&#10;&#10;Acqua: almeno 1,5-2 litri al giorno.&#10;&#10;Alcol: da evitare o limitare a occasioni sporadiche.&#10;&#10;Pasto libero/fuori casa: una volta a settimana circa, con equilibrio."></textarea>
+          </div>
+          <div class="field" style="grid-column:1 / -1;">
+            <label>Anteprima</label>
+            <div class="pg-doc" style="max-width:none; margin:0; padding:0;">
+              <div class="pg-card"><div class="pg-intro-lista" id="imp-intro-anteprima"></div></div>
+            </div>
+          </div>
         </div>
 
         <h4 style="font-size:14.5px; margin:22px 0 6px;">Verdure e Olio</h4>
@@ -7051,6 +7058,14 @@
     }).filter(r => r.alimento);
   }
 
+  function pgAggiornaAnteprimaIntro_(){
+    const el = document.getElementById('imp-intro-anteprima');
+    if(!el) return;
+    const campo = document.getElementById('imp-intro');
+    const testo = campo ? campo.value : '';
+    const html = pgHtmlIntroPunti_(testo);
+    el.innerHTML = html || '<div style="font-size:12px; color:var(--pg-ink-faint); font-style:italic;">Il testo che scrivi qui sopra apparirà diviso in punti, così come nel PDF.</div>';
+  }
   async function apriImpostazioni(){
     document.getElementById('impostazioni-overlay').style.display = 'flex';
     document.getElementById('impostazioni-error').textContent = '';
@@ -7071,6 +7086,7 @@
       document.getElementById('imp-albo').value = IMPOSTAZIONI_PG_CACHE.pg_albo_biologi || '';
       document.getElementById('imp-slogan').value = IMPOSTAZIONI_PG_CACHE.pg_slogan || '';
       document.getElementById('imp-intro').value = IMPOSTAZIONI_PG_CACHE.pg_intro_testo || '';
+      pgAggiornaAnteprimaIntro_();
       document.getElementById('pg-pane-baseline').value = IMPOSTAZIONI_PG_CACHE.pg_pane_baseline_g || 60;
       document.getElementById('pg-olio-baseline').value = IMPOSTAZIONI_PG_CACHE.pg_olio_baseline_g || 15;
       document.getElementById('pg-peso-uovo').value = IMPOSTAZIONI_PG_CACHE.pg_peso_medio_uovo_g || 60;
