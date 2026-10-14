@@ -974,14 +974,16 @@
   .pg-doc .pg-opzione-alimenti{ font-size:10.8px; color:var(--pg-ink-soft); line-height:1.35; }
   .pg-doc .pg-opzione-alimenti .pg-g{ font-family:var(--pg-font-mono); color:var(--pg-ink); font-weight:500; }
   .pg-doc .pg-opzione-alimenti .pg-fisso{ color:var(--pg-ink-faint); }
-  /* Punti dell'introduzione al percorso alimentare: elenco puntato (pallino, non numerato); la
-     prima parola di ogni riga è evidenziata come le intestazioni delle tabelle di sostituzione
-     (.pg-th-accent), es. "IN ALTERNATIVA A PANE" — stesso trattamento (maiuscolo, colore, spaziatura). */
-  .pg-doc .pg-intro-lista{ display:flex; flex-direction:column; gap:6px; }
-  .pg-doc .pg-intro-punto{ display:flex; align-items:flex-start; gap:8px; }
-  .pg-doc .pg-intro-bullet{ flex:none; width:14px; text-align:center; font-size:10.8px; line-height:1.35; color:var(--pg-accent); }
-  .pg-doc .pg-intro-testo{ font-size:10.8px; color:var(--pg-ink-soft); line-height:1.35; white-space:pre-line; }
-  .pg-doc .pg-intro-prima{ font-weight:600; color:var(--pg-accent-ink); text-transform:uppercase; letter-spacing:.04em; }
+  /* Punti dell'introduzione al percorso alimentare: elenco puntato (pallino, non numerato), senza
+     riquadro — i pallini stanno allineati a filo con il titolo "Introduzione al percorso alimentare"
+     sopra di loro, non rientrati come il contenuto delle .pg-card. Il grassetto non è automatico:
+     chi scrive racchiude le parole da *evidenziare* fra asterischi (vedi pgHtmlIntroPunti_). Testo
+     più grande del resto del documento apposta, per restare leggibile: è testo discorsivo, non dati. */
+  .pg-doc .pg-intro-lista{ display:flex; flex-direction:column; gap:9px; margin-top:2px; }
+  .pg-doc .pg-intro-punto{ display:flex; align-items:flex-start; gap:9px; }
+  .pg-doc .pg-intro-bullet{ flex:none; width:14px; text-align:center; font-size:13px; line-height:1.5; color:var(--pg-accent); }
+  .pg-doc .pg-intro-testo{ font-size:13px; color:var(--pg-ink-soft); line-height:1.5; white-space:pre-line; }
+  .pg-doc .pg-intro-testo b{ color:var(--pg-ink); font-weight:600; }
   /* Riga unica per Pranzo/Cena (vedi pgHtmlOpzioneFissaStampa_): stessa dimensione del testo delle
      alimenti su due righe, ma nomi in grassetto direttamente nel flusso invece che su un titolo a parte. */
   .pg-doc .pg-opzione-riga{ font-size:11.5px; line-height:1.4; color:var(--pg-ink-soft); }
@@ -1552,12 +1554,12 @@
           <div class="field"><label>P. IVA</label><input type="text" id="imp-piva" placeholder="Es. 02753720024"></div>
           <div class="field"><label>Iscrizione Albo Biologi n°</label><input type="text" id="imp-albo" placeholder="Es. AA_092973"></div>
           <div class="field"><label>Frase in fondo alla copertina</label><input type="text" id="imp-slogan" placeholder="Es. Il cambiamento inizia da un singolo passo"></div>
-          <div class="field" style="grid-column:1 / -1;"><label>Testo pagina "Introduzione al percorso alimentare" (un punto per paragrafo — lascia una riga vuota fra un punto e l'altro; la prima parola di ogni punto viene evidenziata)</label><textarea id="imp-intro" rows="10" oninput="pgAggiornaAnteprimaIntro_()" placeholder="Verdura: presente ad ogni pasto principale, meglio se di stagione.&#10;&#10;Frutta: 2-3 porzioni al giorno, lontano dai pasti principali.&#10;Evita succhi di frutta e frutta sciroppata.&#10;&#10;Acqua: almeno 1,5-2 litri al giorno.&#10;&#10;Alcol: da evitare o limitare a occasioni sporadiche.&#10;&#10;Pasto libero/fuori casa: una volta a settimana circa, con equilibrio."></textarea>
+          <div class="field" style="grid-column:1 / -1;"><label>Testo pagina "Introduzione al percorso alimentare" (un punto per paragrafo — lascia una riga vuota fra un punto e l'altro; racchiudi fra asterischi le parole da mettere in grassetto, es. *parola*)</label><textarea id="imp-intro" rows="10" oninput="pgAggiornaAnteprimaIntro_()" placeholder="*Verdura*: presente ad ogni pasto principale, meglio se di stagione.&#10;&#10;*Frutta*: 2-3 porzioni al giorno, lontano dai pasti principali.&#10;Evita succhi di frutta e frutta *sciroppata*.&#10;&#10;*Acqua*: almeno 1,5-2 litri al giorno.&#10;&#10;*Alcol*: da evitare o limitare a occasioni *sporadiche*.&#10;&#10;*Pasto libero*/fuori casa: una volta a settimana circa, con equilibrio."></textarea>
           </div>
           <div class="field" style="grid-column:1 / -1;">
             <label>Anteprima</label>
             <div class="pg-doc" style="max-width:none; margin:0; padding:0;">
-              <div class="pg-card"><div class="pg-intro-lista" id="imp-intro-anteprima"></div></div>
+              <div class="pg-intro-lista" id="imp-intro-anteprima"></div>
             </div>
           </div>
         </div>
@@ -7289,16 +7291,22 @@
   // Introduzione al percorso alimentare: un punto per riga (righe vuote ignorate), elenco puntato
   // (pallino, non numerato). La prima parola di ogni riga viene evidenziata nello stesso stile delle
   // intestazioni "IN ALTERNATIVA A PANE/OLIO" (.pg-th-accent): maiuscolo, colore accento, spaziata.
+  // Dentro il testo dell'introduzione, *una o più parole fra asterischi* diventano grassetto — scelta
+  // libera di chi scrive, non automatica. Un asterisco singolo senza chiusura resta un asterisco normale.
+  function pgIntroInlineHtml_(testo){
+    return (testo || '').split(/(\*[^*\n]+\*)/g).map(parte => {
+      if(parte.length > 1 && parte.charAt(0) === '*' && parte.charAt(parte.length - 1) === '*'){
+        return `<b>${cpEsc(parte.slice(1, -1))}</b>`;
+      }
+      return cpEsc(parte);
+    }).join('');
+  }
   function pgHtmlIntroPunti_(testo){
     // Un punto per paragrafo (righe vuote a separarli): dentro lo stesso punto, un singolo "a capo"
     // resta una riga della stessa voce (reso con white-space:pre-line), non un nuovo pallino.
     const paragrafi = (testo || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
     return paragrafi.map(par => {
-      const primaRiga = par.split('\n')[0];
-      const sp = primaRiga.indexOf(' ');
-      const prima = sp === -1 ? primaRiga : primaRiga.slice(0, sp);
-      const resto = sp === -1 ? par.slice(primaRiga.length) : par.slice(sp);
-      return `<div class="pg-intro-punto"><span class="pg-intro-bullet">\u2022</span><span class="pg-intro-testo"><span class="pg-intro-prima">${cpEsc(prima)}</span>${cpEsc(resto)}</span></div>`;
+      return `<div class="pg-intro-punto"><span class="pg-intro-bullet">\u2022</span><span class="pg-intro-testo">${pgIntroInlineHtml_(par)}</span></div>`;
     }).join('');
   }
   function pgHtmlStampaCompleta_(piano, imp, meta){
@@ -7363,7 +7371,7 @@
       ${introTesto ? `
       <div class="pg-pagina pg-break-after">
         <div class="pg-section-title">Introduzione al percorso alimentare</div>
-        <div class="pg-card"><div class="pg-intro-lista">${pgHtmlIntroPunti_(introTesto)}</div></div>
+        <div class="pg-intro-lista">${pgHtmlIntroPunti_(introTesto)}</div>
         ${footer()}
       </div>` : ''}
 
