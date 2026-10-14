@@ -6957,16 +6957,18 @@
     const olioDalPiano = pgDalPianoDuePasti_(plan, giorni, 'Pranzo', 'Cena', foodsById, f => !!f.fonteGrassi);
     const olio = olioDalPiano != null ? olioDalPiano : (Number(presetVerdureOlio.olio) || 10);
     const olioFonte = olioDalPiano != null ? 'piano' : 'preset';
+    const olioPerPasto = olio / 2;
 
     return {
       verdure: Number(presetVerdureOlio.verdure) || 200,
       olio,
+      olioPerPasto,
       olioFonte,
       derivati,
       pranzo: risPranzo.opzioni,
       cena: risCena.opzioni,
       carboEquivalenza: pgScalaEquivalenza_(imp.carboEquivalenza || [], risCena.baseValore, paneBaseline),
-      grassiEquivalenza: pgScalaEquivalenza_(imp.grassiEquivalenza || [], olio, olioBaseline),
+      grassiEquivalenza: pgScalaEquivalenza_(imp.grassiEquivalenza || [], olioPerPasto, olioBaseline),
     };
   }
 
@@ -7171,7 +7173,7 @@
       ${sezFissa('Pranzo', piano.pranzo)}
       ${sezFissa('Cena', piano.cena)}
       ${sezEquivalenza('Sostituzioni carboidrati (a cena, al posto del pane)', piano.carboEquivalenza)}
-      ${sezEquivalenza("Sostituzioni grassi (al posto dell'olio)", piano.grassiEquivalenza)}
+      ${sezEquivalenza("Sostituzioni grassi (al posto dell'olio) per singolo pasto", piano.grassiEquivalenza)}
     `;
   }
 
@@ -7348,9 +7350,9 @@
             <tbody>${piano.carboEquivalenza.map(r => `<tr><td>${cpEsc(r.alimento)}</td><td class="pg-g">${cpFmt(r.grammi)} g</td></tr>`).join('')}</tbody>
           </table>
         </div>
-        <div class="pg-section-title">Sostituzione fonte di grassi</div>
+        <div class="pg-section-title">Sostituzione fonte di grassi (per singolo pasto)</div>
         <div class="pg-card">
-          <table class="pg-equiv-table"><thead><tr><th>In alternativa a Olio <span class="pg-num">${cpFmt(piano.olio)} g</span></th><th style="text-align:right;">Quantità equivalente</th></tr></thead>
+          <table class="pg-equiv-table"><thead><tr><th>In alternativa a Olio <span class="pg-num">${cpFmt(piano.olioPerPasto)} g</span></th><th style="text-align:right;">Quantità equivalente</th></tr></thead>
             <tbody>${piano.grassiEquivalenza.map(r => `<tr><td>${cpEsc(r.alimento)}</td><td class="pg-g">${cpFmt(r.grammi)} g</td></tr>`).join('')}</tbody>
           </table>
         </div>
