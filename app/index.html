@@ -937,7 +937,7 @@
   .pg-doc .pg-section-sub{ font-size:11px; color:var(--pg-ink-faint); margin:-3px 0 6px; line-height:1.4; }
   .pg-doc .pg-card{
     background:var(--pg-surface-raised); border:1px solid var(--pg-border-soft); border-radius:14px;
-    box-shadow:0 1px 2px rgba(23,34,29,.06), 0 1px 1px rgba(23,34,29,.04); padding:8px 14px; margin-bottom:3px;
+    box-shadow:0 1px 2px rgba(23,34,29,.06), 0 1px 1px rgba(23,34,29,.04); padding:8px 14px; margin:0 2px 3px 0;
   }
   /* Ogni riga (opzione/riga di glossario/riga di tabella) non deve mai essere spezzata a metà da
      un cambio pagina: cosi il riquadro si interrompe in modo pulito fra una riga e la successiva.
@@ -7296,7 +7296,7 @@
     let pgNumPagina = 1; // 1 = copertina (senza piè di pagina)
     const footer = () => {
       pgNumPagina++;
-      return `<div class="pg-pagina-footer"><span>${cpEsc(nomeProf)}${titoli[0] ? ' — ' + cpEsc(titoli[0]) : ''}</span><span class="pg-footer-pagina">Pagina ${pgNumPagina} di ${totalePagine}</span><span class="pg-footer-right">Piano alimentare per <b>${cpEsc(nomePaziente)}</b></span></div>`;
+      return `<div class="pg-pagina-footer"><span>${cpEsc(nomeProf)}${titoli[0] ? ' — ' + cpEsc(titoli[0]) : ''}</span><span class="pg-footer-pagina">${pgNumPagina}/${totalePagine}</span><span class="pg-footer-right">Piano alimentare per <b>${cpEsc(nomePaziente)}</b></span></div>`;
     };
     const paneCena = cenaAttivo.length ? cenaAttivo[0].base.valore : (piano.cena[0] ? piano.cena[0].base.valore : 0);
 
