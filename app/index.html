@@ -873,24 +873,24 @@
   .pg-doc *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
   /* min-height serve solo in stampa per far coincidere la copertina con un intero foglio A4: a
      schermo, sul telefono, lascerebbe un enorme spazio vuoto prima del resto del contenuto. */
-  .pg-doc .pg-cover{ display:flex; flex-direction:column; justify-content:space-between; padding:40px 4px 26px; }
-  @media print{ .pg-doc .pg-cover{ min-height:900px; } }
+  .pg-doc .pg-cover{ display:flex; flex-direction:column; justify-content:space-between; padding:40px 4px 40px; }
+  @media print{ .pg-doc .pg-cover{ min-height:263mm; } }
   .pg-doc .pg-cover-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
   .pg-doc .pg-cover-identity{ text-align:left; font-size:15px; color:var(--pg-ink-soft); line-height:1.9; }
   .pg-doc .pg-cover-identity b{ color:var(--pg-ink); font-weight:600; }
   .pg-doc .pg-cover-contacts{ text-align:right; font-size:15px; color:var(--pg-ink-soft); line-height:1.9; }
   .pg-doc .pg-cover-contacts i{ color:var(--pg-ink-faint); }
-  .pg-doc .pg-cover-middle{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:20px; }
-  .pg-doc .pg-cover-logo-img{ width:180px; height:auto; display:block; margin:0 auto; }
+  .pg-doc .pg-cover-middle{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:20px; padding-bottom:40px; }
+  .pg-doc .pg-cover-logo-img{ width:212px; height:auto; display:block; margin:0 auto; }
   .pg-doc .pg-cover-title{ font-family:var(--pg-font-display); font-size:30px; font-weight:600; line-height:1.35; color:var(--pg-ink); }
   .pg-doc .pg-cover-bottom{ text-align:center; font-family:var(--pg-font-display); font-style:italic; font-size:23px; color:var(--pg-ink-soft); }
   /* Le dimensioni della copertina sopra sono pensate per il foglio A4 in stampa. A schermo, sul
      telefono, risultavano decisamente troppo grandi: qui le riduciamo solo per lo schermo stretto
      del telefono (non in stampa, dove restano invariate). */
   @media screen and (max-width:600px){
-    .pg-doc .pg-cover{ padding:20px 2px 16px; }
+    .pg-doc .pg-cover{ padding:20px 2px 20px; }
     .pg-doc .pg-cover-identity, .pg-doc .pg-cover-contacts{ font-size:11.5px; line-height:1.6; }
-    .pg-doc .pg-cover-logo-img{ width:120px; }
+    .pg-doc .pg-cover-logo-img{ width:140px; }
     .pg-doc .pg-cover-title{ font-size:20px; line-height:1.3; }
     .pg-doc .pg-cover-bottom{ font-size:15px; }
   }
