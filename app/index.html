@@ -7280,7 +7280,7 @@
     };
     const sezFissaPagina = (nome, opz) => `
       <div class="pg-section-title">${cpEsc(nome)} <span class="pg-tag">${opz.length} opzion${opz.length===1?'e':'i'}</span></div>
-      <div class="pg-card">${opz.map((o,i) => pgHtmlOpzioneFissaStampa_(o, i+1, piano.verdure, piano.olio)).join('')}</div>`;
+      <div class="pg-card">${opz.map((o,i) => pgHtmlOpzioneFissaStampa_(o, i+1, piano.verdure, piano.olioPerPasto)).join('')}</div>`;
 
     const footer = `<div class="pg-pagina-footer"><span>${cpEsc(nomeProf)}${titoli[0] ? ' — ' + cpEsc(titoli[0]) : ''}</span><span>Piano alimentare per <b>${cpEsc(nomePaziente)}</b></span></div>`;
     const paneCena = cenaAttivo.length ? cenaAttivo[0].base.valore : (piano.cena[0] ? piano.cena[0].base.valore : 0);
