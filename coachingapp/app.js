@@ -78,7 +78,9 @@ async function caricaSchedaCliente() {
       archivio[r.Esercizio.trim()] = {
         video: (r.Video || "").trim(),
         descrizione: (r.Descrizione || "").trim(),
-        alternative: (r.Alternative || "").split(";").map(s => s.trim()).filter(Boolean)
+        alternative: (r.Alternative || "").split(";").map(s => s.trim()).filter(Boolean),
+        img1: (r["Immagine 1"] || "").trim(),
+        img2: (r["Immagine 2"] || "").trim()
       };
     });
     fotoGruppi = {};
@@ -809,12 +811,21 @@ function apriDettaglio(ex, giorno, gruppo) {
 
   document.getElementById("detail-name-top").textContent = isTecnica ? "Esercizi" : nomeGrezzo;
 
-  // video: sempre uno solo, dalla riga o in fallback dall'archivio del primo esercizio
+  // immagini di partenza e arrivo (dall'archivio, una volta per esercizio); se mancano, eventuale video
   const infoPrimo = archivio[subNomi[0].trim()] || { video: "", descrizione: "" };
+  const box = document.getElementById("video-box");
+  const imgs = [[infoPrimo.img1, "Partenza"], [infoPrimo.img2, "Arrivo"]].filter(x => x[0]);
   const video = (ex.Video || "").trim() || infoPrimo.video;
-  document.getElementById("video-box").innerHTML = video
-    ? `<iframe src="${toEmbedUrl(video)}" allowfullscreen allow="autoplay; encrypted-media"></iframe>`
-    : `<div class="video-placeholder"></div>`;
+  if (imgs.length) {
+    box.className = "img-pair" + (imgs.length === 1 ? " uno" : "");
+    box.innerHTML = imgs.map(x => '<figure><img src="' + fzImg(x[0]).replace(/"/g, "&quot;") + '" alt=""><figcaption>' + x[1] + '</figcaption></figure>').join("");
+  } else if (video) {
+    box.className = "video-box";
+    box.innerHTML = `<iframe src="${toEmbedUrl(video)}" allowfullscreen allow="autoplay; encrypted-media"></iframe>`;
+  } else {
+    box.className = "";
+    box.innerHTML = "";
+  }
 
   const chip = document.getElementById("chip-tecnica");
   if (isTecnica) {

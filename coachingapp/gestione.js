@@ -222,26 +222,31 @@ function fgRidimensiona(file) {
     im.src = url;
   });
 }
+// carica una foto su Supabase e scrive il link nel foglio. dest: "funzionale" | "palestra"
+async function fgUpload(nome, slot, file, dest) {
+  if (!supabaseAttivo()) throw new Error("Supabase non e' ancora collegato (config.js)");
+  const blob = await fgRidimensiona(file);
+  const r1 = await fgPost({ azione: "urlImmagine", esercizio: nome, slot, dest });
+  if (!r1.ok) throw new Error(r1.errore || "errore");
+  const fd = new FormData(); fd.append("cacheControl", "31536000"); fd.append("", blob);
+  const up = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/storage/v1/object/upload/sign/esercizi/" + r1.path + "?token=" + encodeURIComponent(r1.token), {
+    method: "PUT", headers: { apikey: SUPABASE_ANON_KEY, "x-upsert": "true" }, body: fd });
+  if (!up.ok) throw new Error("caricamento non riuscito (" + up.status + ")");
+  const r2 = await fgPost({ azione: "salvaImmagine", esercizio: nome, slot, path: r1.path, dest });
+  if (!r2.ok) throw new Error(r2.errore || "errore");
+  return r2.url;
+}
 async function fgCaricaImg(file) {
   const nome = fzEl("fg-ex-nome").value.trim();
   const n = fgImgSlot;
   const st = fzEl("fg-img-stato"), box = document.querySelector('.fg-slot[data-slot="' + n + '"]');
-  if (!nome) { st.textContent = "Scrivi prima il nome dell'esercizio."; return; }
-  if (!supabaseAttivo()) { st.textContent = "Supabase non e' ancora collegato (config.js)."; return; }
+  if (!nome || !box) { st.textContent = "Scrivi prima il nome dell'esercizio."; return; }
   box.classList.add("busy"); st.className = "fz-sub"; st.textContent = "Carico l'immagine...";
   try {
-    const blob = await fgRidimensiona(file);
-    const r1 = await fgPost({ azione: "urlImmagine", esercizio: nome, slot: n });
-    if (!r1.ok) throw new Error(r1.errore || "errore");
-    const fd = new FormData(); fd.append("cacheControl", "31536000"); fd.append("", blob);
-    const up = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/storage/v1/object/upload/sign/esercizi/" + r1.path + "?token=" + encodeURIComponent(r1.token), {
-      method: "PUT", headers: { apikey: SUPABASE_ANON_KEY, "x-upsert": "true" }, body: fd });
-    if (!up.ok) throw new Error("caricamento non riuscito (" + up.status + ")");
-    const r2 = await fgPost({ azione: "salvaImmagine", esercizio: nome, slot: n, path: r1.path });
-    if (!r2.ok) throw new Error(r2.errore || "errore");
+    const url = await fgUpload(nome, n, file, "funzionale");
     const k = fzNorm(nome);
     fzArchivio[k] = Object.assign({ nome, img1: "", img2: "" }, fzArchivio[k], { nome });
-    fzArchivio[k]["img" + n] = r2.url;
+    fzArchivio[k]["img" + n] = url;
     fgAggiornaImg();
     st.className = "fz-sub fg-ok"; st.textContent = "Immagine salvata.";
   } catch (e) {
@@ -389,4 +394,71 @@ document.addEventListener("DOMContentLoaded", () => {
   fzEl("fg-tipo").addEventListener("change", () => { fgWo.tipo = fzEl("fg-tipo").value; });
   fzEl("fg-salva").addEventListener("click", fgSalva);
   fzEl("fg-elimina").addEventListener("click", fgElimina);
+});
+
+
+// ============================================================
+// IMMAGINI ESERCIZI PALESTRA (partenza e arrivo, una volta sola per esercizio)
+// Salvate nel tab "Archivio esercizi" (colonne Immagine 1 e Immagine 2)
+// ============================================================
+let fgPalTarget = null; // {nome, slot}
+
+function fgPalChiave(nome) {
+  const n = fzNorm(nome);
+  return Object.keys(archivio).find(k => fzNorm(k) === n) || "";
+}
+function fgPalNomi() {
+  const q = fzNorm(fzEl("fg-pal-q").value);
+  return Object.keys(archivio).sort((a, b) => a.localeCompare(b, "it")).filter(n => !q || fzNorm(n).includes(q));
+}
+function fgPalRender() {
+  const q = fzEl("fg-pal-q").value.trim();
+  const nomi = fgPalNomi();
+  const slot = (nome, n) => {
+    const url = fzImg((archivio[nome] || {})["img" + n]);
+    return '<div class="fg-slot' + (url ? " has" : "") + '"><button type="button" class="fg-slot-btn" data-pal-img="' + n + '" data-pal-nome="' + fzEsc(nome) + '">' +
+      (url ? '<img src="' + fzEsc(url) + '" alt="">' : '<span class="fg-slot-plus">+ ' + (n === 1 ? "Partenza" : "Arrivo") + '</span>') +
+      '</button><button type="button" class="fg-slot-x" data-pal-del="' + n + '" data-pal-nome="' + fzEsc(nome) + '" aria-label="Rimuovi">&#10005;</button></div>';
+  };
+  let h = nomi.map(n => '<div class="fg-pal-row"><div class="fg-pal-nm">' + fzEsc(n) + '</div><div class="fg-imgs">' + slot(n, 1) + slot(n, 2) + '</div></div>').join("");
+  if (q && !fgPalChiave(q)) h += '<button type="button" class="fz-btn fg-ghost" data-pal-new="' + fzEsc(q) + '" style="margin:10px 0 0">+ AGGIUNGI &laquo;' + fzEsc(q) + '&raquo;</button>';
+  if (!h) h = '<p class="fz-sub">Nessun esercizio nell\'archivio.</p>';
+  fzEl("fg-pal-lista").innerHTML = h;
+}
+function fgPalApri() {
+  fzEl("fg-pal-q").value = ""; fzEl("fg-pal-msg").textContent = "";
+  showScreen("screen-fg-pal"); fgPalRender();
+}
+async function fgPalCarica(file) {
+  const t = fgPalTarget; if (!t) return;
+  const msg = fzEl("fg-pal-msg");
+  msg.className = "fz-sub"; msg.textContent = "Carico l'immagine di " + t.nome + "...";
+  try {
+    const url = await fgUpload(t.nome, t.slot, file, "palestra");
+    const k = fgPalChiave(t.nome) || t.nome;
+    archivio[k] = Object.assign({ video: "", descrizione: "", alternative: [], img1: "", img2: "" }, archivio[k]);
+    archivio[k]["img" + t.slot] = url;
+    msg.className = "fz-sub fg-ok"; msg.textContent = "Immagine salvata.";
+    fgPalRender();
+  } catch (e) { msg.className = "fz-sub"; msg.textContent = "Non riesco a caricare: " + e.message; }
+}
+async function fgPalRimuovi(nome, slot) {
+  const msg = fzEl("fg-pal-msg");
+  try {
+    const r = await fgPost({ azione: "rimuoviImmagine", esercizio: nome, slot, dest: "palestra" });
+    if (!r.ok) throw new Error(r.errore || "errore");
+    const k = fgPalChiave(nome); if (k) archivio[k]["img" + slot] = "";
+    fgPalRender();
+  } catch (e) { msg.className = "fz-sub"; msg.textContent = "Non riesco a rimuovere: " + e.message; }
+}
+document.addEventListener("click", ev => {
+  const t = ev.target; let x;
+  if ((x = t.closest("[data-pal-del]"))) { fgPalRimuovi(x.dataset.palNome, +x.dataset.palDel); return; }
+  if ((x = t.closest("[data-pal-img]"))) { fgPalTarget = { nome: x.dataset.palNome, slot: +x.dataset.palImg }; fzEl("fg-pal-file").value = ""; fzEl("fg-pal-file").click(); return; }
+  if ((x = t.closest("[data-pal-new]"))) { const n = x.dataset.palNew.trim(); if (n && !fgPalChiave(n)) archivio[n] = { video: "", descrizione: "", alternative: [], img1: "", img2: "" }; fzEl("fg-pal-q").value = n; fgPalRender(); return; }
+});
+document.addEventListener("DOMContentLoaded", () => {
+  fzEl("fg-pal-open").addEventListener("click", fgPalApri);
+  fzEl("fg-pal-q").addEventListener("input", fgPalRender);
+  fzEl("fg-pal-file").addEventListener("change", ev => { const f = ev.target.files && ev.target.files[0]; if (f) fgPalCarica(f); });
 });

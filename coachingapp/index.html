@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20">
-<link rel="stylesheet" href="funzionale.css?v=8">
+<link rel="stylesheet" href="style.css?v=21">
+<link rel="stylesheet" href="funzionale.css?v=9">
 </head>
 <body>
 
@@ -154,6 +154,18 @@
       <div id="fg-lista"></div>
       <p class="fz-sub" id="fg-msg"></p>
       <button class="fz-btn" type="button" id="fg-nuovo">+ NUOVO ALLENAMENTO</button>
+      <button class="fz-btn fg-ghost" type="button" id="fg-pal-open" style="margin-top:8px">IMMAGINI ESERCIZI PALESTRA</button>
+    </div>
+  </div>
+
+  <div id="screen-fg-pal" class="screen">
+    <div class="page-pad">
+      <div class="top-bar"><span class="back-arrow" data-back="screen-fg-lista">&#8592;</span><p class="page-title-inline">Immagini palestra</p></div>
+      <p class="fz-sub">Per ogni esercizio carica una foto di partenza e una di arrivo, una volta sola: valgono per tutte le schede.</p>
+      <input type="text" id="fg-pal-q" class="fg-input" placeholder="Cerca esercizio" autocomplete="off">
+      <p class="fz-sub" id="fg-pal-msg"></p>
+      <div id="fg-pal-lista"></div>
+      <input type="file" id="fg-pal-file" accept="image/*" style="display:none">
     </div>
   </div>
 
@@ -332,8 +344,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="config.js?v=6"></script>
-<script src="app.js?v=35"></script>
+<script src="app.js?v=36"></script>
 <script src="funzionale.js?v=8"></script>
-<script src="gestione.js?v=7"></script>
+<script src="gestione.js?v=8"></script>
 </body>
 </html>

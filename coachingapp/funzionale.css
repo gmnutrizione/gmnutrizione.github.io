@@ -118,3 +118,7 @@
 .fg-slot.busy .fg-slot-btn{opacity:.5}
 .fg-slot-x{display:none;position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:13px;border:0;background:#111;color:#fff;font-size:12px;line-height:1;cursor:pointer}
 .fg-slot.has .fg-slot-x{display:block}
+
+.fg-pal-row{padding:12px 0;border-bottom:1px solid #E5E5E5}
+.fg-pal-nm{font:600 14px 'Inter',sans-serif;margin-bottom:8px}
+#fg-pal-lista .fg-slot{height:84px}
