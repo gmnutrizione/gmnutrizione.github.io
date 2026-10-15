@@ -186,11 +186,18 @@ function fzCostruisciEx() {
       nome,
       rep: fzRep(r.Rep),
       kg,
-      etichetta: kg ? "" : (/corsa/i.test(nome) ? "CORSA" : "CORPO LIBERO"),
+      etichetta: kg ? "" : fzEtichetta(r.Categoria, nome),
       img1: fzImg(r["Immagine 1"] || arc.img1),
       img2: fzImg(r["Immagine 2"] || arc.img2)
     };
   });
+}
+function fzEtichetta(cat, nome) {
+  const c = fzNorm(cat);
+  if (c.indexOf("macchin") === 0) return "MACCHINARIO";
+  if (c.indexOf("corsa") === 0) return "CORSA";
+  if (c.indexOf("corpo") === 0) return "CORPO LIBERO";
+  return /corsa/i.test(nome) ? "CORSA" : "CORPO LIBERO";
 }
 function fzDestra(e) { return e.kg ? e.kg + " KG" : e.etichetta; }
 

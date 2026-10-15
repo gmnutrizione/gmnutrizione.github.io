@@ -94,3 +94,6 @@
 .fg-seg button.on{background:#111;color:#fff}
 .fg-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
 .fg-ok{color:#1B6B34 !important}
+
+.fg-cp{border:0;background:#fff;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:18px;color:#111;flex:none}
+.fg-seg button{font-size:12px !important}

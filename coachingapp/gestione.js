@@ -78,12 +78,21 @@ function fgRenderLista() {
 }
 
 // ---- modifica allenamento ----
+const FG_CAT = { peso: "Pesi", free: "Corpo libero", corsa: "Corsa", macchinario: "Macchinario" };
+function fgKDaCategoria(cat, n, m, f) {
+  const c = fzNorm(cat);
+  if (c.indexOf("macchin") === 0) return "macchinario";
+  if (c.indexOf("corsa") === 0) return "corsa";
+  if (c.indexOf("corpo") === 0) return "free";
+  if (c.indexOf("pes") === 0) return "peso";
+  return (m || f) ? "peso" : (/corsa/i.test(n) ? "corsa" : "free");
+}
 function fgDaRighe(tipo, liv, nome) {
   const righe = fzDati.filter(r => fzNorm(r.Tipo) === fzNorm(tipo) && fzNorm(r.Livello) === fzNorm(liv) && (r.Allenamento || "").trim() === nome);
   righe.sort((a, b) => (parseFloat(a.Ordine) || 0) - (parseFloat(b.Ordine) || 0));
   return righe.map(r => {
     const n = (r.Esercizio || "").trim(), m = fzKg(r["Kg uomo"]), f = fzKg(r["Kg donna"]);
-    return { n, q: (r.Rep || "").trim(), m, f, k: (m || f) ? "peso" : (/corsa/i.test(n) ? "corsa" : "free") };
+    return { n, q: (r.Rep || "").trim(), m, f, k: fgKDaCategoria(r.Categoria, n, m, f) };
   });
 }
 function fgApriWo(liv, nome) {
@@ -109,17 +118,43 @@ function fgRenderEdit() {
 function fgRiga(e) {
   const d = [e.q || "—"];
   if (e.k === "peso") d.push("<b>" + fzEsc(e.m || "?") + " kg uomo · " + fzEsc(e.f || "?") + " kg donna</b>");
-  else d.push("<b>" + (e.k === "corsa" ? "Corsa" : "Corpo libero") + "</b>");
+  else d.push("<b>" + ({ corsa: "Corsa", macchinario: "Macchinario" }[e.k] || "Corpo libero") + "</b>");
   return d.join(" · ");
 }
 function fgRenderEx() {
   fzEl("fg-ex").innerHTML = fgWo.ex.length ? fgWo.ex.map((e, i) =>
     '<div class="fg-ex"><span class="i">' + (i + 1) + '</span><div class="body" data-fg-ex="' + i + '"><div class="nm">' + fzEsc(e.n || "Senza nome") + '</div><div class="dt">' + fgRiga(e) + '</div></div>' +
+    '<button type="button" class="fg-cp" data-fg-cp="' + i + '" aria-label="Duplica esercizio" title="Duplica">&#10697;</button>' +
     '<div class="fg-mv"><button type="button" data-fg-up="' + i + '" aria-label="Su">&#9650;</button><button type="button" data-fg-dn="' + i + '" aria-label="Giu">&#9660;</button></div></div>'
   ).join("") : '<p class="fz-empty">Nessun esercizio ancora. Aggiungine uno.</p>';
 }
 
 // ---- modifica esercizio ----
+let fgQ = "rep";
+const FG_UNITA = { tempo: ["sec", "min"], dist: ["m", "km"] };
+function fgSetQ(q, unita) {
+  fgQ = q;
+  document.querySelectorAll("#fg-segq button").forEach(b => b.classList.toggle("on", b.dataset.q === q));
+  const sel = fzEl("fg-ex-qu");
+  if (q === "rep") { sel.style.display = "none"; fzEl("fg-ex-qn").placeholder = "Es. 12"; }
+  else {
+    sel.style.display = "";
+    sel.innerHTML = FG_UNITA[q].map(u => '<option>' + u + '</option>').join("");
+    if (unita && FG_UNITA[q].includes(unita)) sel.value = unita;
+    fzEl("fg-ex-qn").placeholder = q === "tempo" ? "Es. 40" : "Es. 500";
+  }
+}
+// "12" -> rep, "40 sec" / "5 min" -> tempo, "500 m" / "2 km" -> distanza
+function fgLeggiQ(txt) {
+  txt = (txt || "").trim();
+  let m = txt.match(/^([\d.,]+)\s*(sec|s|min|m'|')?$/i);
+  if (m && !m[2]) return { q: "rep", n: m[1], u: "" };
+  m = txt.match(/^([\d.,]+)\s*(sec|s|secondi|min|minuti|')$/i);
+  if (m) return { q: "tempo", n: m[1], u: /^m/i.test(m[2]) || m[2] === "'" ? "min" : "sec" };
+  m = txt.match(/^([\d.,]+)\s*(km|m|metri)$/i);
+  if (m) return { q: "dist", n: m[1], u: /^k/i.test(m[2]) ? "km" : "m" };
+  return { q: "rep", n: txt, u: "" };
+}
 function fgSetK(k) {
   fgK = k;
   document.querySelectorAll("#fg-seg button").forEach(b => b.classList.toggle("on", b.dataset.k === k));
@@ -130,7 +165,9 @@ function fgApriEx(i) {
   const e = i >= 0 ? fgWo.ex[i] : { n: "", q: "", k: "peso", m: "", f: "" };
   fzEl("fg-sheet-ttl").textContent = i >= 0 ? "Esercizio " + (i + 1) : "Nuovo esercizio";
   fzEl("fg-ex-nome").value = e.n;
-  fzEl("fg-ex-q").value = e.q;
+  const lq = fgLeggiQ(e.q);
+  fgSetQ(i < 0 && e.k === "corsa" ? "dist" : lq.q, lq.u);
+  fzEl("fg-ex-qn").value = lq.n;
   fzEl("fg-ex-m").value = e.m || "";
   fzEl("fg-ex-f").value = e.f || "";
   fzEl("fg-sheet-err").textContent = "";
@@ -162,17 +199,18 @@ function fgScegliSuggerito(nome) {
   if (src) {
     const m = fzKg(src["Kg uomo"]), f = fzKg(src["Kg donna"]);
     fzEl("fg-ex-m").value = m; fzEl("fg-ex-f").value = f;
-    fgSetK((m || f) ? "peso" : "free");
-    if (!fzEl("fg-ex-q").value) fzEl("fg-ex-q").value = (src.Rep || "").trim();
+    fgSetK(fgKDaCategoria(src.Categoria, src.Esercizio, m, f));
+    if (!fzEl("fg-ex-qn").value) { const lq = fgLeggiQ(src.Rep); fgSetQ(lq.q, lq.u); fzEl("fg-ex-qn").value = lq.n; }
   }
   fgSuggerimenti();
 }
 function fgConfermaEx() {
   let n = fzEl("fg-ex-nome").value.trim();
-  const q = fzEl("fg-ex-q").value.trim();
+  const num = fzEl("fg-ex-qn").value.trim();
   if (!n && fgK === "corsa") n = "Corsa";
   if (!n) { fzEl("fg-sheet-err").textContent = "Scrivi il nome dell'esercizio."; return; }
-  if (!q) { fzEl("fg-sheet-err").textContent = "Scrivi le ripetizioni o il tempo."; return; }
+  if (!num) { fzEl("fg-sheet-err").textContent = "Scrivi quante ripetizioni, quanto tempo o quanti metri."; return; }
+  const q = fgQ === "rep" ? num : num + " " + fzEl("fg-ex-qu").value;
   const e = { n, q, k: fgK, m: "", f: "" };
   if (fgK === "peso") {
     e.m = fzEl("fg-ex-m").value.trim().replace(/\s*kg$/i, "");
@@ -201,7 +239,7 @@ async function fgSalva() {
     const r = await fgPost({
       azione: "salvaFunzionale", orig: fgWo.orig ? { tipo: o.tipo, livello: o.livello, nome: o.nome } : null,
       tipo: fgWo.tipo, livello: fgWo.liv, nome: fgWo.nome,
-      esercizi: fgWo.ex.map(e => ({ nome: e.n, rep: e.q, kgUomo: e.k === "peso" ? e.m : "", kgDonna: e.k === "peso" ? e.f : "" }))
+      esercizi: fgWo.ex.map(e => ({ nome: e.n, rep: e.q, categoria: FG_CAT[e.k] || "Corpo libero", kgUomo: e.k === "peso" ? e.m : "", kgDonna: e.k === "peso" ? e.f : "" }))
     });
     if (!r || !r.ok) throw new Error((r && r.errore) || "errore");
     fgAggiornaLocale(o, fgWo);
@@ -227,7 +265,7 @@ function fgAggiornaLocale(o, w) {
   }
   w.ex.forEach((e, i) => {
     const im = immagini[fzNorm(e.n)] || ["", ""];
-    fzDati.push({ Tipo: w.tipo, Livello: w.liv, Allenamento: w.nome, Ordine: String(i + 1), Esercizio: e.n, Rep: e.q, "Kg uomo": e.k === "peso" ? e.m : "", "Kg donna": e.k === "peso" ? e.f : "", "Immagine 1": im[0], "Immagine 2": im[1] });
+    fzDati.push({ Tipo: w.tipo, Livello: w.liv, Allenamento: w.nome, Ordine: String(i + 1), Esercizio: e.n, Rep: e.q, Categoria: FG_CAT[e.k] || "Corpo libero", "Kg uomo": e.k === "peso" ? e.m : "", "Kg donna": e.k === "peso" ? e.f : "", "Immagine 1": im[0], "Immagine 2": im[1] });
   });
 }
 let fgSicuro = false;
@@ -261,10 +299,12 @@ document.addEventListener("click", e => {
   if ((x = t.closest("[data-fg-wo]"))) { const p = x.dataset.fgWo.split("|"); fgApriWo(p[0], p.slice(1).join("|")); return; }
   if ((x = t.closest("[data-fg-liv]"))) { fgWo.liv = x.dataset.fgLiv; fgRenderEdit(); return; }
   if ((x = t.closest("[data-fg-ex]"))) { fgApriEx(+x.dataset.fgEx); return; }
+  if ((x = t.closest("[data-fg-cp]"))) { const i = +x.dataset.fgCp; fgWo.ex.splice(i + 1, 0, JSON.parse(JSON.stringify(fgWo.ex[i]))); fgRenderEx(); return; }
   if ((x = t.closest("[data-fg-up]"))) { const i = +x.dataset.fgUp; if (i > 0) { const a = fgWo.ex; [a[i - 1], a[i]] = [a[i], a[i - 1]]; fgRenderEx(); } return; }
   if ((x = t.closest("[data-fg-dn]"))) { const i = +x.dataset.fgDn; const a = fgWo.ex; if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; fgRenderEx(); } return; }
   if ((x = t.closest("[data-fg-sug]"))) { fgScegliSuggerito(x.dataset.fgSug); return; }
-  if ((x = t.closest("#fg-seg button"))) { fgSetK(x.dataset.k); return; }
+  if ((x = t.closest("#fg-seg button"))) { fgSetK(x.dataset.k); if (x.dataset.k === "corsa" && !fzEl("fg-ex-qn").value.trim()) fgSetQ("dist"); return; }
+  if ((x = t.closest("#fg-segq button"))) { fgSetQ(x.dataset.q); return; }
 });
 document.addEventListener("DOMContentLoaded", () => {
   fzEl("fg-code-ok").addEventListener("click", fgConfermaCodice);
