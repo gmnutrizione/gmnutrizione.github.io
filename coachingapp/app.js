@@ -120,7 +120,28 @@ function storageKey(suffix) {
 
 function afterAccessGranted() {
   document.getElementById("greeting-text").textContent = clienteNome ? ("Ciao " + clienteNome) : "Ciao";
+  abilitaFunzionale();
   showScreen("screen-categorie");
+}
+
+// Allenamento funzionale: si sblocca con "Si" nella colonna "Funzionale" del foglio Clienti
+function funzionaleAttivo() {
+  const r = clientiList.find(x => (x.Cliente || "").trim().toLowerCase() === (clienteNome || "").trim().toLowerCase());
+  const v = ((r && r.Funzionale) || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return v === "si" || v === "s" || v === "yes" || v === "x";
+}
+function abilitaFunzionale() {
+  const card = document.getElementById("cat-funzionale");
+  if (!card) return;
+  const ok = funzionaleAttivo();
+  card.classList.toggle("disabled", !ok);
+  card.classList.toggle("active", ok);
+  if (ok) card.dataset.category = "funzionale"; else delete card.dataset.category;
+  const soon = card.querySelector(".cat-soon");
+  if (soon) soon.style.display = ok ? "none" : "";
+  let arrow = card.querySelector(".cat-arrow");
+  if (ok && !arrow) { arrow = document.createElement("span"); arrow.className = "cat-arrow"; arrow.innerHTML = "&#8250;"; card.appendChild(arrow); }
+  if (!ok && arrow) arrow.remove();
 }
 
 // ============================================================
@@ -269,6 +290,9 @@ document.addEventListener("click", e => {
   if (catCard && catCard.dataset.category === "palestra") {
     buildBlocchi();
     showScreen("screen-blocchi");
+  }
+  if (catCard && catCard.dataset.category === "funzionale") {
+    fzApri();
   }
 });
 

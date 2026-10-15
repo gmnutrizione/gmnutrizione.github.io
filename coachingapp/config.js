@@ -16,3 +16,7 @@ const CLIENTI_CSV_URL = "https://docs.google.com/spreadsheets/d/1M-6QGcdYz61884Q
 // Link dell'App web (Google Apps Script) che riceve kg, rep, commenti
 // e le modifiche alla scheda, scrivendoli nel tab "Risultati"
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzuFR3xaRCGpcF_JNSCJ2afkp2DGSEw4jdL8fWUVC2HvCrP0RiEs1-fA27ig7K-aP3MaQ/exec";
+
+// Elenco allenamenti funzionali (tab "Funzionale" del foglio).
+// Tab "Funzionale" collegato.
+const FUNZIONALE_CSV_URL = "https://docs.google.com/spreadsheets/d/1M-6QGcdYz61884Q1AJQbD9ze361JqqXHNEjunUodZRk/export?format=csv&gid=1024569671";

@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css?v=20">
+<link rel="stylesheet" href="funzionale.css?v=1">
 </head>
 <body>
 
@@ -64,12 +65,67 @@
           <span class="cat-name">Corsa</span>
           <span class="cat-soon">presto</span>
         </div>
-        <div class="category-card disabled">
+        <div class="category-card disabled" id="cat-funzionale" data-category-futura="funzionale">
           <span class="cat-icon">&#9995;</span>
           <span class="cat-name">Allenamento funzionale</span>
           <span class="cat-soon">presto</span>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- SCHERMATE: allenamento funzionale -->
+  <div id="screen-fz-tipo" class="screen">
+    <div class="page-pad">
+      <div class="top-bar">
+        <span class="back-arrow" data-back="screen-categorie">&#8592;</span>
+        <p class="page-title-inline">Allenamento funzionale</p>
+      </div>
+      <p class="fz-sub">Come vuoi allenarti?</p>
+      <div class="fz-list" id="fz-tipi"></div>
+      <p class="fz-sub" id="fz-tipi-msg" style="margin-top:14px"></p>
+    </div>
+  </div>
+
+  <div id="screen-fz-liv" class="screen">
+    <div class="page-pad">
+      <div class="top-bar">
+        <span class="back-arrow" data-back="screen-fz-tipo">&#8592;</span>
+        <p class="page-title-inline" id="fz-liv-title"></p>
+      </div>
+      <div id="fz-livelli"></div>
+    </div>
+  </div>
+
+  <div id="screen-fz-det" class="screen">
+    <div class="page-pad">
+      <div class="top-bar">
+        <span class="back-arrow" id="fz-det-back" data-back="screen-fz-liv">&#8592;</span>
+        <p class="page-title-inline" id="fz-det-title"></p>
+      </div>
+      <div class="fz-meta" id="fz-det-meta"></div>
+      <div class="fz-best"><div class="fz-lbl">Ultimi tempi</div><div id="fz-det-tempi"></div></div>
+      <div id="fz-det-ex"></div>
+      <button class="fz-btn" type="button" id="fz-start">AVVIA</button>
+    </div>
+  </div>
+
+  <div id="screen-fz-run" class="screen">
+    <div class="fz-head">
+      <span class="fz-headl"><button type="button" id="fz-prev" aria-label="Esercizio precedente">&#8592;</button><span class="fz-lbl" id="fz-count" style="margin:0"></span></span>
+      <span style="display:flex;align-items:center"><span class="fz-clock" id="fz-clock">00:00</span><button type="button" class="fz-exit" id="fz-exit">Esci</button></span>
+    </div>
+    <div class="fz-prog" id="fz-prog"></div>
+    <div class="fz-body" id="fz-body"></div>
+  </div>
+
+  <div id="screen-fz-end" class="screen">
+    <div class="page-pad fz-end">
+      <p class="sm">Allenamento concluso</p>
+      <p class="big" id="fz-end-time">00:00</p>
+      <p class="cmp" id="fz-end-cmp"></p>
+      <div class="fz-best"><div class="fz-lbl">Ultimi 3 tempi</div><div id="fz-end-list"></div></div>
+      <button class="fz-btn dark" type="button" id="fz-end-back">TORNA AGLI ALLENAMENTI</button>
     </div>
   </div>
 
@@ -207,7 +263,8 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="config.js?v=2"></script>
-<script src="app.js?v=30"></script>
+<script src="config.js?v=3"></script>
+<script src="app.js?v=33"></script>
+<script src="funzionale.js?v=1"></script>
 </body>
 </html>

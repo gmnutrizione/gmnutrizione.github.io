@@ -1,0 +1,63 @@
+/* ===== Allenamento funzionale ===== */
+.fz-sub{color:#6B6B6B;font-size:13px;margin:0 0 14px}
+.fz-list{display:flex;flex-direction:column;gap:10px}
+.fz-card{display:flex;align-items:center;gap:12px;background:#F5F5F5;border-radius:14px;padding:16px;cursor:pointer;border:0;text-align:left;font:inherit;color:inherit;width:100%}
+.fz-card:active{background:#E4E4E4}
+.fz-card .n{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.03em;display:block}
+.fz-card .s{font-size:12px;color:#6B6B6B;display:block}
+.fz-card .txt{flex:1}
+.fz-card .ar{font-size:22px;color:#6B6B6B}
+.fz-group{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.fz-group h3{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:20px;letter-spacing:.06em;margin:6px 0 0;display:flex;align-items:center;gap:8px}
+.fz-tag{font:600 10px 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border-radius:6px}
+.fz-f{background:#E6F4EA;color:#1B6B34}.fz-i{background:#FFF1D6;color:#8A5A00}.fz-d{background:#FFEBEC;color:#E31E24}
+.fz-empty{color:#6B6B6B;font-size:14px;padding:20px 0}
+.fz-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.fz-pill{background:#F5F5F5;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600}
+.fz-best{background:#F5F5F5;border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.fz-lbl{font:600 11px 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6B6B6B;margin-bottom:6px}
+.fz-r{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:#6B6B6B;padding:2px 0}
+.fz-r b{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:24px;color:#111;letter-spacing:.03em}
+.fz-r.top b{color:#E31E24}
+.fz-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #E4E4E4}
+.fz-row .i{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#6B6B6B;width:22px}
+.fz-row .nm{flex:1;font-weight:600;font-size:15px}
+.fz-row .dt{font-size:12px;color:#6B6B6B;margin-top:2px;font-weight:400}
+.fz-row .kg{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.03em;color:#E31E24;white-space:nowrap}
+.fz-btn{border:0;background:#E31E24;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.06em;padding:16px;border-radius:14px;cursor:pointer;width:100%;margin-top:18px}
+.fz-btn.dark{background:#111}
+/* schermata esercizio a tutto schermo */
+#screen-fz-run.active{display:flex;flex-direction:column;height:100vh;height:100dvh;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.fz-head{padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center}
+.fz-headl{display:flex;align-items:center;gap:10px}
+#fz-prev{width:46px;height:46px;border-radius:50%;border:2px solid #111;background:#fff;color:#111;font-size:24px;line-height:1;cursor:pointer;padding:0}
+#fz-prev:disabled{opacity:.25;cursor:default}
+.fz-clock{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.05em;font-variant-numeric:tabular-nums}
+.fz-exit{background:none;border:0;color:#6B6B6B;font:600 12px 'Inter',sans-serif;padding:8px 0 8px 12px;cursor:pointer}
+.fz-prog{display:flex;gap:4px;padding:12px 20px 0}
+.fz-prog i{flex:1;height:4px;border-radius:2px;background:#E4E4E4}
+.fz-prog i.d{background:#111}.fz-prog i.c{background:#E31E24}
+.fz-body{display:flex;flex-direction:column;flex:1;min-height:0}
+.fz-cur{flex:none;padding:14px 24px 0;text-align:center}
+.fz-cur .k{font:600 11px 'Inter',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6B6B6B}
+.fz-name{font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:.95;letter-spacing:.02em;height:128px;display:flex;align-items:center;justify-content:center;overflow:hidden;text-transform:uppercase}
+.fz-rq{display:flex;justify-content:space-between;align-items:baseline;gap:12px;text-align:left}
+.fz-qty,.fz-wt{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:38px;line-height:1;letter-spacing:.03em;white-space:nowrap}
+.fz-wt{color:#E31E24;text-align:right}
+.fz-media{flex:1;min-height:0;margin:16px 24px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fz-media.uno{grid-template-columns:1fr}
+.fz-media div{border:2px solid #E4E4E4;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0}
+.fz-media img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.fz-next{background:#F5F5F5;padding:18px 24px 22px;height:128px;overflow:hidden;border-radius:22px 22px 0 0;flex:none}
+.fz-next .k{font:600 12px 'Inter',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6B6B6B}
+.fz-next .nm{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:.03em;margin-top:4px;line-height:1;text-transform:uppercase}
+.fz-next .dt{font-size:15px;color:#6B6B6B;margin-top:2px}
+.fz-hint{text-align:center;font-size:12px;color:#6B6B6B;padding:6px 0 10px;background:#F5F5F5;flex:none}
+.fz-finish{flex:1;background:#E31E24;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:24px;cursor:pointer;border:0;font:inherit;width:100%}
+.fz-finish .big{font-family:'Bebas Neue',sans-serif;font-size:64px;line-height:.95;letter-spacing:.03em}
+.fz-finish .t{font-size:14px;opacity:.9}
+.fz-end{text-align:center;padding-top:40px}
+.fz-end .sm{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#6B6B6B;letter-spacing:.04em}
+.fz-end .big{font-family:'Bebas Neue',sans-serif;font-size:72px;line-height:1}
+.fz-end .cmp{color:#6B6B6B;font-size:14px;margin:4px 0 18px}
+.fz-end .fz-best{text-align:left}
