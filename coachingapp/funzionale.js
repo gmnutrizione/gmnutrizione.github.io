@@ -169,7 +169,7 @@ function fzData(iso) {
 }
 function fzListaTempi(arr) {
   if (!arr.length) return '<div class="fz-r"><span>Nessun tempo ancora</span></div>';
-  return arr.map((x, i) => '<div class="fz-r' + (i === 0 ? ' top' : '') + '"><span>' + fzData(x.d) + '</span><b>' + fzFmt(x.ms) + '</b></div>').join("");
+  return arr.map((x, i) => '<div class="fz-r' + (i === 0 ? ' top' : '') + '"><span>' + fzData(x.d) + '</span><div class="fz-tm"><i>' + ["🥇","🥈","🥉"][i] + '</i><b>' + fzFmt(x.ms) + '</b></div></div>').join("");
 }
 
 // ---- dettaglio allenamento ----

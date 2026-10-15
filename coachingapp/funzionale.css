@@ -13,17 +13,21 @@
 .fz-s{background:#EDEDED;color:#111}.fz-f{background:#E6F4EA;color:#1B6B34}.fz-i{background:#FFF1D6;color:#8A5A00}.fz-d{background:#FFEBEC;color:#E31E24}
 .fz-empty{color:#6B6B6B;font-size:14px;padding:20px 0}
 .fz-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.fz-pill{background:#F5F5F5;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600}
+.fz-pill{background:#F5F5F5;border-radius:999px;padding:0 12px;height:32px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;line-height:1}
+.fz-meta .fz-tag{height:32px;display:inline-flex;align-items:center;padding:0 12px;border-radius:8px;line-height:1;font-size:11px}
 .fz-best{background:#F5F5F5;border-radius:14px;padding:14px 16px;margin-bottom:10px}
 .fz-lbl{font:600 11px 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6B6B6B;margin-bottom:6px}
 .fz-r{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:#6B6B6B;padding:2px 0}
 .fz-r b{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:24px;color:#111;letter-spacing:.03em}
+.fz-r{align-items:center}
+.fz-tm{display:flex;align-items:center;gap:10px}
+.fz-tm i{font-style:normal;font-size:20px;line-height:1}
 .fz-r.top b{color:#E31E24}
-.fz-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #E4E4E4}
+.fz-row{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid #E4E4E4}
 .fz-row .i{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#6B6B6B;width:22px}
-.fz-row .nm{flex:1;font-weight:600;font-size:15px}
-.fz-row .dt{font-size:12px;color:#6B6B6B;margin-top:2px;font-weight:400}
-.fz-row .kg{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.03em;color:#E31E24;white-space:nowrap}
+.fz-row .nm{flex:1;font-weight:600;font-size:14px;line-height:1.25}
+.fz-row .dt{font-size:12px;color:#6B6B6B;margin-top:1px;font-weight:400}
+.fz-row .kg{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.03em;color:#E31E24;white-space:nowrap}
 .fz-btn{border:0;background:#E31E24;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.06em;padding:16px;border-radius:14px;cursor:pointer;width:100%;margin-top:18px}
 .fz-btn.dark{background:#111}
 /* schermata esercizio a tutto schermo */
@@ -97,3 +101,10 @@
 
 .fg-cp{border:0;background:#fff;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:18px;color:#111;flex:none}
 .fg-seg button{font-size:12px !important}
+
+/* titolo allenamento: grande e centrato */
+#screen-fz-det .page-title-inline{flex:1;text-align:center;font-size:38px;line-height:1.05;margin-right:34px;text-transform:uppercase}
+/* anteprima "Dopo" piu' in alto, centrata, sotto lo spazio immagini */
+.fz-media{flex:none !important;min-height:0 !important;height:clamp(170px,32vh,300px);margin:16px 24px 14px !important}
+.fz-next{margin:0 24px;border-radius:18px !important;height:auto !important;min-height:120px;overflow:visible !important;text-align:center;padding:16px 20px 18px !important;flex:none}
+.fz-next .nm{font-size:34px !important;line-height:1.02}
