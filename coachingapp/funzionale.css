@@ -105,6 +105,6 @@
 /* titolo allenamento: grande e centrato */
 #screen-fz-det .page-title-inline{flex:1;text-align:center;font-size:38px;line-height:1.05;margin-right:34px;text-transform:uppercase}
 /* anteprima "Dopo" piu' in alto, centrata, sotto lo spazio immagini */
-.fz-media{flex:none !important;min-height:0 !important;height:clamp(170px,32vh,300px);margin:16px 24px 14px !important}
+.fz-media{flex:none !important;min-height:0 !important;height:clamp(170px,32vh,300px);margin:16px 24px 38px !important}
 .fz-next{margin:0 24px;border-radius:18px !important;height:auto !important;min-height:120px;overflow:visible !important;text-align:center;padding:16px 20px 18px !important;flex:none}
 .fz-next .nm{font-size:34px !important;line-height:1.02}
