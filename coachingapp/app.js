@@ -64,10 +64,11 @@ async function provaAccesso() {
 async function caricaSchedaCliente() {
   showScreen("screen-loading");
   try {
-    const [datiCliente, datiArchivio, datiFoto] = await Promise.all([
+    const [datiCliente, datiArchivio, datiFoto, imgSb] = await Promise.all([
       fetchCsv(clienteCsvUrl),
       fetchCsv(ARCHIVIO_CSV_URL),
-      fetchCsv(FOTO_CSV_URL)
+      fetchCsv(FOTO_CSV_URL),
+      leggiImmaginiSb("palestra")
     ]);
 
     eserciziTotali = datiCliente.filter(r => r.Esercizio && r.Esercizio.trim() !== "");
@@ -82,6 +83,13 @@ async function caricaSchedaCliente() {
         img1: (r["Immagine 1"] || "").trim(),
         img2: (r["Immagine 2"] || "").trim()
       };
+    });
+    const nrm = s => (s || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
+    imgSb.forEach(o => {
+      let k = Object.keys(archivio).find(x => nrm(x) === nrm(o.nome));
+      if (!k) { k = (o.nome || "").trim(); if (!k) return; archivio[k] = { video: "", descrizione: "", alternative: [], img1: "", img2: "" }; }
+      if (o.img1 !== null && o.img1 !== undefined) archivio[k].img1 = o.img1;
+      if (o.img2 !== null && o.img2 !== undefined) archivio[k].img2 = o.img2;
     });
     fotoGruppi = {};
     datiFoto.forEach(r => {
@@ -130,6 +138,18 @@ async function leggiSupabase(url) {
     if (!Array.isArray(j) || !j.length || !Array.isArray(j[0].righe)) return null;
     return j[0].righe;
   } catch (e) { return null; }
+}
+
+// Immagini caricate dall'app (tabella gm_immagini su Supabase): hanno la precedenza su quelle del foglio
+async function leggiImmaginiSb(dest) {
+  if (!supabaseAttivo()) return [];
+  try {
+    const r = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/gm_immagini?select=nome,img1,img2&dest=eq." + dest,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Cache-Control": "no-cache" } });
+    if (!r.ok) return [];
+    const j = await r.json();
+    return Array.isArray(j) ? j : [];
+  } catch (e) { return []; }
 }
 
 async function fetchCsv(url) {

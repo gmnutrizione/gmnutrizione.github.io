@@ -42,6 +42,7 @@ function fzRep(r) {
 
 // ---- caricamento dati dal foglio (allenamenti + archivio immagini) ----
 async function fzCarica() {
+  const imgP = leggiImmaginiSb("funzionale");
   fzDati = (await fetchCsv(FUNZIONALE_CSV_URL)).filter(r => r.Esercizio && r.Esercizio.trim() !== "");
   fzCaricato = true;
   try {
@@ -53,6 +54,14 @@ async function fzCarica() {
         if (n) fzArchivio[n] = { nome: (r.Esercizio || "").trim(), img1: (r["Immagine 1"] || "").trim(), img2: (r["Immagine 2"] || "").trim() };
       });
     }
+  } catch (e) { console.error(e); }
+  try {
+    (await imgP).forEach(o => {
+      const k = fzNorm(o.nome); if (!k) return;
+      const a = fzArchivio[k] = Object.assign({ nome: (o.nome || "").trim(), img1: "", img2: "" }, fzArchivio[k]);
+      if (o.img1 !== null && o.img1 !== undefined) a.img1 = o.img1;
+      if (o.img2 !== null && o.img2 !== undefined) a.img2 = o.img2;
+    });
   } catch (e) { console.error(e); }
 }
 

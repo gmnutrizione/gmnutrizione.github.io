@@ -222,20 +222,60 @@ function fgRidimensiona(file) {
     im.src = url;
   });
 }
-// carica una foto su Supabase e scrive il link nel foglio. dest: "funzionale" | "palestra"
-async function fgUpload(nome, slot, file, dest) {
-  if (!supabaseAttivo()) throw new Error("Supabase non e' ancora collegato (config.js)");
-  const blob = await fgRidimensiona(file);
+// ---- caricamento immagini ----
+// Percorso veloce: la foto va direttamente su Supabase e il link viene registrato con una funzione
+// protetta dal codice trainer. Il foglio Google si aggiorna da solo subito dopo (script, ogni minuto).
+// Se in Supabase non e' ancora stato fatto il setup, ripiega sul vecchio percorso (script di Google).
+function fgSlug(nome) {
+  return String(nome || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "esercizio";
+}
+function fgSbBase() { return SUPABASE_URL.replace(/\/+$/, ""); }
+function fgSbHdr(extra) { return Object.assign({ apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY }, extra || {}); }
+
+// registra (o svuota, con url "") l'immagine di un esercizio. Restituisce false se la funzione non esiste ancora.
+async function fgImpostaImmagine(nome, slot, url, dest) {
+  const r = await fetch(fgSbBase() + "/rest/v1/rpc/gm_imposta_immagine", {
+    method: "POST", headers: fgSbHdr({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ p_codice: fgCodice(), p_dest: dest, p_nome: nome, p_slot: slot, p_url: url }) });
+  if (r.status === 404) return false;
+  if (!r.ok) throw new Error("Supabase " + r.status);
+  if ((await r.json()) !== true) throw new Error("codice trainer non valido (controlla gm_config su Supabase)");
+  return true;
+}
+
+async function fgUploadScript(nome, slot, blob, dest) {
   const r1 = await fgPost({ azione: "urlImmagine", esercizio: nome, slot, dest });
   if (!r1.ok) throw new Error(r1.errore || "errore");
   const fd = new FormData(); fd.append("cacheControl", "31536000"); fd.append("", blob);
-  const up = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/storage/v1/object/upload/sign/esercizi/" + r1.path + "?token=" + encodeURIComponent(r1.token), {
+  const up = await fetch(fgSbBase() + "/storage/v1/object/upload/sign/esercizi/" + r1.path + "?token=" + encodeURIComponent(r1.token), {
     method: "PUT", headers: { apikey: SUPABASE_ANON_KEY, "x-upsert": "true" }, body: fd });
   if (!up.ok) throw new Error("caricamento non riuscito (" + up.status + ")");
   const r2 = await fgPost({ azione: "salvaImmagine", esercizio: nome, slot, path: r1.path, dest });
   if (!r2.ok) throw new Error(r2.errore || "errore");
   return r2.url;
 }
+
+// carica una foto. dest: "funzionale" | "palestra"
+async function fgUpload(nome, slot, file, dest) {
+  if (!supabaseAttivo()) throw new Error("Supabase non e' ancora collegato (config.js)");
+  const blob = await fgRidimensiona(file);
+  const path = (dest === "palestra" ? "palestra-" : "") + fgSlug(nome) + "-" + slot + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + ".jpg";
+  const up = await fetch(fgSbBase() + "/storage/v1/object/esercizi/" + path, {
+    method: "POST", headers: fgSbHdr({ "Content-Type": "image/jpeg", "x-upsert": "false", "cache-control": "max-age=31536000" }), body: blob });
+  if (up.ok) {
+    const url = fgSbBase() + "/storage/v1/object/public/esercizi/" + path;
+    if (await fgImpostaImmagine(nome, slot, url, dest)) return url;
+  }
+  return fgUploadScript(nome, slot, blob, dest); // setup Supabase non ancora fatto
+}
+
+// toglie l'immagine (subito su Supabase; il foglio si aggiorna dopo)
+async function fgRimuoviSb(nome, slot, dest) {
+  if (supabaseAttivo() && await fgImpostaImmagine(nome, slot, "", dest)) return;
+  const r = await fgPost({ azione: "rimuoviImmagine", esercizio: nome, slot, dest });
+  if (!r.ok) throw new Error(r.errore || "errore");
+}
+
 async function fgCaricaImg(file) {
   const nome = fzEl("fg-ex-nome").value.trim();
   const n = fgImgSlot;
@@ -258,12 +298,17 @@ async function fgRimuoviImg(n) {
   const nome = fzEl("fg-ex-nome").value.trim();
   if (!nome) return;
   const st = fzEl("fg-img-stato");
+  const a = fzArchivio[fzNorm(nome)];
+  const prima = a ? a["img" + n] : "";
+  if (a) a["img" + n] = "";
+  fgAggiornaImg();
   try {
-    const r = await fgPost({ azione: "rimuoviImmagine", esercizio: nome, slot: n });
-    if (!r.ok) throw new Error(r.errore || "errore");
-    const a = fzArchivio[fzNorm(nome)]; if (a) a["img" + n] = "";
+    await fgRimuoviSb(nome, n, "funzionale");
+  } catch (e) {
+    if (a) a["img" + n] = prima;
     fgAggiornaImg();
-  } catch (e) { st.className = "fz-sub"; st.textContent = "Non riesco a rimuovere: " + e.message; }
+    st.className = "fz-sub"; st.textContent = "Non riesco a rimuovere: " + e.message;
+  }
 }
 function fgScegliSuggerito(nome) {
   fzEl("fg-ex-nome").value = nome;
@@ -442,14 +487,20 @@ async function fgPalCarica(file) {
     fgPalRender();
   } catch (e) { msg.className = "fz-sub"; msg.textContent = "Non riesco a caricare: " + e.message; }
 }
+// elimina subito dallo schermo; la richiesta allo script parte in sottofondo (se fallisce, rimette l'immagine)
 async function fgPalRimuovi(nome, slot) {
   const msg = fzEl("fg-pal-msg");
+  const k = fgPalChiave(nome);
+  const prima = k ? archivio[k]["img" + slot] : "";
+  if (k) archivio[k]["img" + slot] = "";
+  fgPalRender();
   try {
-    const r = await fgPost({ azione: "rimuoviImmagine", esercizio: nome, slot, dest: "palestra" });
-    if (!r.ok) throw new Error(r.errore || "errore");
-    const k = fgPalChiave(nome); if (k) archivio[k]["img" + slot] = "";
+    await fgRimuoviSb(nome, slot, "palestra");
+  } catch (e) {
+    if (k) archivio[k]["img" + slot] = prima;
     fgPalRender();
-  } catch (e) { msg.className = "fz-sub"; msg.textContent = "Non riesco a rimuovere: " + e.message; }
+    msg.className = "fz-sub"; msg.textContent = "Non sono riuscito a rimuovere l'immagine di " + nome + ": " + e.message;
+  }
 }
 document.addEventListener("click", ev => {
   const t = ev.target; let x;
