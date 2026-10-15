@@ -790,6 +790,14 @@ function parseRecuperoSecondi(testo) {
   return soloNumero ? parseInt(soloNumero[0]) : 0;
 }
 
+// la cornice delle immagini prende le proporzioni della prima foto (senza tagliarla)
+function aggiornaRapporto(img) {
+  const box = img.closest(".img-pair");
+  if (!box || box.dataset.r || !img.naturalWidth) return;
+  box.dataset.r = "1";
+  box.style.setProperty("--r", Math.min(1.4, Math.max(0.45, img.naturalWidth / img.naturalHeight)));
+}
+
 function apriDettaglio(ex, giorno, gruppo) {
   const nomeGrezzo = ex.Esercizio || ex.esercizio;
   const subNomi = nomeGrezzo.split("+").map(s => s.trim()).filter(Boolean);
@@ -816,9 +824,10 @@ function apriDettaglio(ex, giorno, gruppo) {
   const box = document.getElementById("video-box");
   const imgs = [[infoPrimo.img1, "Partenza"], [infoPrimo.img2, "Arrivo"]].filter(x => x[0]);
   const video = (ex.Video || "").trim() || infoPrimo.video;
+  delete box.dataset.r; box.style.removeProperty("--r");
   if (imgs.length) {
     box.className = "img-pair" + (imgs.length === 1 ? " uno" : "");
-    box.innerHTML = imgs.map(x => '<figure><img src="' + fzImg(x[0]).replace(/"/g, "&quot;") + '" alt=""><figcaption>' + x[1] + '</figcaption></figure>').join("");
+    box.innerHTML = imgs.map(x => '<figure><img src="' + fzImg(x[0]).replace(/"/g, "&quot;") + '" alt="" onload="aggiornaRapporto(this)"><figcaption>' + x[1] + '</figcaption></figure>').join("");
   } else if (video) {
     box.className = "video-box";
     box.innerHTML = `<iframe src="${toEmbedUrl(video)}" allowfullscreen allow="autoplay; encrypted-media"></iframe>`;
