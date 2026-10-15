@@ -989,8 +989,8 @@
      sopra di loro, non rientrati come il contenuto delle .pg-card. Il grassetto non è automatico:
      chi scrive racchiude le parole da *evidenziare* fra asterischi (vedi pgHtmlIntroPunti_). Testo
      più grande del resto del documento apposta, per restare leggibile: è testo discorsivo, non dati. */
-  .pg-doc .pg-intro-lista{ display:flex; flex-direction:column; gap:9px; margin-top:2px; }
-  .pg-doc .pg-intro-punto{ font-size:13px; color:var(--pg-ink-soft); line-height:1.5; white-space:pre-line; }
+  .pg-doc .pg-intro-lista{ display:flex; flex-direction:column; gap:8px; margin-top:2px; }
+  .pg-doc .pg-intro-punto{ font-size:12px; color:var(--pg-ink-soft); line-height:1.48; white-space:pre-line; }
   .pg-doc .pg-intro-punto b{ color:var(--pg-ink); font-weight:600; }
   /* Riga unica per Pranzo/Cena (vedi pgHtmlOpzioneFissaStampa_): stessa dimensione del testo delle
      alimenti su due righe, ma nomi in grassetto direttamente nel flusso invece che su un titolo a parte. */
@@ -1562,12 +1562,20 @@
           <div class="field"><label>P. IVA</label><input type="text" id="imp-piva" placeholder="Es. 02753720024"></div>
           <div class="field"><label>Iscrizione Albo Biologi n°</label><input type="text" id="imp-albo" placeholder="Es. AA_092973"></div>
           <div class="field"><label>Frase in fondo alla copertina</label><input type="text" id="imp-slogan" placeholder="Es. Il cambiamento inizia da un singolo passo"></div>
-          <div class="field" style="grid-column:1 / -1;"><label>Testo pagina "Introduzione al percorso alimentare" (un punto per paragrafo — lascia una riga vuota fra un punto e l'altro; racchiudi fra asterischi le parole da mettere in grassetto, es. *parola*)</label><textarea id="imp-intro" rows="10" oninput="pgAggiornaAnteprimaIntro_()" placeholder="*Verdura*: presente ad ogni pasto principale, meglio se di stagione.&#10;&#10;*Frutta*: 2-3 porzioni al giorno, lontano dai pasti principali.&#10;Evita succhi di frutta e frutta *sciroppata*.&#10;&#10;*Acqua*: almeno 1,5-2 litri al giorno.&#10;&#10;*Alcol*: da evitare o limitare a occasioni *sporadiche*.&#10;&#10;*Pasto libero*/fuori casa: una volta a settimana circa, con equilibrio."></textarea>
+          <div class="field" style="grid-column:1 / -1;"><label>Testo pagina "Introduzione al percorso alimentare" (un punto per paragrafo — lascia una riga vuota fra un punto e l'altro; racchiudi fra asterischi le parole da mettere in grassetto, es. *parola*)</label><textarea id="imp-intro" rows="10" oninput="pgAggiornaAnteprimaTestoLibero_('imp-intro','imp-intro-anteprima')" placeholder="*Verdura*: presente ad ogni pasto principale, meglio se di stagione.&#10;&#10;*Frutta*: 2-3 porzioni al giorno, lontano dai pasti principali.&#10;Evita succhi di frutta e frutta *sciroppata*.&#10;&#10;*Acqua*: almeno 1,5-2 litri al giorno.&#10;&#10;*Alcol*: da evitare o limitare a occasioni *sporadiche*.&#10;&#10;*Pasto libero*/fuori casa: una volta a settimana circa, con equilibrio."></textarea>
           </div>
           <div class="field" style="grid-column:1 / -1;">
             <label>Anteprima</label>
             <div class="pg-doc" style="max-width:none; margin:0; padding:0;">
               <div class="pg-intro-lista" id="imp-intro-anteprima"></div>
+            </div>
+          </div>
+          <div class="field" style="grid-column:1 / -1;"><label>Contenuto aggiuntivo dopo "Spuntino pomeriggio" (stessa pagina di Colazione e Spuntini — resta sempre lì; stesso formato: un paragrafo per punto, *parola* per il grassetto)</label><textarea id="imp-spuntinop-extra" rows="6" oninput="pgAggiornaAnteprimaTestoLibero_('imp-spuntinop-extra','imp-spuntinop-extra-anteprima')" placeholder="Es. *Integratore X*: un misurino la mattina a colazione."></textarea>
+          </div>
+          <div class="field" style="grid-column:1 / -1;">
+            <label>Anteprima</label>
+            <div class="pg-doc" style="max-width:none; margin:0; padding:0;">
+              <div class="pg-intro-lista" id="imp-spuntinop-extra-anteprima"></div>
             </div>
           </div>
         </div>
@@ -7091,13 +7099,13 @@
     }).filter(r => r.alimento);
   }
 
-  function pgAggiornaAnteprimaIntro_(){
-    const el = document.getElementById('imp-intro-anteprima');
+  function pgAggiornaAnteprimaTestoLibero_(campoId, anteprimaId){
+    const el = document.getElementById(anteprimaId);
     if(!el) return;
-    const campo = document.getElementById('imp-intro');
+    const campo = document.getElementById(campoId);
     const testo = campo ? campo.value : '';
     const html = pgHtmlIntroPunti_(testo);
-    el.innerHTML = html || '<div style="font-size:12px; color:var(--pg-ink-faint); font-style:italic;">Il testo che scrivi qui sopra apparirà diviso in punti, così come nel PDF.</div>';
+    el.innerHTML = html || '<div style="font-size:12px; color:var(--pg-ink-faint); font-style:italic;">Il testo che scrivi qui sopra apparirà così nel PDF.</div>';
   }
   async function apriImpostazioni(){
     document.getElementById('impostazioni-overlay').style.display = 'flex';
@@ -7119,7 +7127,9 @@
       document.getElementById('imp-albo').value = IMPOSTAZIONI_PG_CACHE.pg_albo_biologi || '';
       document.getElementById('imp-slogan').value = IMPOSTAZIONI_PG_CACHE.pg_slogan || '';
       document.getElementById('imp-intro').value = IMPOSTAZIONI_PG_CACHE.pg_intro_testo || '';
-      pgAggiornaAnteprimaIntro_();
+      document.getElementById('imp-spuntinop-extra').value = IMPOSTAZIONI_PG_CACHE.pg_spuntinop_extra || '';
+      pgAggiornaAnteprimaTestoLibero_('imp-intro','imp-intro-anteprima');
+      pgAggiornaAnteprimaTestoLibero_('imp-spuntinop-extra','imp-spuntinop-extra-anteprima');
       document.getElementById('pg-pane-baseline').value = IMPOSTAZIONI_PG_CACHE.pg_pane_baseline_g || 60;
       document.getElementById('pg-olio-baseline').value = IMPOSTAZIONI_PG_CACHE.pg_olio_baseline_g || 15;
       document.getElementById('pg-peso-uovo').value = IMPOSTAZIONI_PG_CACHE.pg_peso_medio_uovo_g || 60;
@@ -7159,6 +7169,7 @@
       pg_albo_biologi: document.getElementById('imp-albo').value.trim(),
       pg_slogan: document.getElementById('imp-slogan').value.trim(),
       pg_intro_testo: document.getElementById('imp-intro').value.replace(/\r\n/g, '\n').trim(),
+      pg_spuntinop_extra: document.getElementById('imp-spuntinop-extra').value.replace(/\r\n/g, '\n').trim(),
       pg_pane_baseline_g: String(parseFloat(document.getElementById('pg-pane-baseline').value) || 60),
       pg_olio_baseline_g: String(parseFloat(document.getElementById('pg-olio-baseline').value) || 15),
       pg_peso_medio_uovo_g: String(parseFloat(document.getElementById('pg-peso-uovo').value) || 60),
@@ -7347,6 +7358,7 @@
     const email = imp.pg_email || '', telefono = imp.pg_telefono || '', piva = imp.pg_piva || '', albo = imp.pg_albo_biologi || '';
     const slogan = imp.pg_slogan || '';
     const introTesto = (imp.pg_intro_testo || '').trim();
+    const spuntinopExtra = (imp.pg_spuntinop_extra || '').trim();
     const nomePaziente = (meta && meta.nomePaziente) || '';
     const iniziali = pgIniziali_(nomeProf) || 'GM';
 
@@ -7424,6 +7436,7 @@
         ${sezDerivataPagina('Colazione')}
         ${sezDerivataPagina('Spuntino mattina')}
         ${sezDerivataPagina('Spuntino pomeriggio')}
+        ${spuntinopExtra ? `<div class="pg-intro-lista">${pgHtmlIntroPunti_(spuntinopExtra)}</div>` : ''}
         ${sezDerivataPagina('Dopo cena')}
         ${footer()}
       </div>
