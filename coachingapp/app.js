@@ -97,7 +97,46 @@ async function caricaSchedaCliente() {
   }
 }
 
-function fetchCsv(url) {
+// Chiave con cui i dati di un foglio sono salvati su Supabase (tabella gm_cache).
+// Deve coincidere con quella scritta dallo script di Google (sincronizza).
+function chiaveSupabase(url) {
+  const mappa = [
+    [typeof CLIENTI_CSV_URL !== "undefined" && CLIENTI_CSV_URL, "clienti"],
+    [typeof ARCHIVIO_CSV_URL !== "undefined" && ARCHIVIO_CSV_URL, "archivio"],
+    [typeof FOTO_CSV_URL !== "undefined" && FOTO_CSV_URL, "foto"],
+    [typeof FUNZIONALE_CSV_URL !== "undefined" && FUNZIONALE_CSV_URL, "funzionale"],
+    [typeof FUNZIONALE_RISULTATI_URL !== "undefined" && FUNZIONALE_RISULTATI_URL, "risultati_funzionale"],
+    [typeof FUNZIONALE_ARCHIVIO_URL !== "undefined" && FUNZIONALE_ARCHIVIO_URL, "archivio_funzionale"]
+  ];
+  for (const [u, k] of mappa) if (u && u === url) return k;
+  return "scheda:" + url.trim();
+}
+
+function supabaseAttivo() {
+  return typeof SUPABASE_URL !== "undefined" && SUPABASE_URL && typeof SUPABASE_ANON_KEY !== "undefined" && SUPABASE_ANON_KEY;
+}
+
+// Legge le righe da Supabase (un'unica richiesta JSON, molto piu' veloce del CSV di Google).
+// Restituisce null se non disponibile: in quel caso si usa il foglio Google.
+async function leggiSupabase(url) {
+  if (!supabaseAttivo()) return null;
+  try {
+    const q = SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/gm_cache?select=righe&chiave=eq." + encodeURIComponent(chiaveSupabase(url));
+    const r = await fetch(q, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Cache-Control": "no-cache" } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (!Array.isArray(j) || !j.length || !Array.isArray(j[0].righe)) return null;
+    return j[0].righe;
+  } catch (e) { return null; }
+}
+
+async function fetchCsv(url) {
+  const sb = await leggiSupabase(url);
+  if (sb) return sb;
+  return fetchCsvGoogle(url);
+}
+
+function fetchCsvGoogle(url) {
   const separatore = url.includes("?") ? "&" : "?";
   const urlFresca = url + separatore + "_=" + Date.now();
   return new Promise((resolve, reject) => {

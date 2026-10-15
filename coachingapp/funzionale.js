@@ -224,6 +224,7 @@ function fzApriDettaglio(liv, nome) {
 async function fzAvvia() {
   if (!fzEx.length) return;
   fzCur = 0; fzT0 = Date.now();
+  fzEx.forEach(e => [e.img1, e.img2].forEach(u => { if (u) { const im = new Image(); im.src = u; } }));
   showScreen("screen-fz-run");
   fzRender();
   fzEl("fz-clock").textContent = "00:00";

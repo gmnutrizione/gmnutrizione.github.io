@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css?v=20">
-<link rel="stylesheet" href="funzionale.css?v=7">
+<link rel="stylesheet" href="funzionale.css?v=8">
 </head>
 <body>
 
@@ -177,6 +177,13 @@
   <div id="fg-sheet" class="fg-sheet"><div class="fg-box">
     <div style="display:flex;justify-content:space-between;align-items:center"><p class="page-title-inline" id="fg-sheet-ttl">Esercizio</p><span class="back-arrow" id="fg-sheet-close" style="margin:0">&#10005;</span></div>
     <div class="fg-field"><span class="fz-lbl">Nome esercizio</span><input type="text" id="fg-ex-nome" class="fg-input" placeholder="Es. Squat con manubri" autocomplete="off"><div class="fg-chips" id="fg-sug"></div><p class="fz-sub" id="fg-img-stato" style="margin:0"></p></div>
+    <div class="fg-field"><span class="fz-lbl">Immagini (valgono per tutti gli allenamenti)</span>
+      <div class="fg-imgs">
+        <div class="fg-slot" data-slot="1"><button type="button" class="fg-slot-btn" data-fg-img="1"><span class="fg-slot-plus">+ Immagine 1</span></button><button type="button" class="fg-slot-x" data-fg-imgdel="1" aria-label="Rimuovi">&#10005;</button></div>
+        <div class="fg-slot" data-slot="2"><button type="button" class="fg-slot-btn" data-fg-img="2"><span class="fg-slot-plus">+ Immagine 2</span></button><button type="button" class="fg-slot-x" data-fg-imgdel="2" aria-label="Rimuovi">&#10005;</button></div>
+      </div>
+      <input type="file" id="fg-file" accept="image/*" style="display:none">
+    </div>
     <div class="fg-field"><span class="fz-lbl">Quantit&agrave;</span>
       <div class="fg-seg" id="fg-segq"><button type="button" data-q="rep">Ripetizioni</button><button type="button" data-q="tempo">Tempo</button><button type="button" data-q="dist">Distanza</button><button type="button" data-q="cal">Calorie</button></div>
       <div class="fg-two" style="grid-template-columns:1fr auto"><input type="text" inputmode="decimal" id="fg-ex-qn" class="fg-input" placeholder="Es. 12"><select id="fg-ex-qu" class="fg-input" style="width:auto"></select></div>
@@ -324,9 +331,9 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="config.js?v=5"></script>
-<script src="app.js?v=34"></script>
-<script src="funzionale.js?v=7"></script>
-<script src="gestione.js?v=6"></script>
+<script src="config.js?v=6"></script>
+<script src="app.js?v=35"></script>
+<script src="funzionale.js?v=8"></script>
+<script src="gestione.js?v=7"></script>
 </body>
 </html>

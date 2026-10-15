@@ -28,3 +28,11 @@ const FUNZIONALE_RISULTATI_URL = "https://docs.google.com/spreadsheets/d/1M-6QGc
 // Archivio immagini degli esercizi funzionali: tab "Archivio funzionale" (Esercizio, Immagine 1, Immagine 2).
 // Ogni esercizio si scrive una sola volta, vale per tutti gli allenamenti.
 const FUNZIONALE_ARCHIVIO_URL = "https://docs.google.com/spreadsheets/d/1M-6QGcdYz61884Q1AJQbD9ze361JqqXHNEjunUodZRk/gviz/tq?tqx=out:csv&sheet=Archivio%20funzionale";
+
+// ============================================================
+// SUPABASE (lettura veloce dei dati e archivio immagini)
+// Metti qui l'indirizzo del progetto e la chiave "anon" (publishable).
+// Se restano vuoti, l'app legge direttamente da Google Sheets come prima.
+// ============================================================
+const SUPABASE_URL = "https://ipereqxfukghczjynpnu.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwZXJlcXhmdWtnaGN6anlucG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5MTk3ODUsImV4cCI6MjEwNTQ5NTc4NX0.o-nGl6mnEXVh8M7fbDVMn4uWa6ufEXZOnS2ZDgtUT0g";

@@ -189,11 +189,76 @@ function fgSuggerimenti() {
   const txt = fzNorm(fzEl("fg-ex-nome").value);
   const f = fgNomiNoti().filter(n => !txt || fzNorm(n).includes(txt)).slice(0, 5);
   fzEl("fg-sug").innerHTML = f.length ? f.map(n => '<button type="button" class="sug" data-fg-sug="' + fzEsc(n) + '">' + fzEsc(n) + '</button>').join("") : "";
-  const arc = fzArchivio[txt];
+  fgAggiornaImg();
+}
+// ---- immagini dell'esercizio (caricate su Supabase, scritte nel tab Archivio funzionale) ----
+let fgImgSlot = 0;
+function fgAggiornaImg() {
+  const txt = fzNorm(fzEl("fg-ex-nome").value);
+  const arc = fzArchivio[txt] || {};
   const st = fzEl("fg-img-stato");
-  if (!txt) { st.textContent = ""; st.className = "fz-sub"; }
-  else if (arc && (arc.img1 || arc.img2)) { st.textContent = "Immagini trovate nell'archivio."; st.className = "fz-sub fg-ok"; }
-  else { st.textContent = "Nessuna immagine per questo esercizio: aggiungila una volta sola nel tab Archivio funzionale del foglio."; st.className = "fz-sub"; }
+  st.className = "fz-sub";
+  st.textContent = txt ? "" : "Scrivi prima il nome dell'esercizio, poi aggiungi le immagini.";
+  [1, 2].forEach(n => {
+    const box = document.querySelector('.fg-slot[data-slot="' + n + '"]');
+    const url = fzImg(arc["img" + n]);
+    box.classList.toggle("has", !!url);
+    box.querySelector(".fg-slot-btn").innerHTML = url ? '<img src="' + fzEsc(url) + '" alt="">' : '<span class="fg-slot-plus">+ Immagine ' + n + '</span>';
+  });
+}
+// riduce la foto (max 1000 px, JPEG) cosi' si carica e si vede subito
+function fgRidimensiona(file) {
+  return new Promise((ok, ko) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 1000 / Math.max(im.width, im.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? ok(b) : ko(new Error("immagine non valida")), "image/jpeg", 0.85);
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); ko(new Error("immagine non valida")); };
+    im.src = url;
+  });
+}
+async function fgCaricaImg(file) {
+  const nome = fzEl("fg-ex-nome").value.trim();
+  const n = fgImgSlot;
+  const st = fzEl("fg-img-stato"), box = document.querySelector('.fg-slot[data-slot="' + n + '"]');
+  if (!nome) { st.textContent = "Scrivi prima il nome dell'esercizio."; return; }
+  if (!supabaseAttivo()) { st.textContent = "Supabase non e' ancora collegato (config.js)."; return; }
+  box.classList.add("busy"); st.className = "fz-sub"; st.textContent = "Carico l'immagine...";
+  try {
+    const blob = await fgRidimensiona(file);
+    const r1 = await fgPost({ azione: "urlImmagine", esercizio: nome, slot: n });
+    if (!r1.ok) throw new Error(r1.errore || "errore");
+    const fd = new FormData(); fd.append("cacheControl", "31536000"); fd.append("", blob);
+    const up = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/storage/v1/object/upload/sign/esercizi/" + r1.path + "?token=" + encodeURIComponent(r1.token), {
+      method: "PUT", headers: { apikey: SUPABASE_ANON_KEY, "x-upsert": "true" }, body: fd });
+    if (!up.ok) throw new Error("caricamento non riuscito (" + up.status + ")");
+    const r2 = await fgPost({ azione: "salvaImmagine", esercizio: nome, slot: n, path: r1.path });
+    if (!r2.ok) throw new Error(r2.errore || "errore");
+    const k = fzNorm(nome);
+    fzArchivio[k] = Object.assign({ nome, img1: "", img2: "" }, fzArchivio[k], { nome });
+    fzArchivio[k]["img" + n] = r2.url;
+    fgAggiornaImg();
+    st.className = "fz-sub fg-ok"; st.textContent = "Immagine salvata.";
+  } catch (e) {
+    st.className = "fz-sub"; st.textContent = "Non riesco a caricare l'immagine: " + e.message;
+  }
+  box.classList.remove("busy");
+}
+async function fgRimuoviImg(n) {
+  const nome = fzEl("fg-ex-nome").value.trim();
+  if (!nome) return;
+  const st = fzEl("fg-img-stato");
+  try {
+    const r = await fgPost({ azione: "rimuoviImmagine", esercizio: nome, slot: n });
+    if (!r.ok) throw new Error(r.errore || "errore");
+    const a = fzArchivio[fzNorm(nome)]; if (a) a["img" + n] = "";
+    fgAggiornaImg();
+  } catch (e) { st.className = "fz-sub"; st.textContent = "Non riesco a rimuovere: " + e.message; }
 }
 function fgScegliSuggerito(nome) {
   fzEl("fg-ex-nome").value = nome;
@@ -304,6 +369,8 @@ document.addEventListener("click", e => {
   if ((x = t.closest("[data-fg-cp]"))) { const i = +x.dataset.fgCp; fgWo.ex.splice(i + 1, 0, JSON.parse(JSON.stringify(fgWo.ex[i]))); fgRenderEx(); return; }
   if ((x = t.closest("[data-fg-up]"))) { const i = +x.dataset.fgUp; if (i > 0) { const a = fgWo.ex; [a[i - 1], a[i]] = [a[i], a[i - 1]]; fgRenderEx(); } return; }
   if ((x = t.closest("[data-fg-dn]"))) { const i = +x.dataset.fgDn; const a = fgWo.ex; if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; fgRenderEx(); } return; }
+  if ((x = t.closest("[data-fg-imgdel]"))) { fgRimuoviImg(+x.dataset.fgImgdel); return; }
+  if ((x = t.closest("[data-fg-img]"))) { fgImgSlot = +x.dataset.fgImg; if (!fzEl("fg-ex-nome").value.trim()) { fzEl("fg-img-stato").textContent = "Scrivi prima il nome dell'esercizio."; return; } fzEl("fg-file").value = ""; fzEl("fg-file").click(); return; }
   if ((x = t.closest("[data-fg-sug]"))) { fgScegliSuggerito(x.dataset.fgSug); return; }
   if ((x = t.closest("#fg-seg button"))) { fgSetK(x.dataset.k); if (x.dataset.k === "corsa" && !fzEl("fg-ex-qn").value.trim()) fgSetQ("dist"); return; }
   if ((x = t.closest("#fg-segq button"))) { fgSetQ(x.dataset.q); return; }
@@ -316,6 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fzEl("fg-ex-del").addEventListener("click", () => { fgWo.ex.splice(fgIdx, 1); fzEl("fg-sheet").classList.remove("on"); fgRenderEx(); });
   fzEl("fg-sheet-close").addEventListener("click", () => fzEl("fg-sheet").classList.remove("on"));
   fzEl("fg-ex-nome").addEventListener("input", fgSuggerimenti);
+  fzEl("fg-file").addEventListener("change", ev => { const f = ev.target.files && ev.target.files[0]; if (f) fgCaricaImg(f); });
   fzEl("fg-edit-back").addEventListener("click", () => { showScreen("screen-fg-lista"); fgRenderLista(); });
   fzEl("fg-nome").addEventListener("input", () => { fgWo.nome = fzEl("fg-nome").value; });
   fzEl("fg-tipo").addEventListener("change", () => { fgWo.tipo = fzEl("fg-tipo").value; });
