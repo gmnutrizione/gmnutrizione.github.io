@@ -70,7 +70,7 @@ function fgRenderLista() {
     html += '<div class="fz-group"><h3>' + liv + ' <span class="fz-tag ' + FZ_CLASSE[liv] + '">' + nomi.length + (nomi.length === 1 ? " allenamento" : " allenamenti") + '</span></h3>';
     nomi.forEach(n => {
       const q = rl.filter(r => (r.Allenamento || "").trim() === n).length;
-      html += '<button class="fz-card" type="button" data-fg-wo="' + fzEsc(liv) + '|' + fzEsc(n) + '"><span class="txt"><span class="n">' + fzEsc(n) + '</span><span class="s">' + q + ' esercizi</span></span><span class="ar">&#8250;</span></button>';
+      html += '<button class="fz-card" type="button" data-fg-wo="' + fzEsc(liv) + '|' + fzEsc(n) + '"><span class="txt"><span class="n">' + fzEsc(n) + '</span><span class="s">' + q + ' esercizi</span></span><span class="s" style="font-weight:600;color:#111">&#9998; Modifica</span></button>';
     });
     html += "</div>";
   });
@@ -131,7 +131,7 @@ function fgRenderEx() {
 
 // ---- modifica esercizio ----
 let fgQ = "rep";
-const FG_UNITA = { tempo: ["sec", "min"], dist: ["m", "km"] };
+const FG_UNITA = { tempo: ["sec", "min"], dist: ["m", "km"], cal: ["cal"] };
 function fgSetQ(q, unita) {
   fgQ = q;
   document.querySelectorAll("#fg-segq button").forEach(b => b.classList.toggle("on", b.dataset.q === q));
@@ -141,7 +141,7 @@ function fgSetQ(q, unita) {
     sel.style.display = "";
     sel.innerHTML = FG_UNITA[q].map(u => '<option>' + u + '</option>').join("");
     if (unita && FG_UNITA[q].includes(unita)) sel.value = unita;
-    fzEl("fg-ex-qn").placeholder = q === "tempo" ? "Es. 40" : "Es. 500";
+    fzEl("fg-ex-qn").placeholder = q === "tempo" ? "Es. 40" : (q === "cal" ? "Es. 25" : "Es. 500");
   }
 }
 // "12" -> rep, "40 sec" / "5 min" -> tempo, "500 m" / "2 km" -> distanza
@@ -151,6 +151,8 @@ function fgLeggiQ(txt) {
   if (m && !m[2]) return { q: "rep", n: m[1], u: "" };
   m = txt.match(/^([\d.,]+)\s*(sec|s|secondi|min|minuti|')$/i);
   if (m) return { q: "tempo", n: m[1], u: /^m/i.test(m[2]) || m[2] === "'" ? "min" : "sec" };
+  m = txt.match(/^([\d.,]+)\s*(kcal|cal|calorie)$/i);
+  if (m) return { q: "cal", n: m[1], u: "cal" };
   m = txt.match(/^([\d.,]+)\s*(km|m|metri)$/i);
   if (m) return { q: "dist", n: m[1], u: /^k/i.test(m[2]) ? "km" : "m" };
   return { q: "rep", n: txt, u: "" };
