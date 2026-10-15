@@ -2,8 +2,8 @@
 // ALLENAMENTO FUNZIONALE
 // ============================================================
 const FZ_TIPI = ["Pesi + Corsa", "Pesi senza Corsa", "Corpo libero + Corsa", "Corpo libero senza Corsa"];
-const FZ_LIVELLI = ["Facile", "Intermedio", "Difficile"];
-const FZ_CLASSE = { Facile: "fz-f", Intermedio: "fz-i", Difficile: "fz-d" };
+const FZ_LIVELLI = ["Standard", "Facile", "Intermedio", "Difficile"];
+const FZ_CLASSE = { Standard: "fz-s", Facile: "fz-f", Intermedio: "fz-i", Difficile: "fz-d" };
 
 let fzDati = [];
 let fzCaricato = false;

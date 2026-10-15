@@ -10,7 +10,7 @@
 .fz-group{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
 .fz-group h3{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:20px;letter-spacing:.06em;margin:6px 0 0;display:flex;align-items:center;gap:8px}
 .fz-tag{font:600 10px 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border-radius:6px}
-.fz-f{background:#E6F4EA;color:#1B6B34}.fz-i{background:#FFF1D6;color:#8A5A00}.fz-d{background:#FFEBEC;color:#E31E24}
+.fz-s{background:#EDEDED;color:#111}.fz-f{background:#E6F4EA;color:#1B6B34}.fz-i{background:#FFF1D6;color:#8A5A00}.fz-d{background:#FFEBEC;color:#E31E24}
 .fz-empty{color:#6B6B6B;font-size:14px;padding:20px 0}
 .fz-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .fz-pill{background:#F5F5F5;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600}

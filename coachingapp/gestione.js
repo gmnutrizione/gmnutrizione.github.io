@@ -315,6 +315,8 @@ document.addEventListener("DOMContentLoaded", () => {
   fzEl("fg-sheet-close").addEventListener("click", () => fzEl("fg-sheet").classList.remove("on"));
   fzEl("fg-ex-nome").addEventListener("input", fgSuggerimenti);
   fzEl("fg-edit-back").addEventListener("click", () => { showScreen("screen-fg-lista"); fgRenderLista(); });
+  fzEl("fg-nome").addEventListener("input", () => { fgWo.nome = fzEl("fg-nome").value; });
+  fzEl("fg-tipo").addEventListener("change", () => { fgWo.tipo = fzEl("fg-tipo").value; });
   fzEl("fg-salva").addEventListener("click", fgSalva);
   fzEl("fg-elimina").addEventListener("click", fgElimina);
 });
