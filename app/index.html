@@ -117,7 +117,7 @@
   ::selection{ background:var(--accent-soft); color:var(--accent-ink); }
 
   /* ---------- Shell / top bar ---------- */
-  .shell{ max-width:1320px; margin:0 auto; padding:22px 28px 64px; }
+  .shell{ max-width:1320px; margin:0 auto; padding:calc(22px + env(safe-area-inset-top)) 28px 64px; }
   .topbar{
     display:flex; align-items:center; justify-content:space-between;
     gap:20px; flex-wrap:wrap; margin-bottom:6px;
@@ -1073,7 +1073,7 @@
 
   /* ---------- Schermi stretti (telefono): titolo su una riga, contenuti più vicini ai bordi ---------- */
   @media (max-width: 600px){
-    .shell{ padding:12px 10px 100px; }
+    .shell{ padding:calc(12px + env(safe-area-inset-top)) 10px 100px; }
     .brand-name{ font-size:14.5px; }
     .brand-tag{ font-size:10.3px; }
     .brand-mark{ width:28px; height:28px; }
@@ -2718,6 +2718,29 @@
       });
     });
   }
+
+  // La barra di navigazione in basso (.bottom-nav) è "position:fixed; bottom:0", che su iOS (anche
+  // da app aggiunta alla schermata Home) viene posizionata rispetto al "layout viewport" e non a
+  // quello visivo davvero inquadrato: quando i due non coincidono (schermate con poco contenuto,
+  // tastiera che si apre/chiude, barre di sistema che cambiano) la barra sembra "staccarsi" e
+  // spostarsi più in alto del bordo reale dello schermo. Qui la riancoriamo a mano al bordo
+  // inferiore del viewport visivo reale, quando il browser espone l'API (tutti i browser moderni).
+  (function(){
+    function pgRiancoraBottomNav_(){
+      const nav = document.querySelector('.bottom-nav');
+      const vv = window.visualViewport;
+      if(!nav || !vv) return;
+      const scarto = window.innerHeight - vv.height - vv.offsetTop;
+      nav.style.bottom = Math.max(0, Math.round(scarto)) + 'px';
+    }
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', pgRiancoraBottomNav_);
+      window.visualViewport.addEventListener('scroll', pgRiancoraBottomNav_);
+      window.addEventListener('load', pgRiancoraBottomNav_);
+      window.addEventListener('orientationchange', pgRiancoraBottomNav_);
+      pgRiancoraBottomNav_();
+    }
+  })();
 
   // La libreria "Sortable" (usata solo per trascinare e riordinare gli elementi della lista della
   // spesa) viene scaricata solo quando il paziente apre davvero quella schermata, invece che ad
