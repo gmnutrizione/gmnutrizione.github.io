@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css?v=20">
-<link rel="stylesheet" href="funzionale.css?v=1">
+<link rel="stylesheet" href="funzionale.css?v=2">
 </head>
 <body>
 
@@ -69,6 +69,13 @@
           <span class="cat-icon">&#9995;</span>
           <span class="cat-name">Allenamento funzionale</span>
           <span class="cat-soon">presto</span>
+        </div>
+      </div>
+      <div class="category-list" style="margin-top:14px">
+        <div class="category-card fg-trainer" id="cat-gestione" data-fg-apri="1" style="display:none">
+          <span class="cat-icon">&#9881;</span>
+          <span class="cat-name">Gestisci allenamenti</span>
+          <span class="cat-soon">solo trainer</span>
         </div>
       </div>
     </div>
@@ -128,6 +135,57 @@
       <button class="fz-btn dark" type="button" id="fz-end-back">TORNA AGLI ALLENAMENTI</button>
     </div>
   </div>
+
+  <!-- SCHERMATE: gestione allenamenti (solo trainer) -->
+  <div id="screen-fg-code" class="screen">
+    <div class="page-pad">
+      <div class="top-bar"><span class="back-arrow" data-back="screen-categorie">&#8592;</span><p class="page-title-inline">Codice trainer</p></div>
+      <p class="fz-sub">Inserisci il codice trainer per modificare gli allenamenti. Lo ricordo su questo telefono.</p>
+      <input type="password" id="fg-code-input" class="fg-input" placeholder="Codice trainer" autocomplete="off">
+      <p class="error-text" id="fg-code-err"></p>
+      <button class="fz-btn" type="button" id="fg-code-ok" style="margin-top:6px">CONFERMA</button>
+    </div>
+  </div>
+
+  <div id="screen-fg-lista" class="screen">
+    <div class="page-pad">
+      <div class="top-bar"><span class="back-arrow" data-back="screen-categorie">&#8592;</span><p class="page-title-inline">Gestisci allenamenti</p></div>
+      <div class="fg-tabs" id="fg-tabs"></div>
+      <div id="fg-lista"></div>
+      <p class="fz-sub" id="fg-msg"></p>
+      <button class="fz-btn" type="button" id="fg-nuovo">+ NUOVO ALLENAMENTO</button>
+    </div>
+  </div>
+
+  <div id="screen-fg-edit" class="screen">
+    <div class="page-pad" style="padding-bottom:6px">
+      <div class="top-bar"><span class="back-arrow" id="fg-edit-back">&#8592;</span><p class="page-title-inline" id="fg-edit-ttl">Modifica allenamento</p></div>
+      <div class="fg-field"><span class="fz-lbl">Nome allenamento</span><input type="text" id="fg-nome" class="fg-input"></div>
+      <div class="fg-field"><span class="fz-lbl">Tipo</span><select id="fg-tipo" class="fg-input"></select></div>
+      <div class="fg-field"><span class="fz-lbl">Livello</span><div class="fg-chips" id="fg-liv"></div></div>
+      <div class="fz-lbl" style="margin-top:12px">Esercizi, nell'ordine in cui compaiono</div>
+      <div id="fg-ex"></div>
+      <button class="fz-btn fg-ghost" type="button" id="fg-add">+ AGGIUNGI ESERCIZIO</button>
+      <p class="error-text" id="fg-edit-err"></p>
+    </div>
+    <div class="fg-bar">
+      <button class="fz-btn" type="button" id="fg-salva" style="margin:0">SALVA NEL FOGLIO</button>
+      <button class="fz-btn fg-warn" type="button" id="fg-elimina" style="margin:8px 0 0">ELIMINA ALLENAMENTO</button>
+    </div>
+  </div>
+
+  <div id="fg-sheet" class="fg-sheet"><div class="fg-box">
+    <div style="display:flex;justify-content:space-between;align-items:center"><p class="page-title-inline" id="fg-sheet-ttl">Esercizio</p><span class="back-arrow" id="fg-sheet-close" style="margin:0">&#10005;</span></div>
+    <div class="fg-field"><span class="fz-lbl">Nome esercizio</span><input type="text" id="fg-ex-nome" class="fg-input" placeholder="Es. Squat con manubri" autocomplete="off"><div class="fg-chips" id="fg-sug"></div><p class="fz-sub" id="fg-img-stato" style="margin:0"></p></div>
+    <div class="fg-field"><span class="fz-lbl">Ripetizioni o tempo</span><input type="text" id="fg-ex-q" class="fg-input" placeholder="Es. 12 oppure 40 sec oppure 5 min"></div>
+    <div class="fg-field"><span class="fz-lbl">Tipo di esercizio</span>
+      <div class="fg-seg" id="fg-seg"><button type="button" data-k="peso">Con pesi</button><button type="button" data-k="free">Corpo libero</button><button type="button" data-k="corsa">Corsa</button></div>
+      <div class="fg-two" id="fg-pesi"><div class="fg-field"><span class="fz-sub" style="margin:0">Uomo (kg)</span><input type="text" inputmode="decimal" id="fg-ex-m" class="fg-input" placeholder="12"></div><div class="fg-field"><span class="fz-sub" style="margin:0">Donna (kg)</span><input type="text" inputmode="decimal" id="fg-ex-f" class="fg-input" placeholder="6"></div></div>
+    </div>
+    <p class="error-text" id="fg-sheet-err"></p>
+    <button class="fz-btn" type="button" id="fg-ex-ok" style="margin:0">CONFERMA ESERCIZIO</button>
+    <button class="fz-btn fg-warn" type="button" id="fg-ex-del" style="margin:8px 0 0">TOGLI DALL'ALLENAMENTO</button>
+  </div></div>
 
   <!-- SCHERMATA: blocchi -->
   <div id="screen-blocchi" class="screen">
@@ -263,8 +321,9 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="config.js?v=4"></script>
-<script src="app.js?v=33"></script>
-<script src="funzionale.js?v=3"></script>
+<script src="config.js?v=5"></script>
+<script src="app.js?v=34"></script>
+<script src="funzionale.js?v=4"></script>
+<script src="gestione.js?v=1"></script>
 </body>
 </html>

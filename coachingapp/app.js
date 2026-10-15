@@ -130,7 +130,14 @@ function funzionaleAttivo() {
   const v = ((r && r.Funzionale) || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   return v === "si" || v === "s" || v === "yes" || v === "x";
 }
+function trainerAttivo() {
+  const r = clientiList.find(x => (x.Cliente || "").trim().toLowerCase() === (clienteNome || "").trim().toLowerCase());
+  const v = ((r && r.Trainer) || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return v === "si" || v === "s" || v === "yes" || v === "x";
+}
 function abilitaFunzionale() {
+  const gest = document.getElementById("cat-gestione");
+  if (gest) gest.style.display = trainerAttivo() ? "" : "none";
   const card = document.getElementById("cat-funzionale");
   if (!card) return;
   const ok = funzionaleAttivo();

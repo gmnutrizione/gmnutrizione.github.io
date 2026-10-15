@@ -61,3 +61,36 @@
 .fz-end .big{font-family:'Bebas Neue',sans-serif;font-size:72px;line-height:1}
 .fz-end .cmp{color:#6B6B6B;font-size:14px;margin:4px 0 18px}
 .fz-end .fz-best{text-align:left}
+
+/* ===== Gestione allenamenti (trainer) ===== */
+.category-card.fg-trainer{background:#111;color:#fff}
+.category-card.fg-trainer .cat-soon{background:rgba(255,255,255,.18)}
+.fg-input{width:100%;border:1.5px solid #E4E4E4;border-radius:10px;padding:12px;font:500 15px 'Inter',sans-serif;color:#111;background:#fff}
+.fg-input:focus{outline:2px solid #111;border-color:#111}
+.fg-field{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.fg-chips{display:flex;gap:6px;flex-wrap:wrap}
+.fg-chips button{border:1.5px solid #E4E4E4;background:#fff;border-radius:999px;padding:8px 12px;font:600 12px 'Inter',sans-serif;cursor:pointer;color:#111}
+.fg-chips button.on{border-color:#111;background:#111;color:#fff}
+.fg-chips button.sug{border-style:dashed;color:#6B6B6B;font-weight:500}
+.fg-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px}
+.fg-tabs button{flex:none;border:1.5px solid #111;background:#fff;color:#111;font:600 12px 'Inter',sans-serif;padding:8px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.fg-tabs button.on{background:#111;color:#fff}
+.fg-ex{display:flex;align-items:center;gap:10px;background:#F5F5F5;border-radius:14px;padding:10px 10px 10px 12px;margin-top:8px}
+.fg-ex .i{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#6B6B6B;width:18px;text-align:center}
+.fg-ex .body{flex:1;min-width:0;cursor:pointer}
+.fg-ex .nm{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fg-ex .dt{font-size:12px;color:#6B6B6B;margin-top:2px}
+.fg-ex .dt b{color:#E31E24;font-weight:600}
+.fg-mv{display:flex;flex-direction:column;gap:2px}
+.fg-mv button{border:0;background:#fff;width:30px;height:24px;border-radius:6px;cursor:pointer;font-size:12px;color:#111}
+.fg-ghost{background:#fff !important;color:#111 !important;border:2px solid #111 !important;font-size:22px !important;padding:12px !important}
+.fg-warn{background:#fff !important;color:#E31E24 !important;border:2px solid #E31E24 !important;font-size:18px !important;padding:10px !important}
+.fg-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid #E4E4E4;padding:12px 16px 18px}
+.fg-sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;z-index:50}
+.fg-sheet.on{display:flex}
+.fg-box{background:#fff;width:100%;border-radius:22px 22px 0 0;padding:18px 20px 24px;display:flex;flex-direction:column;gap:4px;max-height:94vh;overflow-y:auto}
+.fg-seg{display:flex;border:1.5px solid #111;border-radius:10px;overflow:hidden}
+.fg-seg button{flex:1;border:0;background:#fff;font:600 13px 'Inter',sans-serif;padding:10px 4px;cursor:pointer;color:#111}
+.fg-seg button.on{background:#111;color:#fff}
+.fg-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.fg-ok{color:#1B6B34 !important}

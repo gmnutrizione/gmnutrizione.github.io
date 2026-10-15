@@ -7,6 +7,7 @@ const FZ_CLASSE = { Facile: "fz-f", Intermedio: "fz-i", Difficile: "fz-d" };
 
 let fzDati = [];
 let fzCaricato = false;
+let fzArchivio = {};   // nome esercizio (normalizzato) -> {nome, img1, img2}
 let fzSel = { tipo: "", livello: "", nome: "" };
 let fzEx = [];
 let fzCur = 0, fzT0 = 0, fzIv = null, fzWake = null;
@@ -39,6 +40,22 @@ function fzRep(r) {
   return /^\d+$/.test(r) ? "Rep. " + r : r;
 }
 
+// ---- caricamento dati dal foglio (allenamenti + archivio immagini) ----
+async function fzCarica() {
+  fzDati = (await fetchCsv(FUNZIONALE_CSV_URL)).filter(r => r.Esercizio && r.Esercizio.trim() !== "");
+  fzCaricato = true;
+  try {
+    if (typeof FUNZIONALE_ARCHIVIO_URL !== "undefined" && FUNZIONALE_ARCHIVIO_URL) {
+      const rows = await fetchCsv(FUNZIONALE_ARCHIVIO_URL);
+      fzArchivio = {};
+      rows.forEach(r => {
+        const n = fzNorm(r.Esercizio);
+        if (n) fzArchivio[n] = { nome: (r.Esercizio || "").trim(), img1: (r["Immagine 1"] || "").trim(), img2: (r["Immagine 2"] || "").trim() };
+      });
+    }
+  } catch (e) { console.error(e); }
+}
+
 // ---- apertura sezione ----
 async function fzApri() {
   showScreen("screen-fz-tipo");
@@ -52,8 +69,7 @@ async function fzApri() {
   }
   fzEl("fz-tipi-msg").textContent = fzCaricato ? "" : "Carico gli allenamenti...";
   try {
-    fzDati = (await fetchCsv(FUNZIONALE_CSV_URL)).filter(r => r.Esercizio && r.Esercizio.trim() !== "");
-    fzCaricato = true;
+    await fzCarica();
     fzEl("fz-tipi-msg").textContent = "";
     fzSincronizza();
   } catch (e) {
@@ -165,13 +181,14 @@ function fzCostruisciEx() {
   fzEx = righe.map(r => {
     const kg = fzKg(sesso === "F" ? r["Kg donna"] : r["Kg uomo"]);
     const nome = (r.Esercizio || "").trim();
+    const arc = fzArchivio[fzNorm(nome)] || {};
     return {
       nome,
       rep: fzRep(r.Rep),
       kg,
       etichetta: kg ? "" : (/corsa/i.test(nome) ? "CORSA" : "CORPO LIBERO"),
-      img1: fzImg(r["Immagine 1"]),
-      img2: fzImg(r["Immagine 2"])
+      img1: fzImg(r["Immagine 1"] || arc.img1),
+      img2: fzImg(r["Immagine 2"] || arc.img2)
     };
   });
 }

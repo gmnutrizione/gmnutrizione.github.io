@@ -24,3 +24,7 @@ const FUNZIONALE_CSV_URL = "https://docs.google.com/spreadsheets/d/1M-6QGcdYz618
 // Risultati degli allenamenti funzionali (tab creato in automatico dallo script).
 // Letti per nome del tab, cosi' non serve nessun numero gid.
 const FUNZIONALE_RISULTATI_URL = "https://docs.google.com/spreadsheets/d/1M-6QGcdYz61884Q1AJQbD9ze361JqqXHNEjunUodZRk/gviz/tq?tqx=out:csv&sheet=Risultati%20funzionale";
+
+// Archivio immagini degli esercizi funzionali: tab "Archivio funzionale" (Esercizio, Immagine 1, Immagine 2).
+// Ogni esercizio si scrive una sola volta, vale per tutti gli allenamenti.
+const FUNZIONALE_ARCHIVIO_URL = "https://docs.google.com/spreadsheets/d/1M-6QGcdYz61884Q1AJQbD9ze361JqqXHNEjunUodZRk/gviz/tq?tqx=out:csv&sheet=Archivio%20funzionale";
