@@ -453,10 +453,9 @@ body {
 }
 #comment-input:focus { outline: none; }
 
-/* immagini partenza / arrivo: la cornice prende le proporzioni della foto, riempie tutta la zona e non taglia */
-.img-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;align-items:start}
+/* immagini partenza / arrivo: cornici leggermente verticali (4:5), altezza legata allo schermo cosi' tutto resta in una schermata */
+.img-pair{--h:clamp(140px,24svh,260px);display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;align-items:start}
 .img-pair.uno{grid-template-columns:1fr}
-.img-pair figure{margin:0;position:relative;border-radius:14px;background:var(--surface-1);aspect-ratio:var(--r,0.75);overflow:hidden}
-.img-pair.uno figure{max-width:62%;margin:0 auto}
+.img-pair figure{margin:0;position:relative;border-radius:14px;background:var(--surface-1);width:min(calc(var(--h) * .8),100%);aspect-ratio:4/5;justify-self:center;overflow:hidden}
 .img-pair img{width:100%;height:100%;object-fit:cover;display:block}
 .img-pair figcaption{position:absolute;left:8px;bottom:8px;font:600 10px 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--text-secondary);background:rgba(255,255,255,.88);padding:3px 7px;border-radius:6px}
