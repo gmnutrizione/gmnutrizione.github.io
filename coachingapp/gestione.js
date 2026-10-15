@@ -10,10 +10,18 @@ let fgK = "peso";
 
 function fgCodice() { try { return localStorage.getItem("gm_fz_codice") || ""; } catch (e) { return ""; } }
 
+// Usa una richiesta GET (e' quella che Google Apps Script lascia leggere in modo affidabile dal browser).
+// Se i dati sono troppi per l'indirizzo, ripiega su POST.
 async function fgPost(payload) {
   payload.codice = fgCodice();
-  const r = await fetch(APPS_SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
-  return await r.json();
+  const json = JSON.stringify(payload);
+  const url = APPS_SCRIPT_URL + "?d=" + encodeURIComponent(json);
+  let r;
+  if (url.length < 7000) r = await fetch(url, { redirect: "follow" });
+  else r = await fetch(APPS_SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: json });
+  const testo = await r.text();
+  try { return JSON.parse(testo); }
+  catch (e) { throw new Error("risposta non valida dallo script: " + testo.slice(0, 60).replace(/\s+/g, " ")); }
 }
 
 // ---- ingresso ----
@@ -37,7 +45,7 @@ async function fgConfermaCodice() {
     else { try { localStorage.removeItem("gm_fz_codice"); } catch (e) {} fzEl("fg-code-err").textContent = "Codice non corretto."; }
   } catch (e) {
     try { localStorage.removeItem("gm_fz_codice"); } catch (e2) {}
-    fzEl("fg-code-err").textContent = "Non riesco a contattare lo script. Controlla che sia aggiornato e riprova.";
+    fzEl("fg-code-err").textContent = "Non riesco a contattare lo script (" + (e && e.message ? e.message : "errore") + "). Controlla che il deployment sia aggiornato.";
   }
   fzEl("fg-code-ok").textContent = "CONFERMA";
 }
@@ -202,7 +210,7 @@ async function fgSalva() {
     fzEl("fg-msg").textContent = "Salvato nel foglio Google.";
   } catch (e) {
     console.error(e);
-    err.textContent = (e.message === "codice") ? "Codice trainer non valido." : "Non sono riuscito a salvare. Controlla la connessione e riprova.";
+    err.textContent = (e.message === "codice") ? "Codice trainer non valido." : "Non sono riuscito a salvare (" + (e && e.message ? e.message : "errore") + "). Riprova.";
     if (e.message === "codice") { try { localStorage.removeItem("gm_fz_codice"); } catch (e2) {} }
   }
   btn.textContent = "SALVA NEL FOGLIO"; btn.disabled = false;
