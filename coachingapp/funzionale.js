@@ -55,6 +55,7 @@ async function fzApri() {
     fzDati = (await fetchCsv(FUNZIONALE_CSV_URL)).filter(r => r.Esercizio && r.Esercizio.trim() !== "");
     fzCaricato = true;
     fzEl("fz-tipi-msg").textContent = "";
+    fzSincronizza();
   } catch (e) {
     console.error(e);
     fzEl("fz-tipi-msg").textContent = "Non riesco a caricare gli allenamenti. Riprova.";
@@ -93,8 +94,54 @@ function fzApriTipo(tipo) {
 function fzChiaveTempi() {
   return storageKey("fz_tempi_" + fzNorm(fzSel.tipo) + "|" + fzNorm(fzSel.livello) + "|" + fzNorm(fzSel.nome));
 }
-function fzTempi() {
+let fzRemote = [];
+let fzSyncP = null;
+function fzTempiLocali() {
   try { return JSON.parse(localStorage.getItem(fzChiaveTempi()) || "[]"); } catch (e) { return []; }
+}
+function fzTempi() {
+  const k = [fzNorm(fzSel.tipo), fzNorm(fzSel.livello), fzNorm(fzSel.nome)];
+  const rem = fzRemote.filter(x => x.tipo === k[0] && x.liv === k[1] && x.nome === k[2]).map(x => ({ ms: x.ms, d: x.d }));
+  const visti = {}, tutti = [];
+  fzTempiLocali().concat(rem).forEach(x => { if (!visti[x.d]) { visti[x.d] = 1; tutti.push(x); } });
+  tutti.sort((a, b) => new Date(b.d) - new Date(a.d));
+  return tutti;
+}
+// I 3 tempi migliori (i piu' bassi)
+function fzMigliori(arr) {
+  return arr.slice().sort((a, b) => a.ms - b.ms).slice(0, 3);
+}
+// Legge dal foglio i risultati del cliente (anche di un telefono precedente)
+function fzSincronizza() {
+  if (typeof FUNZIONALE_RISULTATI_URL === "undefined" || !FUNZIONALE_RISULTATI_URL) return Promise.resolve();
+  fzSyncP = fetchCsv(FUNZIONALE_RISULTATI_URL).then(rows => {
+    fzRemote = rows.filter(r => fzNorm(r.Cliente) === fzNorm(clienteNome)).map(r => ({
+      tipo: fzNorm(r.Tipo), liv: fzNorm(r.Livello), nome: fzNorm(r.Allenamento),
+      ms: (parseFloat(String(r.Secondi).replace(",", ".")) || 0) * 1000, d: (r.ISO || "").trim()
+    })).filter(x => x.ms > 0 && x.d);
+    fzReinvia();
+  }).catch(e => console.error(e));
+  return fzSyncP;
+}
+// Se un tempo salvato sul telefono non e' arrivato al foglio (es. senza rete), lo rimanda
+function fzReinvia() {
+  const prefisso = storageKey("fz_tempi_");
+  const presenti = {};
+  fzRemote.forEach(x => { presenti[x.d] = 1; });
+  for (let i = 0; i < localStorage.length; i++) {
+    const chiave = localStorage.key(i);
+    if (!chiave || chiave.indexOf(prefisso) !== 0) continue;
+    let arr = [];
+    try { arr = JSON.parse(localStorage.getItem(chiave) || "[]"); } catch (e) {}
+    arr.forEach(x => {
+      if (!x.t || presenti[x.d]) return;
+      if (Date.now() - new Date(x.d).getTime() < 10 * 60 * 1000) return;
+      fzInvia(x);
+    });
+  }
+}
+function fzInvia(x) {
+  inviaEvento({ tipo: "Funzionale", tipoAllenamento: x.t, livello: x.l, allenamento: x.n, tempo: fzFmt(x.ms), secondi: Math.round(x.ms / 1000), iso: x.d });
 }
 function fzFmt(ms) {
   const s = Math.floor(ms / 1000), m = Math.floor(s / 60), r = s % 60;
@@ -139,7 +186,10 @@ function fzApriDettaglio(liv, nome) {
   fzEl("fz-det-meta").innerHTML =
     '<span class="fz-tag ' + FZ_CLASSE[liv] + '">' + liv + '</span><span class="fz-pill">' + fzEx.length + ' esercizi</span>' +
     (haPesi ? '<span class="fz-pill">Pesi per ' + (sesso === "F" ? "donna" : "uomo") + '</span>' : '');
-  fzEl("fz-det-tempi").innerHTML = fzListaTempi(fzTempi().slice(0, 3));
+  fzEl("fz-det-tempi").innerHTML = fzListaTempi(fzMigliori(fzTempi()));
+  if (fzSyncP) fzSyncP.then(() => {
+    if (fzEl("screen-fz-det").classList.contains("active")) fzEl("fz-det-tempi").innerHTML = fzListaTempi(fzMigliori(fzTempi()));
+  });
   fzEl("fz-det-ex").innerHTML = fzEx.map((e, i) =>
     '<div class="fz-row"><span class="i">' + (i + 1) + '</span><div class="nm">' + fzEsc(e.nome) + '<div class="dt">' + fzEsc(e.rep) + '</div></div><span class="kg">' + fzEsc(fzDestra(e)) + '</span></div>'
   ).join("");
@@ -189,17 +239,20 @@ function fzConcludi() {
   const ms = Math.max(1000, Date.now() - fzT0);
   fzStop();
   const prima = fzTempi();
-  const nuovi = [{ ms, d: new Date().toISOString() }].concat(prima).slice(0, 3);
+  const nuovo = { ms, d: new Date().toISOString(), t: fzSel.tipo, l: fzSel.livello, n: fzSel.nome };
+  const nuovi = [nuovo].concat(prima).slice(0, 60);
+  fzInvia(nuovo);
   try { localStorage.setItem(fzChiaveTempi(), JSON.stringify(nuovi)); } catch (e) {}
   fzEl("fz-end-time").textContent = fzFmt(ms);
   let cmp = "Primo tempo registrato per questo allenamento.";
   if (prima.length) {
-    const diff = Math.round((ms - prima[0].ms) / 1000);
-    cmp = diff < 0 ? "Hai fatto meglio dell'ultima volta di " + fzFmt(-diff * 1000) + "!" :
-          diff > 0 ? "Hai impiegato " + fzFmt(diff * 1000) + " in più dell'ultima volta." : "Stesso tempo dell'ultima volta.";
+    const record = Math.min.apply(null, prima.map(x => x.ms));
+    const diff = Math.round((ms - record) / 1000);
+    cmp = diff < 0 ? "Nuovo record! Hai migliorato il tuo miglior tempo di " + fzFmt(-diff * 1000) + "." :
+          diff > 0 ? "A " + fzFmt(diff * 1000) + " dal tuo miglior tempo." : "Hai eguagliato il tuo miglior tempo.";
   }
   fzEl("fz-end-cmp").textContent = cmp;
-  fzEl("fz-end-list").innerHTML = fzListaTempi(nuovi);
+  fzEl("fz-end-list").innerHTML = fzListaTempi(fzMigliori(nuovi));
   showScreen("screen-fz-end");
 }
 

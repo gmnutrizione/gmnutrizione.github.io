@@ -20,3 +20,7 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzuFR3xaRCGpcF_
 // Elenco allenamenti funzionali (tab "Funzionale" del foglio).
 // Tab "Funzionale" collegato.
 const FUNZIONALE_CSV_URL = "https://docs.google.com/spreadsheets/d/1M-6QGcdYz61884Q1AJQbD9ze361JqqXHNEjunUodZRk/export?format=csv&gid=1024569671";
+
+// Risultati degli allenamenti funzionali (tab creato in automatico dallo script).
+// Letti per nome del tab, cosi' non serve nessun numero gid.
+const FUNZIONALE_RISULTATI_URL = "https://docs.google.com/spreadsheets/d/1M-6QGcdYz61884Q1AJQbD9ze361JqqXHNEjunUodZRk/gviz/tq?tqx=out:csv&sheet=Risultati%20funzionale";
