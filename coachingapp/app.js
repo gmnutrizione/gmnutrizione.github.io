@@ -74,7 +74,8 @@ async function caricaSchedaCliente() {
 
     eserciziTotali = datiCliente.filter(r => r.Esercizio && r.Esercizio.trim() !== "");
     currentBloccoNumero = Math.max(1, ...eserciziTotali.map(r => parseBloccoNum(r.Blocco)));
-    applicaProgressi(progressi);
+    applicaProgressi(progressi.progressi);
+    applicaStorico(progressi.storico);
     archivio = {};
     datiArchivio.forEach(r => {
       if (!r.Esercizio) return;
@@ -134,14 +135,14 @@ async function leggiSupabase(url) {
   return leggiChiaveSb(chiaveSupabase(url));
 }
 
-async function leggiChiaveSb(chiave) {
+async function leggiChiaveSb(chiave, ammettiVuoto) {
   if (!supabaseAttivo()) return null;
   try {
     const q = SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/gm_cache?select=righe&chiave=eq." + encodeURIComponent(chiave);
     const r = await fetch(q, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Cache-Control": "no-cache" } });
     if (!r.ok) return null;
     const j = await r.json();
-    if (!Array.isArray(j) || !j.length || !Array.isArray(j[0].righe) || !j[0].righe.length) return null;
+    if (!Array.isArray(j) || !j.length || !Array.isArray(j[0].righe) || (!j[0].righe.length && !ammettiVuoto)) return null;
     return j[0].righe;
   } catch (e) { return null; }
 }
@@ -186,15 +187,81 @@ function riduciRisultati(rows, soloCliente) {
     Sessioni: [...m[k].set].sort((a, b) => a - b).join(",") }));
 }
 
-// Legge i progressi: prima da Supabase (veloce); se non c'e', ricostruisce dal tab "Risultati" di Google.
+// Storico delle sedute concluse (kg, rep, fatica, commento) ricavato dalle righe "Allenamento" del tab "Risultati":
+// le righe "Allenamento" prima di "Giorno completato (Allenamento N concluso)" appartengono alla seduta N.
+function riduciStorico(rows, soloCliente) {
+  const pend = {}, fatte = {};
+  rows.forEach(r => {
+    const cli = (r.Cliente || "").toString().trim();
+    if (!cli || normNomeP(cli) !== normNomeP(soloCliente)) return;
+    const t = normNomeP(r.Tipo);
+    const bl = parseBloccoNum(String(r.Blocco || ""));
+    const giorno = (r.Giorno || "").toString().trim();
+    if (t === "azzeramento") {
+      delete fatte[bl];
+      Object.keys(pend).forEach(k => { if (k.startsWith(bl + "|")) delete pend[k]; });
+      return;
+    }
+    const kg = bl + "|" + giorno;
+    if (t === "allenamento") {
+      (pend[kg] = pend[kg] || []).push({ Gruppo: r["Gruppo muscolare"] || "", Esercizio: r.Esercizio || "", Kg: r.Kg || "", Rep: r.Rep || "", Commento: r.Commento || "" });
+      return;
+    }
+    if (t !== "giorno completato" || !giorno) return;
+    const n = parseInt(((r.Commento || "").match(/\d+/) || [])[0], 10);
+    if (!n) return;
+    const righe = pend[kg] || [];
+    delete pend[kg];
+    fatte[bl] = fatte[bl] || [];
+    righe.forEach(x => fatte[bl].push(Object.assign({ Blocco: String(bl), Giorno: giorno, Sessione: n }, x)));
+  });
+  return [].concat(...Object.values(fatte));
+}
+
+// Legge progressi e storico: prima da Supabase (veloce); se non ci sono, li ricostruisce dal tab "Risultati" di Google.
 async function leggiProgressi() {
+  const vuoto = { progressi: [], storico: [] };
   try {
-    const sb = await leggiChiaveSb("progressi");
-    if (sb) return sb;
+    const [p, st] = await Promise.all([
+      leggiChiaveSb("progressi", true),
+      leggiChiaveSb("storico:" + normNomeP(clienteNome), true)
+    ]);
+    if (p && st) return { progressi: p, storico: st };
     const url = ARCHIVIO_CSV_URL.replace(/export\?.*$/, "gviz/tq?tqx=out:csv&sheet=Risultati");
     const rows = await Promise.race([fetchCsvGoogle(url), new Promise(res => setTimeout(() => res([]), 6000))]);
-    return riduciRisultati(rows, clienteNome);
-  } catch (e) { return []; }
+    return { progressi: p || riduciRisultati(rows, clienteNome), storico: st || riduciStorico(rows, clienteNome) };
+  } catch (e) { return vuoto; }
+}
+
+// Ripristina sul telefono kg, rep, fatica e commento delle sedute gia' concluse (solo blocco attuale).
+// Non sovrascrive mai quello che il telefono ha gia'.
+function applicaStorico(righe) {
+  try {
+    (righe || []).forEach(r => {
+      if (parseBloccoNum(String(r.Blocco || "")) !== currentBloccoNumero) return;
+      const giorno = r.Giorno, gruppo = r.Gruppo || "", es = r.Esercizio || "", sess = parseInt(r.Sessione, 10);
+      if (!giorno || !es || !sess) return;
+      let nome = es, idx = -1;
+      const parti = t => String(t || "").split("+").map(x => x.trim()).filter(Boolean);
+      const par = eserciziTotali.find(x => x.Giorno === giorno && (x["Gruppo muscolare"] || "") === gruppo && parti(x.Esercizio).length > 1 && parti(x.Esercizio).some(sn => normNomeP(sn) === normNomeP(es)));
+      if (par) { nome = par.Esercizio; idx = parti(par.Esercizio).findIndex(sn => normNomeP(sn) === normNomeP(es)); }
+      const key = storageKey("input_" + giorno + "|" + gruppo + "|" + nome + "|s" + sess);
+      let o = {};
+      try { o = JSON.parse(localStorage.getItem(key) || "{}"); } catch (e) {}
+      const sfx = idx >= 0 ? "_" + idx : "";
+      let cambiato = false;
+      if (String(r.Rep || "") !== "" && !o["valori" + sfx]) { o["valori" + sfx] = String(r.Rep).split("-"); cambiato = true; }
+      if (String(r.Kg || "") !== "" && !o["valoriKg" + sfx]) { o["valoriKg" + sfx] = String(r.Kg).split("-"); cambiato = true; }
+      if (idx <= 0) {
+        const m = String(r.Commento || "").match(/^Fatica:\s*(\d+)\/10\.\s?([\s\S]*)$/);
+        const rpe = m ? parseInt(m[1], 10) : null;
+        const com = m ? m[2] : String(r.Commento || "");
+        if (rpe && o.rpe === undefined) { o.rpe = rpe; cambiato = true; }
+        if (com && o.commento === undefined) { o.commento = com; cambiato = true; }
+      }
+      if (cambiato) localStorage.setItem(key, JSON.stringify(o));
+    });
+  } catch (e) {}
 }
 
 // Aggiunge ai progressi salvati sul telefono quelli ricostruiti (unione: non toglie mai nulla).
