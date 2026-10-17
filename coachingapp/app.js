@@ -76,6 +76,7 @@ async function caricaSchedaCliente() {
     currentBloccoNumero = Math.max(1, ...eserciziTotali.map(r => parseBloccoNum(r.Blocco)));
     applicaProgressi(progressi.progressi);
     applicaStorico(progressi.storico);
+    riprovaCoda(progressi.progressi);
     archivio = {};
     datiArchivio.forEach(r => {
       if (!r.Esercizio) return;
@@ -466,7 +467,8 @@ function resetAllenamenti() {
   daRimuovere.forEach(k => localStorage.removeItem(k));
 
   try { localStorage.setItem(storageKey("azz_" + currentBloccoNumero), String(Date.now())); } catch (e) {}
-  inviaEvento({ tipo: "Azzeramento", blocco: currentBloccoNumero, commento: "Allenamenti azzerati" });
+  try { codaScrivi(codaLeggi().filter(it => !(normNomeP(it.cliente) === normNomeP(clienteNome) && it.blocco === currentBloccoNumero))); } catch (e) {}
+  inviaEvento({ tipo: "Azzeramento", blocco: currentBloccoNumero, commento: "Allenamenti azzerati" }, true);
   alert("Allenamenti azzerati completamente.");
   buildBlocchi();
 }
@@ -677,6 +679,7 @@ function calcolaProgressione(ex, ultimoValore, ultimaRep, rpe) {
 }
 
 function concludiAllenamento(giorno) {
+  codaBatch = [];
   const flat = listaFlatGiorno(giorno);
 
   flat.forEach(item => {
@@ -759,6 +762,11 @@ function concludiAllenamento(giorno) {
     giorno: giorno,
     commento: "Allenamento " + currentSessione + " concluso"
   });
+
+  // un'unica richiesta con tutte le righe, "Giorno completato" per ultima (ordine garantito, niente righe perse)
+  const eventiBatch = codaBatch;
+  codaBatch = null;
+  inviaBatch(eventiBatch, giorno, currentSessione);
 
   mostraCongratulazioni(giorno);
 }
@@ -1414,12 +1422,61 @@ function inviaModifica(giorno, gruppo, esercizio, descrizioneModifica) {
     blocco: currentBloccoNumero,
     giorno, gruppoMuscolare: gruppo, esercizio,
     commento: descrizioneModifica
-  });
+  }, true);
 }
 
-function inviaEvento(dati) {
+// Durante "Concludi allenamento" gli eventi si accumulano qui e partono tutti insieme.
+let codaBatch = null;
+
+function codaLeggi() {
+  try { return JSON.parse(localStorage.getItem("gm_coda_invio") || "[]"); } catch (e) { return []; }
+}
+function codaScrivi(arr) {
+  try { localStorage.setItem("gm_coda_invio", JSON.stringify(arr)); } catch (e) {}
+}
+
+// Spedisce un allenamento concluso in UN'unica richiesta; lo tiene in coda finche' il foglio non lo conferma.
+function inviaBatch(eventi, giorno, sessione) {
+  if (typeof APPS_SCRIPT_URL === "undefined" || !APPS_SCRIPT_URL || !eventi || !eventi.length) return;
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const payload = { batch: true, id, cliente: clienteNome, eventi };
+  const coda = codaLeggi();
+  coda.push({ id, payload, cliente: clienteNome, blocco: currentBloccoNumero, giorno, sessione, ts: Date.now(), ultimo: Date.now() });
+  codaScrivi(coda);
+  spedisciBatch(payload);
+}
+
+function spedisciBatch(payload) {
+  const body = JSON.stringify(payload);
+  try {
+    fetch(APPS_SCRIPT_URL, { method: "POST", body, keepalive: true, mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" } }).catch(() => {});
+  } catch (e) {
+    try { navigator.sendBeacon(APPS_SCRIPT_URL, new Blob([body], { type: "text/plain;charset=utf-8" })); } catch (e2) {}
+  }
+}
+
+// All'apertura: se un allenamento concluso non risulta ancora sul foglio, lo rimanda (il foglio ignora i doppioni).
+function riprovaCoda(progressi) {
+  try {
+    const coda = codaLeggi(), resto = [];
+    coda.forEach(it => {
+      if (Date.now() - it.ts > 30 * 86400000) return;
+      if (normNomeP(it.cliente) !== normNomeP(clienteNome)) { resto.push(it); return; }
+      const confermato = (progressi || []).some(r => normNomeP(r.Cliente) === normNomeP(it.cliente)
+        && parseBloccoNum(String(r.Blocco || "")) === it.blocco && r.Giorno === it.giorno
+        && String(r.Sessioni || "").split(",").map(Number).includes(it.sessione));
+      if (confermato) return;
+      resto.push(it);
+      if (Date.now() - (it.ultimo || it.ts) > 90000) { it.ultimo = Date.now(); spedisciBatch(it.payload); }
+    });
+    codaScrivi(resto);
+  } catch (e) {}
+}
+
+function inviaEvento(dati, diretto) {
   if (typeof APPS_SCRIPT_URL === "undefined" || !APPS_SCRIPT_URL) return;
   dati.cliente = clienteNome;
+  if (codaBatch && !diretto) { codaBatch.push(dati); return; }
   try {
     navigator.sendBeacon(APPS_SCRIPT_URL, new Blob([JSON.stringify(dati)], { type: "text/plain;charset=utf-8" }));
   } catch (e) {
