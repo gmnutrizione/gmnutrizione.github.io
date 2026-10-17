@@ -64,15 +64,17 @@ async function provaAccesso() {
 async function caricaSchedaCliente() {
   showScreen("screen-loading");
   try {
-    const [datiCliente, datiArchivio, datiFoto, imgSb] = await Promise.all([
+    const [datiCliente, datiArchivio, datiFoto, imgSb, progressi] = await Promise.all([
       fetchCsv(clienteCsvUrl),
       fetchCsv(ARCHIVIO_CSV_URL),
       fetchCsv(FOTO_CSV_URL),
-      leggiImmaginiSb("palestra")
+      leggiImmaginiSb("palestra"),
+      leggiProgressi()
     ]);
 
     eserciziTotali = datiCliente.filter(r => r.Esercizio && r.Esercizio.trim() !== "");
     currentBloccoNumero = Math.max(1, ...eserciziTotali.map(r => parseBloccoNum(r.Blocco)));
+    applicaProgressi(progressi);
     archivio = {};
     datiArchivio.forEach(r => {
       if (!r.Esercizio) return;
@@ -129,9 +131,13 @@ function supabaseAttivo() {
 // Legge le righe da Supabase (un'unica richiesta JSON, molto piu' veloce del CSV di Google).
 // Restituisce null se non disponibile: in quel caso si usa il foglio Google.
 async function leggiSupabase(url) {
+  return leggiChiaveSb(chiaveSupabase(url));
+}
+
+async function leggiChiaveSb(chiave) {
   if (!supabaseAttivo()) return null;
   try {
-    const q = SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/gm_cache?select=righe&chiave=eq." + encodeURIComponent(chiaveSupabase(url));
+    const q = SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/gm_cache?select=righe&chiave=eq." + encodeURIComponent(chiave);
     const r = await fetch(q, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Cache-Control": "no-cache" } });
     if (!r.ok) return null;
     const j = await r.json();
@@ -150,6 +156,64 @@ async function leggiImmaginiSb(dest) {
     const j = await r.json();
     return Array.isArray(j) ? j : [];
   } catch (e) { return []; }
+}
+
+// ============================================================
+// PROGRESSI (allenamenti completati): salvati anche su Supabase / tab "Risultati"
+// ============================================================
+function normNomeP(s) { return (s || "").toString().trim().toLowerCase().replace(/\s+/g, " "); }
+
+// righe grezze del tab "Risultati" (in ordine cronologico) -> [{Cliente, Blocco, Giorno, Sessioni:"1,2,3"}]
+function riduciRisultati(rows, soloCliente) {
+  const m = {};
+  rows.forEach(r => {
+    const cli = (r.Cliente || "").toString().trim();
+    if (!cli || (soloCliente && normNomeP(cli) !== normNomeP(soloCliente))) return;
+    const t = normNomeP(r.Tipo);
+    const bl = parseBloccoNum(String(r.Blocco || ""));
+    if (t === "azzeramento") {
+      Object.keys(m).forEach(k => { if (k.startsWith(normNomeP(cli) + "|" + bl + "|")) delete m[k]; });
+      return;
+    }
+    if (t !== "giorno completato" || !r.Giorno) return;
+    const n = parseInt(((r.Commento || "").match(/\d+/) || [])[0], 10);
+    if (!n) return;
+    const k = normNomeP(cli) + "|" + bl + "|" + r.Giorno;
+    if (!m[k]) m[k] = { Cliente: cli, Blocco: String(bl), Giorno: r.Giorno, set: new Set() };
+    m[k].set.add(n);
+  });
+  return Object.keys(m).map(k => ({ Cliente: m[k].Cliente, Blocco: m[k].Blocco, Giorno: m[k].Giorno,
+    Sessioni: [...m[k].set].sort((a, b) => a - b).join(",") }));
+}
+
+// Legge i progressi: prima da Supabase (veloce); se non c'e', ricostruisce dal tab "Risultati" di Google.
+async function leggiProgressi() {
+  try {
+    const sb = await leggiChiaveSb("progressi");
+    if (sb) return sb;
+    const url = ARCHIVIO_CSV_URL.replace(/export\?.*$/, "gviz/tq?tqx=out:csv&sheet=Risultati");
+    const rows = await Promise.race([fetchCsvGoogle(url), new Promise(res => setTimeout(() => res([]), 6000))]);
+    return riduciRisultati(rows, clienteNome);
+  } catch (e) { return []; }
+}
+
+// Aggiunge ai progressi salvati sul telefono quelli ricostruiti (unione: non toglie mai nulla).
+function applicaProgressi(righe) {
+  try {
+    (righe || []).forEach(r => {
+      if (normNomeP(r.Cliente) !== normNomeP(clienteNome)) return;
+      const bl = parseBloccoNum(String(r.Blocco || ""));
+      // appena azzerato su questo telefono: non ricostruire per qualche minuto (il foglio si aggiorna con ritardo)
+      const azz = parseInt(localStorage.getItem(storageKey("azz_" + bl)) || "0", 10);
+      if (azz && Date.now() - azz < 5 * 60 * 1000) return;
+      const dal = String(r.Sessioni || "").split(",").map(x => parseInt(x, 10)).filter(Boolean);
+      const key = storageKey("sessioni_completate_" + bl + "_" + r.Giorno);
+      let loc = [];
+      try { loc = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) {}
+      const unione = [...new Set([...loc, ...dal])].sort((a, b) => a - b);
+      if (unione.length !== loc.length) localStorage.setItem(key, JSON.stringify(unione));
+    });
+  } catch (e) {}
 }
 
 async function fetchCsv(url) {
@@ -334,6 +398,8 @@ function resetAllenamenti() {
   }
   daRimuovere.forEach(k => localStorage.removeItem(k));
 
+  try { localStorage.setItem(storageKey("azz_" + currentBloccoNumero), String(Date.now())); } catch (e) {}
+  inviaEvento({ tipo: "Azzeramento", blocco: currentBloccoNumero, commento: "Allenamenti azzerati" });
   alert("Allenamenti azzerati completamente.");
   buildBlocchi();
 }
