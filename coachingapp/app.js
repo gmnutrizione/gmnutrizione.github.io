@@ -135,7 +135,7 @@ async function leggiSupabase(url) {
     const r = await fetch(q, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Cache-Control": "no-cache" } });
     if (!r.ok) return null;
     const j = await r.json();
-    if (!Array.isArray(j) || !j.length || !Array.isArray(j[0].righe)) return null;
+    if (!Array.isArray(j) || !j.length || !Array.isArray(j[0].righe) || !j[0].righe.length) return null;
     return j[0].righe;
   } catch (e) { return null; }
 }
