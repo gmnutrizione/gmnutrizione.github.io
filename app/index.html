@@ -845,6 +845,7 @@
   .pg-opzione-escludi{ border:none; background:none; cursor:pointer; font-size:15px; color:var(--ink-faint); line-height:1; padding:2px 6px; }
   .pg-opzione-escludi:hover{ color:var(--accent); }
   @media print{ .pg-opzione-escludi{ display:none !important; } }
+  .pg-opzione-titolo-custom{ font-size:11.5px; color:var(--ink-faint); font-style:italic; margin-top:2px; }
 
   /* ---- Impostazioni Piano Generico: tabella preset + righe di sostituzione ---- */
   .pg-preset-table{ width:100%; border-collapse:collapse; margin-bottom:6px; font-size:13px; }
@@ -2937,6 +2938,8 @@
     pgCarboSalva:             { fn:'piano_generico_carbo_salva',             args:b => ({ p_codice: b.codice, p_righe: b.righe }) },
     pgEsclusioniLeggi:        { fn:'piano_generico_esclusioni_leggi',        args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
     pgEsclusioneImposta:      { fn:'piano_generico_esclusione_imposta',      args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_chiave_opzione: b.chiaveOpzione, p_escludi: b.escludi }) },
+    pgTitoliLeggi:            { fn:'piano_generico_titoli_leggi',            args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
+    pgTitoloImposta:          { fn:'piano_generico_titolo_imposta',          args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_chiave_opzione: b.chiaveOpzione, p_titolo: b.titolo }) },
     pgLeggi:                  { fn:'piano_generico_leggi',                   args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
     pgSalva:                  { fn:'piano_generico_salva',                   args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_piano_json: b.pianoJson, p_generato_da_riga: b.generatoDaRiga || null }) },
   };
@@ -3691,6 +3694,17 @@
   // Nell'app paziente il nome alimento va mostrato senza la marca tra parentesi (es. "Petto di
   // pollo (Fileni)" -> "Petto di pollo"); nel programma lato nutrizionista resta invariato.
   function cpNomeSenzaMarca(nome){ return String(nome||'').replace(/\s*\([^)]*\)\s*$/, ''); }
+  // Toglie la parola "MIX" (da sola, maiuscola o minuscola) dal nome di un alimento quando lo si
+  // stampa nel Piano Generico per il paziente -- succede quando un prodotto e' stato aggiunto con
+  // quella parola nel nome (es. da scansione codice a barre). Il nome resta invariato nel database
+  // e in tutte le altre schermate: viene solo nascosta qui, nella stampa per il paziente.
+  function cpNomeSenzaMix_(nome){
+    return String(nome || '')
+      .replace(/\bmix\b/gi, '')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/\s+([,.;:])/g, '$1')
+      .trim();
+  }
   function cpEmptyPlan(){
     const p = {};
     CP_GIORNI.forEach(g => { p[g] = {}; CP_MEALS.forEach(m => p[g][m] = []); });
@@ -7051,6 +7065,16 @@
       cena: piano.cena.map(segna),
     });
   }
+  // Titoli personalizzati per-paziente delle opzioni di Colazione/Spuntini/Dopo cena (Pranzo e
+  // Cena non li usano: restano sulle 9/10 combinazioni fisse per categoria, senza bisogno di un
+  // titolo diverso da quello che hanno già).
+  function pgApplicaTitoli_(piano, titoli){
+    const t = titoli || {};
+    const segna = o => Object.assign({}, o, { titoloPersonalizzato: t[o.chiave] || '' });
+    const derivati = {};
+    Object.keys(piano.derivati).forEach(pasto => { derivati[pasto] = piano.derivati[pasto].map(segna); });
+    return Object.assign({}, piano, { derivati });
+  }
 
   /* ================= Impostazioni Piano Generico (copertina + intro) ================= */
   let IMPOSTAZIONI_PG_CACHE = null; // { pg_nome_professionista, pg_titoli_professionista, pg_email, ... } — null finché non caricate
@@ -7210,6 +7234,7 @@
   /* ================= Piano Generico: scheda Studio (per-paziente) ================= */
   let PG_STATO = null;   // { dati, generatoDaRiga, aggiornatoIl } — piano generato/caricato per il paziente aperto (null se mai generato)
   let PG_ESCLUSE = [];   // chiavi escluse per il paziente aperto
+  let PG_TITOLI = {};    // { chiave: titolo personalizzato } per il paziente aperto
 
   function pgTestoProteica_(p){
     if(p.testo) return p.testo;
@@ -7223,8 +7248,10 @@
   }
   function pgHtmlOpzioneDerivata_(o){
     const elenco = o.righe.map(r => cpEsc(cpNomeSenzaMarca(r.nome)) + ' ' + cpFmt(r.g) + ' g').join(' + ');
+    const titoloRiga = o.titoloPersonalizzato ? `<div class="pg-opzione-titolo-custom">Titolo nel PDF: ${cpEsc(o.titoloPersonalizzato)}</div>` : '';
     return `<div class="pg-opzione${o.escluso?' escluso':''}">
-      <div class="pg-opzione-testo">${elenco}</div>
+      <div class="pg-opzione-testo">${elenco}${titoloRiga}</div>
+      <button type="button" class="pg-opzione-escludi" title="${o.titoloPersonalizzato?'Modifica il titolo personalizzato':'Scrivi un titolo personalizzato per il PDF'}" onclick='pgModificaTitoloOpzione_(${JSON.stringify(o.chiave)}, ${JSON.stringify(o.titoloPersonalizzato||'')})'>✎</button>
       <button type="button" class="pg-opzione-escludi" title="${o.escluso?'Includi di nuovo':'Escludi per questo paziente'}" onclick='pgToggleEsclusione(${JSON.stringify(o.chiave)}, ${!o.escluso})'>${o.escluso?'↺':'✕'}</button>
     </div>`;
   }
@@ -7307,8 +7334,9 @@
   // ricetta" nei dati (sono combinazioni reali trovate nel piano settimanale, non ricette
   // precompilate), quindi il titolo è la lista degli alimenti senza quantità.
   function pgHtmlOpzioneDerivataStampa_(o, num){
-    const titolo = o.righe.map(r => cpEsc(cpNomeSenzaMarca(r.nome))).join(' + ');
-    const elenco = o.righe.map(r => `${cpEsc(cpNomeSenzaMarca(r.nome))} <span class="pg-g">${cpFmt(r.g)} g</span>`).join(' · ');
+    const titoloAuto = o.righe.map(r => cpEsc(cpNomeSenzaMix_(cpNomeSenzaMarca(r.nome)))).join(' + ');
+    const titolo = o.titoloPersonalizzato ? cpEsc(o.titoloPersonalizzato) : titoloAuto;
+    const elenco = o.righe.map(r => `${cpEsc(cpNomeSenzaMix_(cpNomeSenzaMarca(r.nome)))} <span class="pg-g">${cpFmt(r.g)} g</span>`).join(' · ');
     return `<div class="pg-opzione">
       <div class="pg-opzione-num">${num}</div>
       <div class="pg-opzione-corpo">
@@ -7479,11 +7507,13 @@
     contEl.innerHTML = '';
     stampaBtn.style.display = 'none';
     try{
-      const [resPiano, resEscl] = await Promise.all([
+      const [resPiano, resEscl, resTit] = await Promise.all([
         apiGet('pgLeggi', { codice: SESSION.codice, paziente: currentPatientCode }),
         apiGet('pgEsclusioniLeggi', { codice: SESSION.codice, paziente: currentPatientCode }),
+        apiGet('pgTitoliLeggi', { codice: SESSION.codice, paziente: currentPatientCode }),
       ]);
       PG_ESCLUSE = (resEscl.ok && resEscl.chiavi) || [];
+      PG_TITOLI = (resTit.ok && resTit.titoli) || {};
       PG_STATO = (resPiano.ok && resPiano.piano) || null;
       pgRenderStato_();
     } catch(err){
@@ -7503,13 +7533,30 @@
     }
     subEl.textContent = 'Aggiornato il ' + fmtDateFull(new Date(PG_STATO.aggiornatoIl));
     stampaBtn.style.display = 'flex';
-    contEl.innerHTML = pgHtmlPiano_(pgApplicaEsclusioni(PG_STATO.dati, PG_ESCLUSE));
+    contEl.innerHTML = pgHtmlPiano_(pgApplicaTitoli_(pgApplicaEsclusioni(PG_STATO.dati, PG_ESCLUSE), PG_TITOLI));
   }
   async function pgToggleEsclusione(chiave, escludi){
     try{
       const res = await apiPost('pgEsclusioneImposta', { codice: SESSION.codice, paziente: currentPatientCode, chiaveOpzione: chiave, escludi });
       if(!res.ok){ showToast(res.error || 'Errore nel salvataggio.'); return; }
       PG_ESCLUSE = escludi ? PG_ESCLUSE.concat(PG_ESCLUSE.includes(chiave) ? [] : [chiave]) : PG_ESCLUSE.filter(c => c !== chiave);
+      pgRenderStato_();
+    } catch(err){
+      showToast('Errore di connessione: ' + err.message);
+    }
+  }
+  // Chiede (con un prompt semplice) il titolo da mostrare nel PDF per questa opzione, al posto di
+  // quello generato in automatico dai nomi degli alimenti. Lasciare vuoto cancella il titolo
+  // personalizzato e torna a quello automatico.
+  async function pgModificaTitoloOpzione_(chiave, titoloAttuale){
+    const nuovo = window.prompt('Titolo da mostrare nel Piano Generico per questa opzione (lascia vuoto per tornare al titolo automatico):', titoloAttuale || '');
+    if(nuovo === null) return;
+    const pulito = nuovo.trim();
+    try{
+      const res = await apiPost('pgTitoloImposta', { codice: SESSION.codice, paziente: currentPatientCode, chiaveOpzione: chiave, titolo: pulito });
+      if(!res.ok){ showToast(res.error || 'Errore nel salvataggio.'); return; }
+      PG_TITOLI = Object.assign({}, PG_TITOLI);
+      if(pulito) PG_TITOLI[chiave] = pulito; else delete PG_TITOLI[chiave];
       pgRenderStato_();
     } catch(err){
       showToast('Errore di connessione: ' + err.message);
@@ -7575,7 +7622,7 @@
       const res = await apiGet('pgImpostazioniLeggi', { codice: SESSION.codice });
       const imp = res.ok ? res.impostazioni : {};
       const nomePaziente = (currentPatientMeta && currentPatientMeta.Nome) || currentPatientCode || '';
-      const piano = pgApplicaEsclusioni(PG_STATO.dati, PG_ESCLUSE);
+      const piano = pgApplicaTitoli_(pgApplicaEsclusioni(PG_STATO.dati, PG_ESCLUSE), PG_TITOLI);
       document.getElementById('pg-stampa-sub').textContent = 'Anteprima per ' + nomePaziente + ' — controlla che sia tutto corretto prima di stampare o salvare come PDF.';
       document.getElementById('pg-stampa-contenuto').innerHTML = pgHtmlStampaCompleta_(piano, imp, { nomePaziente, notaExtraPiano: (currentPatientMeta && currentPatientMeta.NotaExtraPiano) || '' });
       document.getElementById('pg-stampa-overlay').style.display = 'flex';
@@ -7610,9 +7657,10 @@
     const paziente = SESSION.paziente.Codice;
     cpBottoneCaricando_(btn, 'Caricamento…');
     try{
-      const [resPiano, resEscl, resImp] = await Promise.all([
+      const [resPiano, resEscl, resTit, resImp] = await Promise.all([
         apiGet('pgLeggi', { codice: SESSION.codice, paziente }),
         apiGet('pgEsclusioniLeggi', { codice: SESSION.codice, paziente }),
+        apiGet('pgTitoliLeggi', { codice: SESSION.codice, paziente }),
         apiGet('pgImpostazioniLeggi', { codice: SESSION.codice }),
       ]);
       if(!resPiano.ok || !resPiano.piano){
@@ -7620,9 +7668,10 @@
         return;
       }
       const escluse = (resEscl.ok && resEscl.chiavi) || [];
+      const titoli = (resTit.ok && resTit.titoli) || {};
       const imp = resImp.ok ? resImp.impostazioni : {};
       const nomePaziente = SESSION.paziente.Nome || '';
-      const piano = pgApplicaEsclusioni(resPiano.piano.dati, escluse);
+      const piano = pgApplicaTitoli_(pgApplicaEsclusioni(resPiano.piano.dati, escluse), titoli);
       document.getElementById('p-piano-generico-contenuto').innerHTML = pgHtmlStampaCompleta_(piano, imp, { nomePaziente, notaExtraPiano: (SESSION.paziente && SESSION.paziente.NotaExtraPiano) || '' });
       setPatientScreen('piano-generico');
     } catch(err){
