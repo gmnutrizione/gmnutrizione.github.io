@@ -1537,6 +1537,14 @@
             </select>
           </div>
         </div>
+        <div class="field" style="margin-top:14px;"><label>Nota personalizzata dopo "Spuntino pomeriggio" nel Piano Generico di questo paziente (un paragrafo per punto — lascia una riga vuota fra un punto e l'altro; racchiudi fra asterischi le parole da mettere in grassetto, es. *parola*)</label><textarea id="ep-nota-extra" rows="6" oninput="pgAggiornaAnteprimaTestoLibero_('ep-nota-extra','ep-nota-extra-anteprima')" placeholder="Es. *Integratore X*: un misurino la mattina a colazione."></textarea>
+        </div>
+        <div class="field">
+          <label>Anteprima</label>
+          <div class="pg-doc" style="max-width:none; margin:0; padding:0;">
+            <div class="pg-intro-lista" id="ep-nota-extra-anteprima"></div>
+          </div>
+        </div>
         <div class="login-error" id="edit-patient-error"></div>
         <div style="display:flex; gap:10px; margin-top:16px;">
           <button class="btn ghost" type="button" onclick="closeEditPatientModal()">Annulla</button>
@@ -1568,14 +1576,6 @@
             <label>Anteprima</label>
             <div class="pg-doc" style="max-width:none; margin:0; padding:0;">
               <div class="pg-intro-lista" id="imp-intro-anteprima"></div>
-            </div>
-          </div>
-          <div class="field" style="grid-column:1 / -1;"><label>Contenuto aggiuntivo dopo "Spuntino pomeriggio" (stessa pagina di Colazione e Spuntini — resta sempre lì; stesso formato: un paragrafo per punto, *parola* per il grassetto)</label><textarea id="imp-spuntinop-extra" rows="6" oninput="pgAggiornaAnteprimaTestoLibero_('imp-spuntinop-extra','imp-spuntinop-extra-anteprima')" placeholder="Es. *Integratore X*: un misurino la mattina a colazione."></textarea>
-          </div>
-          <div class="field" style="grid-column:1 / -1;">
-            <label>Anteprima</label>
-            <div class="pg-doc" style="max-width:none; margin:0; padding:0;">
-              <div class="pg-intro-lista" id="imp-spuntinop-extra-anteprima"></div>
             </div>
           </div>
         </div>
@@ -5107,6 +5107,8 @@
     document.getElementById('ep-data-controllo').value = pc.data;
     document.getElementById('ep-ora-controllo').value = pc.ora;
     document.getElementById('ep-statoTipo').value = p.StatoTipo || 'good';
+    document.getElementById('ep-nota-extra').value = p.NotaExtraPiano || '';
+    pgAggiornaAnteprimaTestoLibero_('ep-nota-extra','ep-nota-extra-anteprima');
     document.getElementById('edit-patient-error').textContent = '';
     document.getElementById('edit-patient-overlay').style.display = 'flex';
   }
@@ -5129,6 +5131,7 @@
     const oraControllo = document.getElementById('ep-ora-controllo').value;
     const statoTipo = document.getElementById('ep-statoTipo').value;
     const statoTesto = STATUS_LABEL[statoTipo];
+    const notaExtraPiano = document.getElementById('ep-nota-extra').value.replace(/\r\n/g, '\n').trim();
 
     let prossimoControllo = '';
     if(dataControllo){
@@ -5142,6 +5145,7 @@
       Sesso: sesso, Altezza: altezza ? (parseNum(altezza) ?? altezza) : '',
       Obiettivo: obiettivo, ProssimoControllo: prossimoControllo,
       StatoTesto: statoTesto, StatoTipo: statoTipo,
+      NotaExtraPiano: notaExtraPiano,
     };
 
     const btn = document.getElementById('btn-edit-patient-save');
@@ -7127,9 +7131,7 @@
       document.getElementById('imp-albo').value = IMPOSTAZIONI_PG_CACHE.pg_albo_biologi || '';
       document.getElementById('imp-slogan').value = IMPOSTAZIONI_PG_CACHE.pg_slogan || '';
       document.getElementById('imp-intro').value = IMPOSTAZIONI_PG_CACHE.pg_intro_testo || '';
-      document.getElementById('imp-spuntinop-extra').value = IMPOSTAZIONI_PG_CACHE.pg_spuntinop_extra || '';
       pgAggiornaAnteprimaTestoLibero_('imp-intro','imp-intro-anteprima');
-      pgAggiornaAnteprimaTestoLibero_('imp-spuntinop-extra','imp-spuntinop-extra-anteprima');
       document.getElementById('pg-pane-baseline').value = IMPOSTAZIONI_PG_CACHE.pg_pane_baseline_g || 60;
       document.getElementById('pg-olio-baseline').value = IMPOSTAZIONI_PG_CACHE.pg_olio_baseline_g || 15;
       document.getElementById('pg-peso-uovo').value = IMPOSTAZIONI_PG_CACHE.pg_peso_medio_uovo_g || 60;
@@ -7169,7 +7171,6 @@
       pg_albo_biologi: document.getElementById('imp-albo').value.trim(),
       pg_slogan: document.getElementById('imp-slogan').value.trim(),
       pg_intro_testo: document.getElementById('imp-intro').value.replace(/\r\n/g, '\n').trim(),
-      pg_spuntinop_extra: document.getElementById('imp-spuntinop-extra').value.replace(/\r\n/g, '\n').trim(),
       pg_pane_baseline_g: String(parseFloat(document.getElementById('pg-pane-baseline').value) || 60),
       pg_olio_baseline_g: String(parseFloat(document.getElementById('pg-olio-baseline').value) || 15),
       pg_peso_medio_uovo_g: String(parseFloat(document.getElementById('pg-peso-uovo').value) || 60),
@@ -7358,7 +7359,7 @@
     const email = imp.pg_email || '', telefono = imp.pg_telefono || '', piva = imp.pg_piva || '', albo = imp.pg_albo_biologi || '';
     const slogan = imp.pg_slogan || '';
     const introTesto = (imp.pg_intro_testo || '').trim();
-    const spuntinopExtra = (imp.pg_spuntinop_extra || '').trim();
+    const spuntinopExtra = ((meta && meta.notaExtraPiano) || '').trim();
     const nomePaziente = (meta && meta.nomePaziente) || '';
     const iniziali = pgIniziali_(nomeProf) || 'GM';
 
@@ -7576,7 +7577,7 @@
       const nomePaziente = (currentPatientMeta && currentPatientMeta.Nome) || currentPatientCode || '';
       const piano = pgApplicaEsclusioni(PG_STATO.dati, PG_ESCLUSE);
       document.getElementById('pg-stampa-sub').textContent = 'Anteprima per ' + nomePaziente + ' — controlla che sia tutto corretto prima di stampare o salvare come PDF.';
-      document.getElementById('pg-stampa-contenuto').innerHTML = pgHtmlStampaCompleta_(piano, imp, { nomePaziente });
+      document.getElementById('pg-stampa-contenuto').innerHTML = pgHtmlStampaCompleta_(piano, imp, { nomePaziente, notaExtraPiano: (currentPatientMeta && currentPatientMeta.NotaExtraPiano) || '' });
       document.getElementById('pg-stampa-overlay').style.display = 'flex';
     } catch(err){
       showToast('Errore di connessione: ' + err.message);
@@ -7622,7 +7623,7 @@
       const imp = resImp.ok ? resImp.impostazioni : {};
       const nomePaziente = SESSION.paziente.Nome || '';
       const piano = pgApplicaEsclusioni(resPiano.piano.dati, escluse);
-      document.getElementById('p-piano-generico-contenuto').innerHTML = pgHtmlStampaCompleta_(piano, imp, { nomePaziente });
+      document.getElementById('p-piano-generico-contenuto').innerHTML = pgHtmlStampaCompleta_(piano, imp, { nomePaziente, notaExtraPiano: (SESSION.paziente && SESSION.paziente.NotaExtraPiano) || '' });
       setPatientScreen('piano-generico');
     } catch(err){
       showToast('Errore di connessione: ' + err.message);
