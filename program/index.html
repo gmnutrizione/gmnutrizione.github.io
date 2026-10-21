@@ -1046,6 +1046,35 @@
   .pg-doc .pg-freq-table td.pg-freq-giorno{ color:var(--pg-accent); font-weight:600; }
   .pg-doc .pg-freq-table td.pg-freq-sett{ color:var(--pg-warning); font-weight:600; }
 
+  /* Piano Generico — carattere aumentato, pagina per pagina (ottobre 2026). Introduzione+Nota,
+     Colazione/Spuntini e Pranzo/Cena/Formaggi hanno più margine libero quindi il carattere sale
+     di più; Categorie/Frequenze è già al limite dello spazio disponibile in una pagina, quindi
+     sale di meno ed è stata anche compattata (schede e righe più strette) per farcelo stare. */
+  .pg-doc .pg-pagina-intro .pg-intro-punto{ font-size:15.5px; }
+  .pg-doc .pg-pagina-intro .pg-section-title{ font-size:20.75px; }
+
+  .pg-doc .pg-pagina-colazione .pg-opzione-titolo{ font-size:15px; }
+  .pg-doc .pg-pagina-colazione .pg-opzione-alimenti{ font-size:13.8px; }
+  .pg-doc .pg-pagina-colazione .pg-opzione-vuoto{ font-size:15px; }
+  .pg-doc .pg-pagina-colazione .pg-section-title{ font-size:20.5px; }
+
+  .pg-doc .pg-pagina-pranzocena .pg-opzione-riga{ font-size:14.5px; }
+  .pg-doc .pg-pagina-pranzocena .pg-section-title{ font-size:20.5px; }
+
+  .pg-doc .pg-pagina-formaggi .pg-equiv-table{ font-size:13.8px; }
+  .pg-doc .pg-pagina-formaggi .pg-equiv-table th{ font-size:13px; }
+  .pg-doc .pg-pagina-formaggi .pg-section-title{ font-size:20.5px; }
+
+  .pg-doc .pg-pagina-categorie .pg-glossario-nome{ font-size:13.9px; }
+  .pg-doc .pg-pagina-categorie .pg-glossario-esempi{ font-size:12.9px; }
+  .pg-doc .pg-pagina-categorie .pg-equiv-table{ font-size:13.2px; }
+  .pg-doc .pg-pagina-categorie .pg-equiv-table th{ font-size:12.4px; padding:0 14px 3px 0; }
+  .pg-doc .pg-pagina-categorie .pg-equiv-table td{ padding:3px 14px 3px 0; }
+  .pg-doc .pg-pagina-categorie .pg-section-title{ font-size:20.2px; margin:9px 0 4px; }
+  .pg-doc .pg-pagina-categorie .pg-card{ padding:5px 14px; }
+  .pg-doc .pg-pagina-categorie .pg-glossario-riga{ padding:3px 0; }
+  .pg-doc .pg-pagina-categorie .pg-glossario-riga:nth-child(1), .pg-doc .pg-pagina-categorie .pg-glossario-riga:nth-child(2){ padding-top:1px; }
+
   @media print{
     /* Il browser del telefono (soprattutto Safari su iPhone) in stampa a volte impagina il
        contenuto usando la larghezza dello SCHERMO invece del foglio A4, per via del meta
@@ -1562,7 +1591,8 @@
             </select>
           </div>
         </div>
-        <div class="field" style="margin-top:14px;"><label>Nota personalizzata dopo "Spuntino pomeriggio" nel Piano Generico di questo paziente (un paragrafo per punto — lascia una riga vuota fra un punto e l'altro; racchiudi fra asterischi le parole da mettere in grassetto, es. *parola*)</label><textarea id="ep-nota-extra" rows="6" oninput="pgAggiornaAnteprimaTestoLibero_('ep-nota-extra','ep-nota-extra-anteprima')" placeholder="Es. *Integratore X*: un misurino la mattina a colazione."></textarea>
+        <div class="field" style="margin-top:14px;"><label>Titolo della nota personalizzata nel Piano Generico di questo paziente (facoltativo — se lo lasci vuoto verrà usato "Indicazioni personalizzate")</label><input type="text" id="ep-nota-extra-titolo" maxlength="80" placeholder="Es. Note per Federica"></div>
+        <div class="field" style="margin-top:10px;"><label>Nota personalizzata per questo paziente nel Piano Generico (una pagina a sé, subito dopo l'Introduzione — un paragrafo per punto, lascia una riga vuota fra un punto e l'altro; racchiudi fra asterischi le parole da mettere in grassetto, es. *parola*)</label><textarea id="ep-nota-extra" rows="6" oninput="pgAggiornaAnteprimaTestoLibero_('ep-nota-extra','ep-nota-extra-anteprima')" placeholder="Es. *Integratore X*: un misurino la mattina a colazione."></textarea>
         </div>
         <div class="field">
           <label>Anteprima</label>
@@ -5162,6 +5192,7 @@
     document.getElementById('ep-data-controllo').value = pc.data;
     document.getElementById('ep-ora-controllo').value = pc.ora;
     document.getElementById('ep-statoTipo').value = p.StatoTipo || 'good';
+    document.getElementById('ep-nota-extra-titolo').value = p.NotaExtraPianoTitolo || '';
     document.getElementById('ep-nota-extra').value = p.NotaExtraPiano || '';
     pgAggiornaAnteprimaTestoLibero_('ep-nota-extra','ep-nota-extra-anteprima');
     document.getElementById('edit-patient-error').textContent = '';
@@ -5186,6 +5217,7 @@
     const oraControllo = document.getElementById('ep-ora-controllo').value;
     const statoTipo = document.getElementById('ep-statoTipo').value;
     const statoTesto = STATUS_LABEL[statoTipo];
+    const notaExtraPianoTitolo = document.getElementById('ep-nota-extra-titolo').value.trim();
     const notaExtraPiano = document.getElementById('ep-nota-extra').value.replace(/\r\n/g, '\n').trim();
 
     let prossimoControllo = '';
@@ -5201,6 +5233,7 @@
       Obiettivo: obiettivo, ProssimoControllo: prossimoControllo,
       StatoTesto: statoTesto, StatoTipo: statoTipo,
       NotaExtraPiano: notaExtraPiano,
+      NotaExtraPianoTitolo: notaExtraPianoTitolo,
     };
 
     const btn = document.getElementById('btn-edit-patient-save');
@@ -7429,6 +7462,7 @@
     const slogan = imp.pg_slogan || '';
     const introTesto = (imp.pg_intro_testo || '').trim();
     const spuntinopExtra = ((meta && meta.notaExtraPiano) || '').trim();
+    const notaTitolo = (((meta && meta.notaExtraPianoTitolo) || '').trim()) || 'Indicazioni personalizzate';
     const nomePaziente = (meta && meta.nomePaziente) || '';
     const iniziali = pgIniziali_(nomeProf) || 'GM';
 
@@ -7452,7 +7486,7 @@
     // a un foglio fisico (vedi i commenti sopra su min-height/break), quindi contando le pagine
     // con piè di pagina (+1 per la copertina, che non lo mostra) si ottiene il numero reale —
     // cosi può stare sulla stessa riga del testo invece che nel margine disegnato dal browser.
-    const totalePagine = (introTesto ? 1 : 0) + 4 + 1;
+    const totalePagine = 1 + ((introTesto || spuntinopExtra) ? 1 : 0) + 4;
     let pgNumPagina = 1; // 1 = copertina (senza piè di pagina)
     const footer = () => {
       pgNumPagina++;
@@ -7481,14 +7515,18 @@
         <div class="pg-cover-bottom">${slogan ? '«' + cpEsc(slogan) + '»' : ''}</div>
       </div>
 
-      ${introTesto ? `
-      <div class="pg-pagina pg-break-after">
+      ${(introTesto || spuntinopExtra) ? `
+      <div class="pg-pagina pg-break-after pg-pagina-intro">
+        ${introTesto ? `
         <div class="pg-section-title">Introduzione al percorso alimentare</div>
-        <div class="pg-intro-lista">${pgHtmlIntroPunti_(introTesto)}</div>
+        <div class="pg-intro-lista">${pgHtmlIntroPunti_(introTesto)}</div>` : ''}
+        ${spuntinopExtra ? `
+        <div class="pg-section-title">${cpEsc(notaTitolo)}</div>
+        <div class="pg-intro-lista">${pgHtmlIntroPunti_(spuntinopExtra)}</div>` : ''}
         ${footer()}
       </div>` : ''}
 
-      <div class="pg-pagina${introTesto ? '' : ' pg-break-after'}">
+      <div class="pg-pagina pg-break-before pg-pagina-categorie">
         <div class="pg-section-title">Categorie alimentari</div>
         <div class="pg-card"><div class="pg-glossario-grid">${pgHtmlGlossario_()}</div></div>
         <div class="pg-section-title">Frequenze alimentari consigliate</div>
@@ -7502,22 +7540,21 @@
         ${footer()}
       </div>
 
-      <div class="pg-pagina pg-break-before">
+      <div class="pg-pagina pg-break-before pg-pagina-colazione">
         ${sezDerivataPagina('Colazione')}
         ${sezDerivataPagina('Spuntino mattina')}
         ${sezDerivataPagina('Spuntino pomeriggio')}
-        ${spuntinopExtra ? `<div class="pg-intro-lista">${pgHtmlIntroPunti_(spuntinopExtra)}</div>` : ''}
         ${sezDerivataPagina('Dopo cena')}
         ${footer()}
       </div>
 
-      <div class="pg-pagina pg-break-before">
+      <div class="pg-pagina pg-break-before pg-pagina-pranzocena">
         ${sezFissaPagina('Pranzo', pranzoAttivo)}
         ${sezFissaPagina('Cena', cenaAttivo)}
         ${footer()}
       </div>
 
-      <div class="pg-pagina pg-break-before">
+      <div class="pg-pagina pg-break-before pg-pagina-formaggi">
         <div class="pg-section-title">Formaggi</div>
         <div class="pg-card"><table class="pg-equiv-table"><thead><tr><th class="pg-th-accent">Formaggio</th><th style="text-align:right;">Quantità</th></tr></thead><tbody>${pgHtmlFormaggiTabella_()}</tbody></table></div>
         <div class="pg-section-title">Sostituzione fonti di carboidrati</div>
@@ -7665,7 +7702,7 @@
       const nomePaziente = (currentPatientMeta && currentPatientMeta.Nome) || currentPatientCode || '';
       const piano = pgApplicaTitoli_(pgApplicaEsclusioni(PG_STATO.dati, PG_ESCLUSE), PG_TITOLI);
       document.getElementById('pg-stampa-sub').textContent = 'Anteprima per ' + nomePaziente + ' — controlla che sia tutto corretto prima di stampare o salvare come PDF.';
-      document.getElementById('pg-stampa-contenuto').innerHTML = pgHtmlStampaCompleta_(piano, imp, { nomePaziente, notaExtraPiano: (currentPatientMeta && currentPatientMeta.NotaExtraPiano) || '' });
+      document.getElementById('pg-stampa-contenuto').innerHTML = pgHtmlStampaCompleta_(piano, imp, { nomePaziente, notaExtraPiano: (currentPatientMeta && currentPatientMeta.NotaExtraPiano) || '', notaExtraPianoTitolo: (currentPatientMeta && currentPatientMeta.NotaExtraPianoTitolo) || '' });
       document.getElementById('pg-stampa-overlay').style.display = 'flex';
     } catch(err){
       showToast('Errore di connessione: ' + err.message);
@@ -7713,7 +7750,7 @@
       const imp = resImp.ok ? resImp.impostazioni : {};
       const nomePaziente = SESSION.paziente.Nome || '';
       const piano = pgApplicaTitoli_(pgApplicaEsclusioni(resPiano.piano.dati, escluse), titoli);
-      document.getElementById('p-piano-generico-contenuto').innerHTML = pgHtmlStampaCompleta_(piano, imp, { nomePaziente, notaExtraPiano: (SESSION.paziente && SESSION.paziente.NotaExtraPiano) || '' });
+      document.getElementById('p-piano-generico-contenuto').innerHTML = pgHtmlStampaCompleta_(piano, imp, { nomePaziente, notaExtraPiano: (SESSION.paziente && SESSION.paziente.NotaExtraPiano) || '', notaExtraPianoTitolo: (SESSION.paziente && SESSION.paziente.NotaExtraPianoTitolo) || '' });
       setPatientScreen('piano-generico');
     } catch(err){
       showToast('Errore di connessione: ' + err.message);
