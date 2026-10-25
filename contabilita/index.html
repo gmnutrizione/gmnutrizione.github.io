@@ -157,6 +157,20 @@
   .doc-sum-total{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:6px;border-top:1px solid #1A1A1A;padding-top:6px;}
   .doc-note{margin-top:14px;font-size:10px;line-height:1.6;color:#333;}
   .stat-card .stat-value.amount-pos{color:var(--accent);}
+  .mese-card{margin:10px 20px 0 20px;padding:14px 16px;}
+  .mese-head{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:block;}
+  .mese-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .mese-nome{font-size:15px;font-weight:700;text-transform:capitalize;}
+  .mese-tot{font-size:16px;font-weight:700;}
+  .mese-tot.zero{color:var(--faint);font-weight:600;}
+  .mese-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .mese-bar{height:6px;border-radius:999px;background:var(--bg);margin-top:10px;overflow:hidden;}
+  .mese-bar span{display:block;height:100%;background:var(--accent);border-radius:999px;}
+  .mese-det{margin-top:12px;padding-top:6px;border-top:1px solid var(--border);}
+  .mese-det .row-btn{margin:0;box-shadow:none;padding-left:0;padding-right:0;}
+  .mese-riga-sum{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:8px;}
+  .anno-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin:14px 20px 0 20px;}
+  .anno-nav b{font-size:18px;min-width:70px;text-align:center;}
   .fatt-form .field select{border:1.5px solid #CBD5D1;background-color:var(--card);}
   .fatt-form .field select:focus{border-color:var(--accent);}
   .fatt-form .field input[type=text],.fatt-form .date-btn{border:1.5px solid #CBD5D1 !important;background:var(--card) !important;}
@@ -238,6 +252,8 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     fattureCaricate: false,
     prestazioniPreset: PRESTAZIONI_DEFAULT.slice(),
     pazienti: [],
+    meseAnno: new Date().getFullYear(),
+    meseAperto: 0,
     clienteForm: emptyClienteForm(),
     clienteErrore: "",
     clienteRitornoA: "clienti",
@@ -519,14 +535,14 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     try { await ricarica(); } catch (e) {}
     state.clienti = DB.clienti.slice();
     state.clientiCaricati = true;
-    if (state.view === "clienti" || state.view === "fattura-form" || state.view === "fatture-home") render();
+    if (state.view === "clienti" || state.view === "fattura-form" || state.view === "fatture-home" || state.view === "fatture-mesi") render();
   }
 
   async function caricaFatture() {
     try { await ricarica(); } catch (e) {}
     state.fatture = DB.fatture.slice();
     state.fattureCaricate = true;
-    if (state.view === "fatture-home") render();
+    if (state.view === "fatture-home" || state.view === "fatture-mesi") render();
   }
 
   function apriFatture() {
@@ -980,6 +996,7 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     else if (baseView === "dettaglio") app.appendChild(renderDettaglio());
     else if (baseView === "ricorrenti") app.appendChild(renderRicorrenti());
     else if (baseView === "fatture-home") app.appendChild(renderFattureHome());
+    else if (baseView === "fatture-mesi") app.appendChild(renderFattureMesi());
     else if (baseView === "clienti") app.appendChild(renderClienti());
     else if (baseView === "cliente-form") app.appendChild(renderClienteForm());
     else if (baseView === "fattura-form") app.appendChild(renderFatturaForm());
@@ -1178,6 +1195,76 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     return wrap;
   }
 
+  function renderFattureMesi() {
+    var wrap = h('<div></div>');
+    wrap.appendChild(h(
+      '<div class="topbar">' +
+        '<button class="iconbtn" data-action="torna-fatture-home" aria-label="Indietro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>' +
+        '<h1>Fatturato per mese</h1><div style="width:40px"></div>' +
+      '</div>'
+    ));
+    var anno = state.meseAnno;
+    wrap.appendChild(h(
+      '<div class="anno-nav">' +
+        '<button class="iconbtn" data-action="anno-prec" aria-label="Anno precedente"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>' +
+        '<b>' + anno + '</b>' +
+        '<button class="iconbtn" data-action="anno-succ" aria-label="Anno successivo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>' +
+      '</div>'
+    ));
+    var mesi = [];
+    for (var i = 0; i < 12; i++) mesi.push({ n: 0, totale: 0, enpab: 0, bollo: 0, imponibile: 0, fatture: [] });
+    (state.fatture || []).forEach(function (f) {
+      if (!f.data || parseInt(f.data.slice(0, 4), 10) !== anno) return;
+      var m = mesi[parseInt(f.data.slice(5, 7), 10) - 1];
+      m.n++; m.totale += Number(f.totale) || 0; m.enpab += Number(f.enpab) || 0;
+      m.bollo += Number(f.bollo) || 0; m.imponibile += Number(f.imponibile) || 0;
+      m.fatture.push(f);
+    });
+    var tot = mesi.reduce(function (a, m) { a.n += m.n; a.totale += m.totale; a.enpab += m.enpab; a.bollo += m.bollo; return a; }, { n: 0, totale: 0, enpab: 0, bollo: 0 });
+    var max = mesi.reduce(function (mx, m) { return Math.max(mx, m.totale); }, 0);
+    wrap.appendChild(h(
+      '<div class="card balance-card">' +
+        '<div class="balance-label">Totale fatturato ' + anno + '</div>' +
+        '<div class="balance-amount">' + formatEUR(tot.totale) + '</div>' +
+        '<div class="balance-split">' +
+          '<div><span>Fatture</span><span>' + tot.n + '</span></div>' +
+          '<div><span>Enpab 4%</span><span>' + formatEUR(tot.enpab) + '</span></div>' +
+          '<div><span>Marche da bollo</span><span>' + formatEUR(tot.bollo) + '</span></div>' +
+        '</div>' +
+      '</div>'
+    ));
+    mesi.forEach(function (m, idx) {
+      var aperto = state.meseAperto === idx + 1;
+      var pct = max > 0 ? Math.round(m.totale / max * 100) : 0;
+      var card = h(
+        '<div class="card mese-card">' +
+          '<button class="mese-head" data-action="toggle-mese" data-m="' + (idx + 1) + '">' +
+            '<div class="mese-top"><span class="mese-nome">' + MESI[idx] + '</span><span class="mese-tot' + (m.n ? '' : ' zero') + '">' + formatEUR(m.totale) + '</span></div>' +
+            '<div class="mese-sub">' + (m.n ? m.n + (m.n === 1 ? ' fattura' : ' fatture') : 'Nessuna fattura') + '</div>' +
+            '<div class="mese-bar"><span style="width:' + pct + '%"></span></div>' +
+          '</button>' +
+        '</div>'
+      );
+      if (aperto && m.n) {
+        var det = h('<div class="mese-det"></div>');
+        m.fatture.sort(function (a, b) { return a.data < b.data ? -1 : (a.data > b.data ? 1 : 0); }).forEach(function (f) {
+          det.appendChild(h(
+            '<button class="row-btn" data-action="apri-anteprima-fattura" data-id="' + esc(f.id) + '">' +
+              '<span><span class="row-title">N° ' + esc(f.numero) + ' — ' + esc(f.cliente_nome || "") + '</span><br><span class="row-sub">' + formatDateLong(f.data) + '</span></span>' +
+              '<span class="row-amount">' + formatEUR(f.totale) + '</span>' +
+            '</button>'
+          ));
+        });
+        det.appendChild(h('<div class="mese-riga-sum"><span>Imponibile</span><span>' + formatEUR(m.imponibile) + '</span></div>'));
+        det.appendChild(h('<div class="mese-riga-sum"><span>Enpab 4%</span><span>' + formatEUR(m.enpab) + '</span></div>'));
+        det.appendChild(h('<div class="mese-riga-sum"><span>Marche da bollo</span><span>' + formatEUR(m.bollo) + '</span></div>'));
+        card.appendChild(det);
+      }
+      wrap.appendChild(card);
+    });
+    return wrap;
+  }
+
   function renderFattureHome() {
     var wrap = h('<div></div>');
     wrap.appendChild(h(
@@ -1203,6 +1290,9 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
         '<button class="btn btn-outline" data-action="apri-clienti">Clienti</button>' +
         '<button class="btn btn-primary" data-action="nuova-fattura">+ Nuova fattura</button>' +
       '</div>'
+    ));
+    wrap.appendChild(h(
+      '<div class="btnrow"><button class="btn btn-outline" data-action="apri-fatture-mesi">Fatturato per mese</button></div>'
     ));
     wrap.appendChild(h('<div class="section-head"><h2>Emesse di recente</h2></div>'));
     if (!state.fatture.length) { wrap.appendChild(h('<div class="empty">Nessuna fattura ancora.</div>')); return wrap; }
@@ -1612,6 +1702,10 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
       case "apri-fatture": apriFatture(); break;
       case "torna-ambiti": goto("ambiti"); break;
       case "torna-fatture-home": goto("fatture-home"); break;
+      case "apri-fatture-mesi": state.meseAperto = 0; goto("fatture-mesi"); break;
+      case "anno-prec": state.meseAnno--; state.meseAperto = 0; render(); break;
+      case "anno-succ": state.meseAnno++; state.meseAperto = 0; render(); break;
+      case "toggle-mese": var mm = parseInt(el.getAttribute("data-m"), 10); state.meseAperto = state.meseAperto === mm ? 0 : mm; render(); break;
       case "apri-clienti": goto("clienti"); break;
       case "torna-clienti": goto("clienti"); break;
       case "nuovo-cliente":
