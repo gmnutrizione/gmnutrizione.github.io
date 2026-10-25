@@ -254,6 +254,7 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     pazienti: [],
     meseAnno: new Date().getFullYear(),
     meseAperto: 0,
+    fattureVisibili: 4,
     clienteForm: emptyClienteForm(),
     clienteErrore: "",
     clienteRitornoA: "clienti",
@@ -546,6 +547,7 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
   }
 
   function apriFatture() {
+    state.fattureVisibili = 4;
     goto("fatture-home");
     aggiornaTutto();
   }
@@ -1195,6 +1197,18 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     return wrap;
   }
 
+  // "7/2026" -> { anno: 2026, n: 7 }: serve per ordinare le fatture per numero e non per inserimento
+  function chiaveNumero(f) {
+    var m = String(f.numero || "").match(/^\s*(\d+)\s*\/\s*(\d{2,4})/);
+    if (m) return { anno: parseInt(m[2], 10) < 100 ? 2000 + parseInt(m[2], 10) : parseInt(m[2], 10), n: parseInt(m[1], 10) };
+    var n = parseInt(f.numero, 10);
+    return { anno: f.data ? parseInt(f.data.slice(0, 4), 10) : 0, n: isNaN(n) ? 0 : n };
+  }
+  function cmpNumero(a, b) {
+    var x = chiaveNumero(a), y = chiaveNumero(b);
+    return x.anno !== y.anno ? x.anno - y.anno : x.n - y.n;
+  }
+
   function renderFattureMesi() {
     var wrap = h('<div></div>');
     wrap.appendChild(h(
@@ -1247,7 +1261,7 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
       );
       if (aperto && m.n) {
         var det = h('<div class="mese-det"></div>');
-        m.fatture.sort(function (a, b) { return a.data < b.data ? -1 : (a.data > b.data ? 1 : 0); }).forEach(function (f) {
+        m.fatture.sort(cmpNumero).forEach(function (f) {
           det.appendChild(h(
             '<button class="row-btn" data-action="apri-anteprima-fattura" data-id="' + esc(f.id) + '">' +
               '<span><span class="row-title">N° ' + esc(f.numero) + ' — ' + esc(f.cliente_nome || "") + '</span><br><span class="row-sub">' + formatDateLong(f.data) + '</span></span>' +
@@ -1297,7 +1311,8 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     wrap.appendChild(h('<div class="section-head"><h2>Emesse di recente</h2></div>'));
     if (!state.fatture.length) { wrap.appendChild(h('<div class="empty">Nessuna fattura ancora.</div>')); return wrap; }
     var list = h('<div class="list"></div>');
-    state.fatture.slice(0, 10).forEach(function (f) {
+    var recenti = state.fatture.slice().sort(function (a, b) { return cmpNumero(b, a); });
+    recenti.slice(0, state.fattureVisibili).forEach(function (f) {
       list.appendChild(h(
         '<button class="row-btn" data-action="apri-anteprima-fattura" data-id="' + esc(f.id) + '">' +
           '<span><span class="row-title">N° ' + esc(f.numero) + ' — ' + esc(f.cliente_nome || "") + '</span><br><span class="row-sub">' + formatDateLong(f.data) + '</span></span>' +
@@ -1306,6 +1321,10 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
       ));
     });
     wrap.appendChild(list);
+    if (recenti.length > state.fattureVisibili) {
+      var rimaste = recenti.length - state.fattureVisibili;
+      wrap.appendChild(h('<button class="dashed-btn" data-action="carica-altre-fatture">Carica altre fatture (' + rimaste + ' rimaste)</button>'));
+    }
     return wrap;
   }
 
@@ -1702,6 +1721,7 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
       case "apri-fatture": apriFatture(); break;
       case "torna-ambiti": goto("ambiti"); break;
       case "torna-fatture-home": goto("fatture-home"); break;
+      case "carica-altre-fatture": state.fattureVisibili += 10; render(); break;
       case "apri-fatture-mesi": state.meseAperto = 0; goto("fatture-mesi"); break;
       case "anno-prec": state.meseAnno--; state.meseAperto = 0; render(); break;
       case "anno-succ": state.meseAnno++; state.meseAperto = 0; render(); break;
