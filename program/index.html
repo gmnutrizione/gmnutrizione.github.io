@@ -1075,6 +1075,21 @@
   .pg-doc .pg-pagina-categorie .pg-glossario-riga{ padding:3px 0; }
   .pg-doc .pg-pagina-categorie .pg-glossario-riga:nth-child(1), .pg-doc .pg-pagina-categorie .pg-glossario-riga:nth-child(2){ padding-top:1px; }
 
+  /* Piè di pagina della pagina Introduzione+Nota personalizzata: qui, a differenza di tutte le
+     altre pagine, il testo puo' essere lungo quanto vuole chi scrive (note libere), quindi puo'
+     avvicinarsi o superare lo spazio di una pagina — mentre nelle altre pagine la quantita' di
+     contenuto è sempre fissa e ci sta sempre comoda. In quel caso Chrome in stampa a volte non
+     appoggia piu' il piè di pagina (margin-top:auto dentro al flex) esattamente in fondo al
+     foglio, lasciando un vuoto sotto di lui prima del bordo pagina. Qui lo ancoriamo invece in
+     modo esplicito al fondo della pagina con position:absolute (si appoggia a position:relative
+     di .pg-pagina, già presente sopra). Il padding-bottom riserva sempre lo spazio del piè di
+     pagina stesso, cosi anche se le note sono cosi' lunghe da sforare su una seconda pagina, il
+     testo si ferma comunque prima di lui invece di finirci sotto. */
+  @media print{
+    .pg-doc .pg-pagina-intro{ padding-bottom:16mm; }
+    .pg-doc .pg-pagina-intro .pg-pagina-footer{ position:absolute; left:0; right:0; bottom:0; margin-top:0; }
+  }
+
   @media print{
     /* Il browser del telefono (soprattutto Safari su iPhone) in stampa a volte impagina il
        contenuto usando la larghezza dello SCHERMO invece del foglio A4, per via del meta
@@ -1434,6 +1449,143 @@
     .diario-day-nav > .btn{ width:38px; height:38px; padding:0; justify-content:center; font-size:17px; flex:none; }
     .diario-day-nav-center input[type="date"]{ width:100%; box-sizing:border-box; }
     .diario-oggi-btn{ padding:5px 14px; }
+  }
+
+  /* ================= SCHEDA ANAMNESI (lato nutrizionista) =================
+     Stesso linguaggio visivo del resto del programma (vedi .card, .btn),
+     con in più lo stile "foglio di calcolo" per le voci della scheda: una
+     casella di scrittura per ogni voce, mai un'unica area di testo condivisa.
+     Prefisso "an-" su ogni classe nuova per non toccare nient'altro. */
+  .an-tabs{ display:flex; align-items:center; gap:4px; margin-bottom:18px; flex-wrap:wrap; }
+  .an-tab{
+    font-family:inherit; font-size:12.8px; font-weight:600; padding:9px 18px;
+    border:1px solid var(--border); border-radius:10px 10px 0 0; cursor:pointer;
+    background:var(--border-soft); color:var(--ink-faint); user-select:none;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .an-tab:hover{ background:var(--accent-soft); color:var(--accent-ink); border-color:var(--accent); }
+  .an-tab.active{ background:var(--surface-raised); color:var(--accent-ink); box-shadow:0 -2px 0 var(--accent) inset; }
+  .an-save-indicator{
+    display:flex; align-items:center; gap:7px; font-size:12px; font-weight:600;
+    padding:6px 12px 6px 10px; border-radius:999px; background:var(--good-soft); color:var(--good);
+    white-space:nowrap; transition:background .25s ease, color .25s ease; margin-left:auto;
+  }
+  .an-save-indicator .dot{ width:7px; height:7px; border-radius:50%; background:currentColor; flex:none; }
+  .an-save-indicator.saving{ background:var(--accent-soft); color:var(--accent-ink); }
+  .an-save-indicator.saving .dot{ animation:anPulseDot 1s ease-in-out infinite; }
+  .an-save-indicator.pending{ background:var(--warning-soft); color:#7A5E13; }
+  @keyframes anPulseDot{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+
+  .an-xl-sezione-sub{ font-size:12px; color:var(--ink-faint); margin:0 0 10px; }
+  .an-xl-grid{ border:1px solid var(--border-soft); border-radius:var(--radius-s); overflow:hidden; }
+  .an-xl-riga{ display:grid; grid-template-columns:230px 1fr; border-top:1px solid var(--border-soft); }
+  .an-xl-riga:first-child{ border-top:none; }
+  .an-xl-cella-label{
+    display:flex; align-items:center; padding:0 14px; font-size:12.6px; font-weight:500;
+    color:var(--ink-soft); background:var(--paper); border-right:1px solid var(--border-soft);
+    min-height:38px; line-height:1.3;
+  }
+  .an-xl-cella-valore{ display:flex; align-items:stretch; min-height:38px; background:var(--surface-raised); }
+  .an-xl-input, .an-xl-select{
+    width:100%; border:none; background:transparent; font-family:var(--font-mono); font-size:13px;
+    color:var(--ink); padding:0 14px; outline-offset:-2px;
+  }
+  textarea.an-xl-input{ resize:none; overflow:hidden; padding:9px 14px; line-height:1.45; min-height:38px; display:block; }
+  .an-xl-input::placeholder{ color:var(--ink-faint); font-family:var(--font-body); font-style:italic; }
+  .an-xl-input:focus, .an-xl-select:focus{ background:var(--accent-soft); outline:2px solid var(--accent); }
+  .an-xl-select{ cursor:pointer; appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2348564C' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 14px center; padding-right:30px;
+  }
+  .an-xl-readonly{ color:var(--ink-faint); font-style:italic; }
+  .an-xl-unit{ display:flex; align-items:center; padding:0 14px 0 0; color:var(--ink-faint); font-size:12px; font-family:var(--font-mono); }
+  .an-xl-cella-valore.split{ display:grid; grid-template-columns:1fr 1fr; }
+  .an-xl-cella-valore.split > div{ display:flex; align-items:center; border-right:1px solid var(--border-soft); }
+  .an-xl-cella-valore.split > div:last-child{ border-right:none; }
+
+  .an-pasto-card{ border:1px solid var(--border-soft); border-radius:var(--radius-s); margin-bottom:8px; overflow:hidden; }
+  .an-pasto-card:last-child{ margin-bottom:0; }
+  .an-pasto-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 12px;
+    background:var(--accent-soft); color:var(--accent-ink); font-weight:600; font-size:12.5px;
+  }
+  .an-pasto-head .an-orario-wrap{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:500; }
+  .an-pasto-head input.an-ora{
+    width:68px; border:1px solid var(--border); border-radius:6px; background:var(--surface-raised);
+    font-family:var(--font-mono); font-size:12px; padding:3px 6px; color:var(--ink);
+  }
+  .an-pasto-body{ padding:8px 12px 10px; display:flex; flex-direction:column; gap:7px; }
+  .an-pasto-field label{ display:block; font-size:10.8px; font-weight:600; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px; }
+  .an-pasto-field textarea{
+    width:100%; min-height:36px; resize:none; overflow:hidden; font-family:var(--font-body); font-size:12.6px;
+    line-height:1.45; color:var(--ink); border:1px solid var(--border-soft); border-radius:7px; padding:6px 9px; background:var(--surface);
+  }
+  .an-pasto-field textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; background:var(--surface-raised); }
+  .an-opzioni-list{ display:flex; flex-direction:column; gap:4px; }
+  .an-opzioni-list .an-op-riga{ display:flex; align-items:flex-start; gap:6px; }
+  .an-opzioni-list .an-op-num{ font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); width:14px; flex:none; text-align:right; padding-top:6px; }
+  .an-opzioni-list textarea{
+    flex:1; border:1px solid var(--border-soft); border-radius:6px; background:var(--surface); font-family:var(--font-body);
+    font-size:12.3px; padding:5px 8px; color:var(--ink); resize:none; overflow:hidden; line-height:1.4; min-height:28px;
+  }
+  .an-opzioni-list textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; background:var(--surface-raised); }
+  .an-opzioni-list .an-op-remove{
+    flex:none; width:24px; height:24px; margin-top:1px; border-radius:6px; border:1px solid var(--border-soft);
+    background:var(--surface); color:var(--critical); font-size:15px; font-weight:700; cursor:pointer; line-height:1;
+    display:flex; align-items:center; justify-content:center; font-family:inherit;
+  }
+  .an-opzioni-list .an-op-remove:hover{ background:var(--critical-soft); }
+
+  .an-pasto-extra{ display:flex; flex-direction:column; gap:8px; margin-top:2px; padding-top:9px; border-top:1px dashed var(--border-soft); }
+  .an-pasto-extra-riga{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .an-pasto-extra-riga label{ font-size:11.3px; font-weight:600; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.03em; flex:none; min-width:108px; }
+  .an-pasto-extra textarea{
+    width:100%; min-height:38px; resize:none; overflow:hidden; font-family:var(--font-body); font-size:12.6px;
+    line-height:1.45; color:var(--ink); border:1px solid var(--border-soft); border-radius:7px; padding:6px 9px; background:var(--surface);
+  }
+  .an-pasto-extra textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; background:var(--surface-raised); }
+
+  .an-scala10{ display:flex; flex-wrap:wrap; gap:7px; }
+  .an-scala10 button{
+    width:32px; height:32px; border-radius:50%; border:1px solid var(--border); background:var(--surface-raised);
+    color:var(--ink-soft); font-family:var(--font-mono); font-size:12.8px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:0;
+    transition:background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  .an-scala10 button:hover{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink); }
+  .an-scala10 button.active{ background:var(--accent); color:#fff; border-color:transparent; transform:scale(1.1); }
+  .an-xl-cella-valore.an-scala-cell{ align-items:center; padding:8px 14px; }
+
+  .an-controllo-card{ border:1px solid var(--border-soft); border-radius:var(--radius-m); margin-bottom:14px; overflow:hidden; }
+  .an-controllo-top{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 18px;
+    background:var(--paper); cursor:pointer; user-select:none;
+  }
+  .an-controllo-top .sx{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .an-controllo-top input.an-data{
+    border:1px solid var(--border); border-radius:7px; background:var(--surface-raised); font-family:var(--font-mono);
+    font-size:12.8px; padding:5px 9px; color:var(--ink);
+  }
+  .an-controllo-top .an-badge{
+    font-size:11.3px; font-weight:700; color:var(--accent-ink); background:var(--accent-soft); border-radius:999px; padding:3px 10px;
+  }
+  .an-controllo-top .an-chevron{ color:var(--ink-faint); font-size:20px; line-height:1; transition:transform .15s ease; flex:none; }
+  .an-controllo-card.open .an-chevron{ transform:rotate(180deg); }
+  .an-controllo-body{ padding:18px; }
+  .an-controllo-card:not(.open) .an-controllo-body{ display:none; }
+
+  .an-domande-list{ display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+  .an-domande-list .an-dom-riga{ display:flex; align-items:flex-start; gap:7px; }
+  .an-domande-list .an-dom-num{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); width:16px; flex:none; text-align:right; padding-top:7px; }
+  .an-domande-list textarea{
+    flex:1; border:1px solid var(--border-soft); border-radius:6px; background:var(--surface); font-family:var(--font-body);
+    font-size:12.8px; padding:6px 9px; color:var(--ink); resize:none; overflow:hidden; line-height:1.4; min-height:30px;
+  }
+  .an-domande-list textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; background:var(--surface-raised); }
+
+  @media (max-width: 680px){
+    .an-xl-riga{ grid-template-columns:1fr; }
+    .an-xl-cella-label{ border-right:none; border-bottom:1px solid var(--border-soft); min-height:auto; padding:8px 12px; }
   }
 </style>
 
@@ -2045,6 +2197,7 @@
 
       <div class="tabs">
         <button class="tab-btn active" data-tab="panoramica" onclick="setNutriTab('panoramica')">Panoramica</button>
+        <button class="tab-btn" data-tab="anamnesi" onclick="setNutriTab('anamnesi')">Anamnesi</button>
         <button class="tab-btn" data-tab="piano" onclick="setNutriTab('piano')">Piano alimentare</button>
         <button class="tab-btn" data-tab="creapiano" onclick="setNutriTab('creapiano')">Crea piano</button>
         <button class="tab-btn" data-tab="pianogenerico" onclick="setNutriTab('pianogenerico')">Piano Generico</button>
@@ -2106,6 +2259,48 @@
               </div>
               <button class="btn small" style="margin-top:13px; width:100%; justify-content:center;" onclick="setNutriTab('piano')">Vai alla sezione piano →</button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- ANAMNESI ---- -->
+      <div class="tab-panel" id="tab-anamnesi">
+        <div class="an-tabs">
+          <div class="an-tab active" data-an-tab="anamnesi" onclick="anSetSheet('anamnesi')">Anamnesi</div>
+          <div class="an-tab" data-an-tab="controlli" onclick="anSetSheet('controlli')">Controlli</div>
+          <div class="an-save-indicator" id="an-save-indicator"><span class="dot"></span><span id="an-save-indicator-text">Salvato</span></div>
+        </div>
+
+        <div id="an-body-anamnesi">
+          <div class="card">
+            <div class="card-head">
+              <div><h3>Generalità</h3><p>Una casella per ogni voce: clicca e scrivi solo nello spazio che ti serve.</p></div>
+            </div>
+            <div class="an-xl-grid" id="an-grid-generalita"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div><h3>Anamnesi personale</h3></div></div>
+            <div class="an-xl-grid" id="an-grid-personale"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div><h3>Anamnesi alimentare</h3><p>Pasti della giornata</p></div></div>
+            <div id="an-pasti-wrap"></div>
+            <p class="an-xl-sezione-sub" style="margin-top:16px;">Abitudini a tavola</p>
+            <div class="an-xl-grid" id="an-grid-abitudini"></div>
+            <p class="an-xl-sezione-sub" style="margin-top:16px;">Top 3 alimenti ai quali non rinuncerebbe</p>
+            <div class="an-xl-grid" id="an-grid-top3"></div>
+          </div>
+        </div>
+
+        <div id="an-body-controlli" style="display:none;">
+          <div class="card">
+            <div class="card-head">
+              <div><h3>Controlli</h3><p>Un controllo per ogni visita di follow-up — ciascuno con la sua data, si aggiungono nel tempo.</p></div>
+            </div>
+            <div id="an-controlli-wrap"></div>
+            <button class="btn primary small" id="an-btn-nuovo-controllo" onclick="anNuovoControlloClick_()" style="margin-top:10px;">+ Nuovo controllo</button>
           </div>
         </div>
       </div>
@@ -2949,6 +3144,11 @@
     aggiungiPaziente:      { fn:'aggiungi_paziente',      args:b => ({ p_codice: b.codice, p_paziente: b.paziente }) },
     modificaPaziente:      { fn:'modifica_paziente',      args:b => ({ p_codice: b.codice, p_codice_attuale: b.codiceAttuale, p_paziente: b.paziente }) },
     aggiornaStatoPaziente: { fn:'aggiorna_stato_paziente', args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_stato_tipo: b.statoTipo, p_stato_testo: b.statoTesto }) },
+    // ---- Scheda Anamnesi + Controlli (vedi istruzioni SQL in chat) ----
+    anamnesiLeggi:   { fn:'anamnesi_leggi',   args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
+    anamnesiSalva:   { fn:'anamnesi_salva',   args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_dati: b.dati }) },
+    controlliLeggi:  { fn:'controlli_leggi',  args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
+    controlloSalva:  { fn:'controllo_salva',  args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_id: b.id || null, p_data: b.data, p_campi: b.campi, p_domande: b.domande }) },
     salvaPianoStrutturato: { fn:'salva_piano_strutturato', args:b => ({
       p_codice: b.codice, p_paziente: b.paziente, p_target: b.target, p_plan: b.plan,
       p_kcal: b.kcal, p_prot: b.prot, p_carb: b.carb, p_zuccheri: b.zuccheri,
@@ -5254,6 +5454,7 @@
   }
 
   async function selectPatientByCode(codice){
+    await anFlushIfDirty_(); // salva subito eventuali modifiche non ancora scritte prima di cambiare paziente
     codice = codiceStr_(codice);
     pazientiRecentiSegna_(codice);
     currentPatientCode = codice;
@@ -8173,6 +8374,464 @@
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.screen===name));
   }
 
+  /* ================= SCHEDA ANAMNESI (lato nutrizionista) =================
+     Stessa logica del mockup rivisto insieme (una casella per ogni voce, stile
+     foglio di calcolo), ma salvata davvero su Supabase invece che in locale:
+     stesso debounce (1.2s) + salvataggio forzato ogni minuto del mockup,
+     scoped per SESSION.codice + currentPatientCode come tutto il resto del
+     programma (vedi misurazioni/piano). ========================= */
+
+  var AN_GENERALITA = [
+    { key:'indirizzo', label:'Indirizzo', placeholder:'Indirizzo e n° civico' },
+    { key:'capProv', label:'Cap e provincia', placeholder:'CAP, provincia' },
+    { key:'cf', label:'C.F.', placeholder:'Codice fiscale' },
+    { key:'piva', label:'P. IVA', placeholder:'Se presente' },
+    { key:'email', label:'Email', placeholder:'Indirizzo email' },
+    { key:'ricevePiano', label:'Come vuole ricevere il piano?', type:'select', options:['', 'Email', 'WhatsApp', 'Cartaceo a mano', 'Altro'] },
+    { key:'natoA', label:'Nato a', placeholder:'Città' },
+    { key:'natoIl', label:'Nato il', type:'date' },
+  ];
+
+  var AN_PERSONALE = [
+    { key:'pesoAltezza', label:'Peso attuale / Altezza', type:'pesoAltezza' },
+    { key:'bmi', label:'BMI', type:'bmi' },
+    { key:'storicoPeso', label:'Storico del peso', placeholder:'Andamento nel tempo, variazioni recenti…' },
+    { key:'diete', label:'Diete precedenti', placeholder:'Diete già seguite, con chi, risultati…' },
+    { key:'famiglia', label:'Famiglia', placeholder:'Patologie o abitudini rilevanti in famiglia' },
+    { key:'lavoroOre', label:'Lavoro (ore a settimana)', placeholder:'Es. 40h, ufficio' },
+    { key:'attivitaFisica', label:'Attività fisica', placeholder:'Sport praticati, frequenza' },
+    { key:'idratazione', label:'Idratazione', placeholder:'Litri di acqua al giorno circa' },
+    { key:'fumo', label:'Fumo', placeholder:'Sì/No, quante sigarette' },
+    { key:'alcol', label:'Alcol', placeholder:'Frequenza e quantità' },
+    { key:'regimeAlimentare', label:'Regime alimentare', placeholder:'Onnivoro, vegetariano, vegano…' },
+    { key:'oreSonno', label:'Ore di sonno', placeholder:'Es. 7h, qualità' },
+    { key:'cicloMestruale', label:'Ciclo mestruale', placeholder:'Regolare/irregolare, note' },
+    { key:'alvo', label:'Alvo', placeholder:'Regolare/irregolare' },
+    { key:'intolleranze', label:'Intolleranze o allergie', placeholder:'Alimentari e non' },
+    { key:'patologie', label:'Patologie in atto', placeholder:'Patologie attuali' },
+    { key:'motivoVisita', label:'Motivo della visita', placeholder:'Perché il paziente è qui oggi — anche un paragrafo.' },
+  ];
+
+  var AN_PASTI = [
+    { key:'colazione', nome:'Colazione', opzioni:3 },
+    { key:'spuntinoMattina', nome:'Spuntino (mattina)', opzioni:3 },
+    { key:'pranzo', nome:'Pranzo', opzioni:3, extra:true },
+    { key:'merenda', nome:'Merenda (spuntino pomeriggio)', opzioni:3 },
+    { key:'cena', nome:'Cena', opzioni:3, extra:true },
+  ];
+
+  var AN_ABITUDINI = [
+    { key:'pianoSettimanale', label:'Piano settimanale, sì o no?', type:'select', options:['', 'Sì', 'No'] },
+    { key:'pastoFame', label:'Pasto dove senti di più la fame' },
+    { key:'pastoMangiaDiPiu', label:'Pasto dove mangi di più' },
+    { key:'saltaPasto', label:'Capita di saltare un pasto?' },
+    { key:'mangiaNonFame', label:'Capita di mangiare non per fame?' },
+    { key:'mangiaVeloce', label:'Mangi velocemente?' },
+    { key:'weekendDiverso', label:'Nel weekend mangia diversamente?' },
+    { key:'fuoriCena', label:'Quante volte vai fuori a cena?' },
+    { key:'problemiPesa', label:'Problemi con la pesa per alimenti?' },
+  ];
+
+  var AN_CONTROLLO_CAMPI = [
+    { key:'pianoSeguito', label:'Piano seguito da 1 a 10', type:'scala10' },
+    { key:'andamentoPercorso', label:'Andamento percorso' },
+    { key:'difficolta', label:'Difficoltà maggiori' },
+    { key:'alimentiNonGraditi', label:'Alimenti non graditi' },
+    { key:'acqua', label:'Acqua' },
+    { key:'alvo', label:'Alvo' },
+    { key:'energie', label:'Energie' },
+    { key:'sonno', label:'Sonno' },
+    { key:'frutta', label:'Frutta' },
+    { key:'verdura', label:'Verdura' },
+    { key:'colazione', label:'Colazione' },
+    { key:'spuntinoMattino', label:'Spuntino mattino' },
+    { key:'spuntinoPomeriggio', label:'Spuntino pomeriggio' },
+    { key:'pranzo', label:'Pranzo' },
+    { key:'cena', label:'Cena' },
+    { key:'dopoCena', label:'Dopo cena' },
+    { key:'attivitaFisica', label:"Attività fisica" },
+    { key:'modificheDaEffettuare', label:'Modifiche da effettuare' },
+  ];
+
+  var anState = { generale:{}, personale:{}, pasti:{}, abitudini:{}, top3:{} };
+  var anControlli = [];
+  var anLoadedKey = null; // "codice|paziente" attualmente caricato in anState/anControlli
+  var anSheet = 'anamnesi';
+  var anDirtyAnamnesi = false;
+  var anDirtyControlli = {}; // { [c.id]: true } — c.id e' la chiave stabile lato client, non il dbId
+  var anSaveTimer = null, anHardSaveTimer = null;
+
+  function anEl(tag, cls, html){
+    var e = document.createElement(tag);
+    if(cls) e.className = cls;
+    if(html !== undefined) e.innerHTML = html;
+    return e;
+  }
+  function anAutoResize(ta){ ta.style.height='auto'; ta.style.height = Math.max(parseInt(ta.dataset.minh||'0',10), ta.scrollHeight) + 'px'; }
+
+  function anRigaCampo(container, def, groupState){
+    var riga = anEl('div', 'an-xl-riga');
+    riga.appendChild(anEl('div', 'an-xl-cella-label', def.label));
+    var val = anEl('div', 'an-xl-cella-valore');
+
+    if(def.type === 'select'){
+      var sel = anEl('select', 'an-xl-select');
+      (def.options||[]).forEach(function(o){
+        var opt = anEl('option', null, o || '— non specificato —'); opt.value = o; sel.appendChild(opt);
+      });
+      sel.value = groupState[def.key] || '';
+      sel.addEventListener('change', function(){ groupState[def.key] = sel.value; anDirtyAnamnesi = true; anScheduleSave(); });
+      val.appendChild(sel);
+    } else if(def.type === 'date'){
+      var inpD = anEl('input', 'an-xl-input'); inpD.type = 'date';
+      inpD.value = groupState[def.key] || '';
+      inpD.addEventListener('input', function(){ groupState[def.key] = inpD.value; anDirtyAnamnesi = true; anScheduleSave(); });
+      val.appendChild(inpD);
+    } else if(def.type === 'pesoAltezza'){
+      val.classList.add('split');
+      var d1 = anEl('div'); var i1 = anEl('input','an-xl-input'); i1.placeholder='Peso'; i1.inputMode='decimal';
+      i1.value = groupState.peso || ''; i1.addEventListener('input', function(){ groupState.peso = i1.value; anAggiornaBMI(); anDirtyAnamnesi = true; anScheduleSave(); });
+      var u1 = anEl('span','an-xl-unit','kg'); d1.appendChild(i1); d1.appendChild(u1);
+      var d2 = anEl('div'); var i2 = anEl('input','an-xl-input'); i2.placeholder='Altezza'; i2.inputMode='decimal';
+      i2.value = groupState.altezza || ''; i2.addEventListener('input', function(){ groupState.altezza = i2.value; anAggiornaBMI(); anDirtyAnamnesi = true; anScheduleSave(); });
+      var u2 = anEl('span','an-xl-unit','m'); d2.appendChild(i2); d2.appendChild(u2);
+      val.appendChild(d1); val.appendChild(d2);
+    } else if(def.type === 'bmi'){
+      var bmiSpan = anEl('div', 'an-xl-readonly', '—');
+      bmiSpan.id = 'an-bmi-calcolato'; bmiSpan.style.padding = '0 14px';
+      val.appendChild(bmiSpan);
+    } else {
+      var inp = anEl('textarea', 'an-xl-input'); inp.rows = 1; inp.dataset.minh = '38';
+      inp.placeholder = def.placeholder || '';
+      inp.value = groupState[def.key] || '';
+      inp.addEventListener('input', function(){ groupState[def.key] = inp.value; anAutoResize(inp); anDirtyAnamnesi = true; anScheduleSave(); });
+      val.appendChild(inp);
+      setTimeout(function(){ anAutoResize(inp); }, 0);
+    }
+    riga.appendChild(val);
+    container.appendChild(riga);
+  }
+
+  function anAggiornaBMI(){
+    var p = parseFloat((anState.personale.peso||'').replace(',','.'));
+    var h = parseFloat((anState.personale.altezza||'').replace(',','.'));
+    var out = document.getElementById('an-bmi-calcolato');
+    if(!out) return;
+    if(p > 0 && h > 0){
+      out.textContent = (p / (h*h)).toFixed(1);
+      out.classList.remove('an-xl-readonly');
+    } else {
+      out.textContent = 'inserisci peso e altezza';
+      out.classList.add('an-xl-readonly');
+    }
+  }
+
+  function anRenderOpzioniList(list, p, st){
+    list.innerHTML = '';
+    var opzioni = st.opzioni;
+    while(opzioni.length < p.opzioni) opzioni.push('');
+    opzioni.forEach(function(val, idx){
+      var row = anEl('div','an-op-riga');
+      row.appendChild(anEl('span','an-op-num', (idx+1)+'.'));
+      var oi = anEl('textarea'); oi.rows = 1; oi.dataset.minh = '28'; oi.value = val || '';
+      oi.addEventListener('input', function(){ opzioni[idx] = oi.value; anAutoResize(oi); anDirtyAnamnesi = true; anScheduleSave(); });
+      row.appendChild(oi);
+      var rm = anEl('button','an-op-remove','−'); rm.type = 'button'; rm.setAttribute('aria-label','Rimuovi riga');
+      rm.addEventListener('click', function(){ opzioni.splice(idx, 1); anRenderOpzioniList(list, p, st); anDirtyAnamnesi = true; anScheduleSave(); });
+      row.appendChild(rm);
+      list.appendChild(row);
+    });
+    setTimeout(function(){ list.querySelectorAll('textarea').forEach(anAutoResize); }, 0);
+  }
+
+  function anRenderPasti(){
+    var wrap = document.getElementById('an-pasti-wrap');
+    wrap.innerHTML = '';
+    AN_PASTI.forEach(function(p){
+      if(!anState.pasti[p.key]) anState.pasti[p.key] = { orario:'', cosa:'', opzioni:[] };
+      var st = anState.pasti[p.key];
+      if(!st.opzioni) st.opzioni = [];
+      var card = anEl('div','an-pasto-card');
+      var head = anEl('div','an-pasto-head');
+      head.appendChild(anEl('span', null, p.nome));
+      var oraWrap = anEl('span','an-orario-wrap'); oraWrap.appendChild(document.createTextNode('ore '));
+      var oraInp = anEl('input','an-ora'); oraInp.placeholder='--:--'; oraInp.value = st.orario || '';
+      oraInp.addEventListener('input', function(){ st.orario = oraInp.value; anDirtyAnamnesi = true; anScheduleSave(); });
+      oraWrap.appendChild(oraInp);
+      head.appendChild(oraWrap);
+      card.appendChild(head);
+
+      var body = anEl('div','an-pasto-body');
+      var f1 = anEl('div','an-pasto-field'); f1.appendChild(anEl('label', null, 'Cosa mangia solitamente'));
+      var ta = anEl('textarea'); ta.dataset.minh='36'; ta.value = st.cosa || '';
+      ta.addEventListener('input', function(){ st.cosa = ta.value; anAutoResize(ta); anDirtyAnamnesi = true; anScheduleSave(); });
+      f1.appendChild(ta); body.appendChild(f1);
+
+      var f2 = anEl('div','an-pasto-field'); f2.appendChild(anEl('label', null, 'Opzioni da inserire nel piano'));
+      var list = anEl('div','an-opzioni-list');
+      anRenderOpzioniList(list, p, st);
+      f2.appendChild(list);
+      var addOpz = anEl('button','btn small','+ Aggiungi riga'); addOpz.type = 'button';
+      addOpz.style.marginTop = '6px'; addOpz.style.alignSelf = 'flex-start';
+      addOpz.addEventListener('click', function(){ st.opzioni.push(''); anRenderOpzioniList(list, p, st); anDirtyAnamnesi = true; anScheduleSave(); });
+      f2.appendChild(addOpz);
+      body.appendChild(f2);
+
+      if(p.extra){
+        var extra = anEl('div','an-pasto-extra');
+        var rBase = anEl('div','an-pasto-extra-riga');
+        rBase.appendChild(anEl('label', null, 'Cereale o pane'));
+        var taBase = anEl('textarea'); taBase.placeholder = 'Es. riso, pane integrale, pasta…'; taBase.value = st.base || '';
+        taBase.addEventListener('input', function(){ st.base = taBase.value; anAutoResize(taBase); anDirtyAnamnesi = true; anScheduleSave(); });
+        rBase.appendChild(taBase);
+        extra.appendChild(rBase);
+
+        var rVerdure = anEl('div','an-pasto-extra-riga');
+        rVerdure.appendChild(anEl('label', null, 'Verdure'));
+        var taV = anEl('textarea'); taV.placeholder = 'Due righe, giusto per segnare le preferenze…'; taV.value = st.verdure || '';
+        taV.addEventListener('input', function(){ st.verdure = taV.value; anAutoResize(taV); anDirtyAnamnesi = true; anScheduleSave(); });
+        rVerdure.appendChild(taV);
+        extra.appendChild(rVerdure);
+
+        var rFonti = anEl('div','an-pasto-extra-riga');
+        rFonti.appendChild(anEl('label', null, 'Fonti proteiche'));
+        var taF = anEl('textarea'); taF.placeholder = 'Preferenze sulle fonti proteiche…'; taF.value = st.fontiProteiche || '';
+        taF.addEventListener('input', function(){ st.fontiProteiche = taF.value; anAutoResize(taF); anDirtyAnamnesi = true; anScheduleSave(); });
+        rFonti.appendChild(taF);
+        extra.appendChild(rFonti);
+
+        body.appendChild(extra);
+        setTimeout(function(){ anAutoResize(taBase); anAutoResize(taV); anAutoResize(taF); }, 0);
+      }
+
+      card.appendChild(body);
+      wrap.appendChild(card);
+      setTimeout(function(){ anAutoResize(ta); }, 0);
+    });
+  }
+
+  function anNuovoControllo(){
+    return { id: 'c' + Date.now() + Math.random().toString(36).slice(2,6), dbId:null, data: new Date().toISOString().slice(0,10), campi:{}, domande:['','',''] };
+  }
+
+  function anRenderControlli(){
+    var wrap = document.getElementById('an-controlli-wrap');
+    wrap.innerHTML = '';
+    if(anControlli.length === 0){
+      wrap.appendChild(anEl('p', 'an-xl-sezione-sub', 'Nessun controllo registrato ancora — clicca "Nuovo controllo" per aggiungere il primo.'));
+      return;
+    }
+    anControlli.forEach(function(c, idx){
+      var card = anEl('div', 'an-controllo-card' + (idx===0 ? ' open' : ''));
+      var top = anEl('div','an-controllo-top');
+      var sx = anEl('div','sx');
+      var dataInp = anEl('input','an-data'); dataInp.type='date'; dataInp.value = c.data;
+      dataInp.addEventListener('click', function(ev){ ev.stopPropagation(); });
+      dataInp.addEventListener('input', function(){ c.data = dataInp.value; anDirtyControlli[c.id] = true; anScheduleSave(); });
+      sx.appendChild(dataInp);
+      var badge = anEl('span','an-badge', c.campi.pianoSeguito ? ('Piano seguito: ' + c.campi.pianoSeguito + '/10') : 'Da compilare');
+      sx.appendChild(badge);
+      top.appendChild(sx);
+      var right = anEl('div', null);
+      var chev = anEl('span','an-chevron','▾'); right.appendChild(chev);
+      top.appendChild(right);
+      top.addEventListener('click', function(){ card.classList.toggle('open'); });
+      card.appendChild(top);
+
+      var body = anEl('div','an-controllo-body');
+      var grid = anEl('div','an-xl-grid');
+      AN_CONTROLLO_CAMPI.forEach(function(cc){
+        var riga = anEl('div','an-xl-riga');
+        riga.appendChild(anEl('div','an-xl-cella-label', cc.label));
+        var valCell = anEl('div','an-xl-cella-valore');
+        if(cc.type === 'scala10'){
+          valCell.classList.add('an-scala-cell');
+          var scala = anEl('div','an-scala10');
+          for(var n=1;n<=10;n++){
+            (function(n){
+              var b = anEl('button', null, String(n)); b.type='button'; b.dataset.v = String(n);
+              if(c.campi[cc.key] === String(n)) b.classList.add('active');
+              b.addEventListener('click', function(){
+                var already = c.campi[cc.key] === String(n);
+                c.campi[cc.key] = already ? '' : String(n);
+                scala.querySelectorAll('button').forEach(function(bb){ bb.classList.toggle('active', bb.dataset.v === c.campi[cc.key]); });
+                badge.textContent = c.campi.pianoSeguito ? ('Piano seguito: ' + c.campi.pianoSeguito + '/10') : 'Da compilare';
+                anDirtyControlli[c.id] = true; anScheduleSave();
+              });
+              scala.appendChild(b);
+            })(n);
+          }
+          valCell.appendChild(scala);
+        } else {
+          var inp = anEl('textarea','an-xl-input'); inp.rows = 1; inp.dataset.minh = '38'; inp.value = c.campi[cc.key] || '';
+          inp.addEventListener('input', function(){ c.campi[cc.key] = inp.value; anAutoResize(inp); anDirtyControlli[c.id] = true; anScheduleSave(); });
+          valCell.appendChild(inp);
+          setTimeout(function(){ anAutoResize(inp); }, 0);
+        }
+        riga.appendChild(valCell);
+        grid.appendChild(riga);
+      });
+      body.appendChild(grid);
+
+      var domWrap = anEl('div', null);
+      domWrap.appendChild(anEl('p','an-xl-sezione-sub','Domande poste durante il controllo'));
+      var domList = anEl('div','an-domande-list');
+      function anRenderDomande(){
+        domList.innerHTML = '';
+        c.domande.forEach(function(d, i){
+          var row = anEl('div','an-dom-riga');
+          row.appendChild(anEl('span','an-dom-num',(i+1)+'.'));
+          var di = anEl('textarea'); di.rows = 1; di.dataset.minh = '30'; di.value = d;
+          di.addEventListener('input', function(){ c.domande[i] = di.value; anAutoResize(di); anDirtyControlli[c.id] = true; anScheduleSave(); });
+          row.appendChild(di);
+          domList.appendChild(row);
+        });
+        setTimeout(function(){ domList.querySelectorAll('textarea').forEach(anAutoResize); }, 0);
+      }
+      anRenderDomande();
+      domWrap.appendChild(domList);
+      var addDom = anEl('button','btn small','+ Aggiungi domanda'); addDom.type='button'; addDom.style.marginTop='8px';
+      addDom.addEventListener('click', function(){ c.domande.push(''); anRenderDomande(); anDirtyControlli[c.id] = true; anScheduleSave(); });
+      domWrap.appendChild(addDom);
+      body.appendChild(domWrap);
+
+      card.appendChild(body);
+      wrap.appendChild(card);
+    });
+  }
+
+  function anRenderAnamnesi(){
+    var gG = document.getElementById('an-grid-generalita'); gG.innerHTML = '';
+    AN_GENERALITA.forEach(function(d){ anRigaCampo(gG, d, anState.generale); });
+
+    var gP = document.getElementById('an-grid-personale'); gP.innerHTML = '';
+    AN_PERSONALE.forEach(function(d){ anRigaCampo(gP, d, anState.personale); });
+    anAggiornaBMI();
+
+    anRenderPasti();
+
+    var gA = document.getElementById('an-grid-abitudini'); gA.innerHTML = '';
+    AN_ABITUDINI.forEach(function(d){ anRigaCampo(gA, d, anState.abitudini); });
+
+    var gT = document.getElementById('an-grid-top3'); gT.innerHTML = '';
+    [0,1,2].forEach(function(i){
+      anRigaCampo(gT, { key:'t'+i, label:(i+1)+'ª scelta', placeholder:'Un alimento' }, anState.top3);
+    });
+  }
+
+  function anStatoVuoto_(){ return { generale:{}, personale:{}, pasti:{}, abitudini:{}, top3:{} }; }
+
+  var anIndicatorEl, anIndicatorTextEl;
+  function anSetIndicator(stato, testo){
+    if(!anIndicatorEl) anIndicatorEl = document.getElementById('an-save-indicator');
+    if(!anIndicatorTextEl) anIndicatorTextEl = document.getElementById('an-save-indicator-text');
+    if(!anIndicatorEl || !anIndicatorTextEl) return;
+    anIndicatorEl.classList.remove('saving','pending');
+    if(stato) anIndicatorEl.classList.add(stato);
+    anIndicatorTextEl.textContent = testo;
+  }
+
+  async function anDoSave(){
+    if(!currentPatientCode) return;
+    var chiamate = [];
+    if(anDirtyAnamnesi){
+      anDirtyAnamnesi = false;
+      var statoDaSalvare = anState;
+      chiamate.push(apiPost('anamnesiSalva', { codice: SESSION.codice, paziente: currentPatientCode, dati: statoDaSalvare }).catch(function(){ anDirtyAnamnesi = true; }));
+    }
+    var idsSporchi = Object.keys(anDirtyControlli);
+    idsSporchi.forEach(function(cid){
+      delete anDirtyControlli[cid];
+      var c = anControlli.find(function(x){ return x.id === cid; });
+      if(!c) return;
+      chiamate.push(apiPost('controlloSalva', { codice: SESSION.codice, paziente: currentPatientCode, id: c.dbId, data: c.data, campi: c.campi, domande: c.domande })
+        .then(function(res){ if(res && res.ok && res.id) c.dbId = res.id; })
+        .catch(function(){ anDirtyControlli[cid] = true; }));
+    });
+    if(!chiamate.length){ anSetIndicator('', 'Salvato'); return; }
+    await Promise.all(chiamate);
+    anSetIndicator('', 'Salvato alle ' + new Date().toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' }));
+  }
+
+  function anScheduleSave(){
+    anSetIndicator('pending', 'Scrivendo…');
+    if(anSaveTimer) clearTimeout(anSaveTimer);
+    anSaveTimer = setTimeout(function(){
+      anSaveTimer = null;
+      anSetIndicator('saving', 'Salvataggio…');
+      anDoSave();
+    }, 1200);
+  }
+
+  async function anFlushIfDirty_(){
+    if(anSaveTimer){ clearTimeout(anSaveTimer); anSaveTimer = null; }
+    if(anDirtyAnamnesi || Object.keys(anDirtyControlli).length){
+      anSetIndicator('saving', 'Salvataggio…');
+      await anDoSave();
+    }
+  }
+
+  function anStartHardSaveInterval_(){
+    if(anHardSaveTimer) clearInterval(anHardSaveTimer);
+    anHardSaveTimer = setInterval(function(){
+      if(anDirtyAnamnesi || Object.keys(anDirtyControlli).length){ anSetIndicator('saving','Salvataggio…'); anDoSave(); }
+    }, 60000);
+  }
+  anStartHardSaveInterval_();
+
+  window.addEventListener('beforeunload', function(e){
+    if(anDirtyAnamnesi || Object.keys(anDirtyControlli).length){ e.preventDefault(); e.returnValue = ''; }
+  });
+
+  async function anEnsureLoaded_(){
+    var chiave = SESSION.codice + '|' + currentPatientCode;
+    if(anLoadedKey === chiave) return;
+    await anFlushIfDirty_();
+    anLoadedKey = chiave;
+    anState = anStatoVuoto_();
+    anControlli = [];
+    anSetIndicator('', 'Carico…');
+    try{
+      var resA = await apiGet('anamnesiLeggi', { codice: SESSION.codice, paziente: currentPatientCode });
+      if(resA && resA.ok && resA.dati && Object.keys(resA.dati).length){
+        anState = Object.assign(anStatoVuoto_(), resA.dati);
+      }
+    }catch(err){ /* resta scheda vuota: si puo' comunque scrivere, il prossimo salvataggio riprova */ }
+    try{
+      var resC = await apiGet('controlliLeggi', { codice: SESSION.codice, paziente: currentPatientCode });
+      if(resC && resC.ok && Array.isArray(resC.controlli)){
+        anControlli = resC.controlli.map(function(r){
+          return { id: 'db'+r.id, dbId: r.id, data: r.data, campi: r.campi || {}, domande: (r.domande && r.domande.length ? r.domande : ['','','']) };
+        });
+      }
+    }catch(err){ /* idem */ }
+    anSetIndicator('', (anDirtyAnamnesi || Object.keys(anDirtyControlli).length) ? 'Scrivendo…' : 'Salvato');
+  }
+
+  function anSetSheet(name){
+    anSheet = name;
+    document.querySelectorAll('.an-tab').forEach(function(t){ t.classList.toggle('active', t.dataset.anTab === name); });
+    document.getElementById('an-body-anamnesi').style.display = name === 'anamnesi' ? '' : 'none';
+    document.getElementById('an-body-controlli').style.display = name === 'controlli' ? '' : 'none';
+  }
+
+  function anNuovoControlloClick_(){
+    var c = anNuovoControllo();
+    anControlli.unshift(c);
+    anDirtyControlli[c.id] = true;
+    anRenderControlli();
+    var first = document.querySelector('#an-controlli-wrap .an-controllo-card');
+    if(first) first.classList.add('open');
+    anScheduleSave();
+  }
+
+  async function renderAnamnesiTab(){
+    await anEnsureLoaded_();
+    anRenderAnamnesi();
+    anRenderControlli();
+    anSetSheet(anSheet);
+  }
+
   /* ================= TAB SWITCHING (nutrizionista) ================= */
   function setNutriTab(name){
     document.querySelectorAll('#view-nutri .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===name));
@@ -8184,6 +8843,7 @@
     if(name==='pianogenerico') renderPianoGenericoTab();
     if(name==='misurazioni'){ renderMisCategorie(); renderBigChart(); renderSparkGrid(); }
     if(name==='confronto') renderCompareTable();
+    if(name==='anamnesi') renderAnamnesiTab();
   }
 
   /* ================= LOGIN / LOGOUT ================= */
