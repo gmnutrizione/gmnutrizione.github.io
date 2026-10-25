@@ -293,8 +293,6 @@
   }
   .phdr-chip .k{ color:rgba(255,255,255,.64); font-weight:500; }
   .phdr-chip .v{ color:#fff; font-weight:600; font-family:var(--font-mono); font-size:12px; }
-  .phdr-chip.accent{ background:rgba(255,255,255,.2); border-color:rgba(255,255,255,.34); }
-  .phdr-chip.accent .k{ color:rgba(255,255,255,.82); }
   #patient-status-select{
     font-family:var(--font-body); font-size:12px; font-weight:600; color:var(--ink-soft);
     border:1px solid var(--border); background:var(--surface-raised); border-radius:999px;
@@ -1617,6 +1615,31 @@
   }
   .an-domande-list textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; background:var(--surface-raised); }
 
+  .an-data-anamnesi-box{
+    display:flex; align-items:center; gap:8px; flex:none;
+    border:1px solid var(--border); border-radius:var(--radius-s); background:var(--surface-raised);
+    padding:7px 12px;
+  }
+  .an-data-anamnesi-box label{ font-size:11.5px; font-weight:600; color:var(--ink-soft); white-space:nowrap; }
+  .an-data-anamnesi-box input[type="date"]{
+    border:none; background:transparent; font-family:var(--font-mono); font-size:13px; color:var(--ink);
+    outline-offset:-2px; cursor:pointer;
+  }
+
+  /* ====== Scritte piene (non grigie) in tutta l'Anamnesi, tranne in Generalità ====== */
+  #an-body-anamnesi .card-head p{ color:var(--ink); }
+  #an-body-anamnesi #an-head-generalita p{ color:var(--ink-faint); }
+  #an-body-anamnesi .an-xl-sezione-sub{ color:var(--ink); }
+  #an-body-anamnesi .an-xl-cella-label{ color:var(--ink); }
+  #an-body-anamnesi #an-grid-generalita .an-xl-cella-label{ color:var(--ink-soft); }
+  #an-body-anamnesi .an-xl-input::placeholder{ color:var(--ink); }
+  #an-body-anamnesi #an-grid-generalita .an-xl-input::placeholder{ color:var(--ink-faint); }
+  #an-body-anamnesi .an-xl-readonly{ color:var(--ink); }
+  #an-body-anamnesi .an-xl-unit{ color:var(--ink); }
+  #an-body-anamnesi .an-pasto-field label{ color:var(--ink); }
+  #an-body-anamnesi .an-opzioni-list .an-op-num{ color:var(--ink); }
+  #an-body-anamnesi .an-pasto-extra-riga label{ color:var(--ink); }
+
   @media (max-width: 680px){
     .an-xl-riga{ grid-template-columns:1fr; }
     .an-xl-cella-label{ border-right:none; border-bottom:1px solid var(--border-soft); min-height:auto; padding:8px 12px; }
@@ -2228,8 +2251,7 @@
         <div class="phdr-chip-row">
           <span class="phdr-chip"><span class="k">Età</span><span class="v" id="patient-age">—</span></span>
           <span class="phdr-chip"><span class="k">Obiettivo</span><span class="v" id="patient-goal">—</span></span>
-          <span class="phdr-chip accent"><span class="k">Prossimo controllo</span><span class="v" id="patient-next-visit">—</span></span>
-          <span class="phdr-chip"><span class="k">Data anamnesi</span><span class="v" id="patient-anamnesi-date">—</span></span>
+          <span class="phdr-chip"><span class="k">Prossimo controllo</span><span class="v" id="patient-next-visit">—</span></span>
         </div>
       </div>
 
@@ -2311,8 +2333,12 @@
 
         <div id="an-body-anamnesi">
           <div class="card">
-            <div class="card-head">
+            <div class="card-head" id="an-head-generalita">
               <div><h3>Generalità</h3><p>Una casella per ogni voce: clicca e scrivi solo nello spazio che ti serve.</p></div>
+              <div class="an-data-anamnesi-box">
+                <label for="an-data-anamnesi">Data anamnesi</label>
+                <input type="date" id="an-data-anamnesi" oninput="anDataAnamnesiCambiata_(this.value)">
+              </div>
             </div>
             <div class="an-xl-grid" id="an-grid-generalita"></div>
           </div>
@@ -3185,7 +3211,6 @@
     // ---- Scheda Anamnesi + Controlli (vedi istruzioni SQL in chat) ----
     anamnesiLeggi:   { fn:'anamnesi_leggi',   args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
     anamnesiSalva:   { fn:'anamnesi_salva',   args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_dati: b.dati }) },
-    anamnesiData:    { fn:'anamnesi_data',    args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
     controlliLeggi:  { fn:'controlli_leggi',  args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
     controlloSalva:  { fn:'controllo_salva',  args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_id: b.id || null, p_data: b.data, p_campi: b.campi, p_domande: b.domande }) },
     salvaPianoStrutturato: { fn:'salva_piano_strutturato', args:b => ({
@@ -5492,19 +5517,6 @@
     cpBottoneFinito_(btn);
   }
 
-  function fmtDataAnamnesi_(iso){
-    if(!iso) return 'Mai svolta';
-    const d = new Date(iso);
-    if(isNaN(d.getTime())) return 'Mai svolta';
-    return d.toLocaleDateString('it-IT', { day:'numeric', month:'short', year:'numeric' });
-  }
-
-  function phdrAggiornaDataAnamnesi_(res){
-    const el = document.getElementById('patient-anamnesi-date');
-    if(!el) return;
-    el.textContent = (res && res.ok) ? fmtDataAnamnesi_(res.creatoIl) : 'Mai svolta';
-  }
-
   async function selectPatientByCode(codice){
     await anFlushIfDirty_(); // salva subito eventuali modifiche non ancora scritte prima di cambiare paziente
     codice = codiceStr_(codice);
@@ -5522,13 +5534,8 @@
       document.getElementById('patient-status-led').className = 'status-led ' + stato;
       document.getElementById('patient-status-select').value = stato;
     }
-    document.getElementById('patient-anamnesi-date').textContent = '—';
     currentMetric = 'peso'; misCategoriaAttiva = 'peso';
-    const risultati = await Promise.all([
-      loadMisurazioni(codice), loadPiano(codice), loadPianoStrutturato(codice),
-      apiGet('anamnesiData', { codice: SESSION.codice, paziente: codice }).catch(function(){ return null; })
-    ]);
-    phdrAggiornaDataAnamnesi_(risultati[3]);
+    await Promise.all([loadMisurazioni(codice), loadPiano(codice), loadPianoStrutturato(codice)]);
     const activeTab = document.querySelector('#view-nutri .tab-btn.active');
     setNutriTab(activeTab ? activeTab.dataset.tab : 'panoramica');
   }
@@ -8760,6 +8767,9 @@
   }
 
   function anRenderAnamnesi(){
+    var elData = document.getElementById('an-data-anamnesi');
+    if(elData) elData.value = anState.dataAnamnesi || '';
+
     var gG = document.getElementById('an-grid-generalita'); gG.innerHTML = '';
     AN_GENERALITA.forEach(function(d){ anRigaCampo(gG, d, anState.generale); });
 
@@ -8778,7 +8788,13 @@
     });
   }
 
-  function anStatoVuoto_(){ return { generale:{}, personale:{}, pasti:{}, abitudini:{}, top3:{} }; }
+  function anStatoVuoto_(){ return { generale:{}, personale:{}, pasti:{}, abitudini:{}, top3:{}, dataAnamnesi:'' }; }
+
+  function anDataAnamnesiCambiata_(valore){
+    anState.dataAnamnesi = valore;
+    anDirtyAnamnesi = true;
+    anScheduleSave();
+  }
 
   var anIndicatorEl, anIndicatorTextEl;
   function anSetIndicator(stato, testo){
@@ -8793,10 +8809,8 @@
   async function anDoSave(){
     if(!currentPatientCode) return;
     var chiamate = [];
-    var stavaSalvandoAnamnesi = false;
     if(anDirtyAnamnesi){
       anDirtyAnamnesi = false;
-      stavaSalvandoAnamnesi = true;
       var statoDaSalvare = anState;
       chiamate.push(apiPost('anamnesiSalva', { codice: SESSION.codice, paziente: currentPatientCode, dati: statoDaSalvare }).catch(function(){ anDirtyAnamnesi = true; }));
     }
@@ -8812,15 +8826,6 @@
     if(!chiamate.length){ anSetIndicator('', 'Salvato'); return; }
     await Promise.all(chiamate);
     anSetIndicator('', 'Salvato alle ' + new Date().toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' }));
-    if(stavaSalvandoAnamnesi && !anDirtyAnamnesi){
-      // La "Data anamnesi" resta fissa alla data della prima visita: la impostiamo SOLO se prima
-      // non c'era ancora nessuna data (primissimo salvataggio in assoluto per questo paziente),
-      // mai nei salvataggi successivi — anche se poi si modifica la scheda, la data non deve cambiare.
-      var elAnData = document.getElementById('patient-anamnesi-date');
-      if(elAnData && elAnData.textContent === 'Mai svolta'){
-        phdrAggiornaDataAnamnesi_({ ok:true, creatoIl: new Date().toISOString() });
-      }
-    }
   }
 
   function anScheduleSave(){
