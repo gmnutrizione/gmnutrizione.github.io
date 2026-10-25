@@ -8461,21 +8461,21 @@
   var AN_PERSONALE = [
     { key:'pesoAltezza', label:'Peso attuale / Altezza', type:'pesoAltezza' },
     { key:'bmi', label:'BMI', type:'bmi' },
-    { key:'storicoPeso', label:'Storico del peso', placeholder:'Andamento nel tempo, variazioni recenti…' },
-    { key:'diete', label:'Diete precedenti', placeholder:'Diete già seguite, con chi, risultati…' },
-    { key:'famiglia', label:'Famiglia', placeholder:'Patologie o abitudini rilevanti in famiglia' },
-    { key:'lavoroOre', label:'Lavoro (ore a settimana)', placeholder:'Es. 40h, ufficio' },
-    { key:'attivitaFisica', label:'Attività fisica', placeholder:'Sport praticati, frequenza' },
-    { key:'idratazione', label:'Idratazione', placeholder:'Litri di acqua al giorno circa' },
-    { key:'fumo', label:'Fumo', placeholder:'Sì/No, quante sigarette' },
-    { key:'alcol', label:'Alcol', placeholder:'Frequenza e quantità' },
-    { key:'regimeAlimentare', label:'Regime alimentare', placeholder:'Onnivoro, vegetariano, vegano…' },
-    { key:'oreSonno', label:'Ore di sonno', placeholder:'Es. 7h, qualità' },
-    { key:'cicloMestruale', label:'Ciclo mestruale', placeholder:'Regolare/irregolare, note' },
-    { key:'alvo', label:'Alvo', placeholder:'Regolare/irregolare' },
-    { key:'intolleranze', label:'Intolleranze o allergie', placeholder:'Alimentari e non' },
-    { key:'patologie', label:'Patologie in atto', placeholder:'Patologie attuali' },
-    { key:'motivoVisita', label:'Motivo della visita', placeholder:'Perché il paziente è qui oggi — anche un paragrafo.' },
+    { key:'storicoPeso', label:'Storico del peso' },
+    { key:'diete', label:'Diete precedenti' },
+    { key:'famiglia', label:'Famiglia' },
+    { key:'lavoroOre', label:'Lavoro (ore a settimana)' },
+    { key:'attivitaFisica', label:'Attività fisica' },
+    { key:'idratazione', label:'Idratazione' },
+    { key:'fumo', label:'Fumo' },
+    { key:'alcol', label:'Alcol' },
+    { key:'regimeAlimentare', label:'Regime alimentare' },
+    { key:'oreSonno', label:'Ore di sonno' },
+    { key:'cicloMestruale', label:'Ciclo mestruale' },
+    { key:'alvo', label:'Alvo' },
+    { key:'intolleranze', label:'Intolleranze o allergie' },
+    { key:'patologie', label:'Patologie in atto' },
+    { key:'motivoVisita', label:'Motivo della visita' },
   ];
 
   var AN_PASTI = [
@@ -8555,10 +8555,10 @@
       val.appendChild(inpD);
     } else if(def.type === 'pesoAltezza'){
       val.classList.add('split');
-      var d1 = anEl('div'); var i1 = anEl('input','an-xl-input'); i1.placeholder='Peso'; i1.inputMode='decimal';
+      var d1 = anEl('div'); var i1 = anEl('input','an-xl-input'); i1.inputMode='decimal';
       i1.value = groupState.peso || ''; i1.addEventListener('input', function(){ groupState.peso = i1.value; anAggiornaBMI(); anDirtyAnamnesi = true; anScheduleSave(); });
       var u1 = anEl('span','an-xl-unit','kg'); d1.appendChild(i1); d1.appendChild(u1);
-      var d2 = anEl('div'); var i2 = anEl('input','an-xl-input'); i2.placeholder='Altezza'; i2.inputMode='decimal';
+      var d2 = anEl('div'); var i2 = anEl('input','an-xl-input'); i2.inputMode='decimal';
       i2.value = groupState.altezza || ''; i2.addEventListener('input', function(){ groupState.altezza = i2.value; anAggiornaBMI(); anDirtyAnamnesi = true; anScheduleSave(); });
       var u2 = anEl('span','an-xl-unit','m'); d2.appendChild(i2); d2.appendChild(u2);
       val.appendChild(d1); val.appendChild(d2);
@@ -8587,7 +8587,7 @@
       out.textContent = (p / (h*h)).toFixed(1);
       out.classList.remove('an-xl-readonly');
     } else {
-      out.textContent = 'inserisci peso e altezza';
+      out.textContent = '';
       out.classList.add('an-xl-readonly');
     }
   }
