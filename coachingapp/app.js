@@ -602,6 +602,40 @@ function apriSessioni(giorno) {
   showScreen("screen-sessioni");
 }
 
+// foto di intestazione: prima cerca su Supabase (esercizi/gruppi/<gruppo>.jpg), poi l'eventuale link nel foglio
+const _fotoGruppoCache = {};
+function slugGruppo(nome) {
+  return String(nome || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+function candidatiFotoGruppo(gruppo) {
+  const lista = [];
+  if (supabaseAttivo()) {
+    const base = SUPABASE_URL.replace(/\/+$/, "") + "/storage/v1/object/public/esercizi/gruppi/" + slugGruppo(gruppo);
+    ["jpg", "jpeg", "png", "webp"].forEach(e => lista.push(base + "." + e));
+  }
+  const foglio = (fotoGruppi[gruppo] || "").trim();
+  if (foglio && !foglio.includes("LINK_FOTO_DRIVE")) lista.push(foglio);
+  return lista;
+}
+function provaImmagine(url) {
+  return new Promise(res => { const im = new Image(); im.onload = () => res(true); im.onerror = () => res(false); im.src = url; });
+}
+async function trovaFotoGruppo(gruppo) {
+  if (_fotoGruppoCache[gruppo] !== undefined) return _fotoGruppoCache[gruppo];
+  let trovata = "";
+  for (const url of candidatiFotoGruppo(gruppo)) {
+    if (await provaImmagine(url)) { trovata = url; break; }
+  }
+  _fotoGruppoCache[gruppo] = trovata;
+  return trovata;
+}
+async function caricaFotoGruppo(gruppo, header) {
+  const url = await trovaFotoGruppo(gruppo);
+  if (url && currentGiorno && document.getElementById("day-header") === header) {
+    header.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.35)), url('${url}')`;
+  }
+}
+
 function openGiorno(giorno) {
   currentGiorno = giorno;
   const rows = esercizi.filter(r => r.Giorno === giorno)
@@ -623,13 +657,9 @@ function openGiorno(giorno) {
   chipRow.innerHTML = gruppiPrincipali.map(g => `<span class="chip">${g}</span>`).join("");
 
   const primoGruppo = gruppiPrincipali[0];
-  const foto = primoGruppo ? fotoGruppi[primoGruppo] : "";
   const header = document.getElementById("day-header");
-  if (foto && !foto.includes("LINK_FOTO_DRIVE")) {
-    header.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.35)), url('${foto}')`;
-  } else {
-    header.style.backgroundImage = "";
-  }
+  header.style.backgroundImage = "";
+  if (primoGruppo) caricaFotoGruppo(primoGruppo, header);
 
   renderElencoEsercizi(giorno);
   document.getElementById("concludi-btn").onclick = () => concludiAllenamento(giorno);
