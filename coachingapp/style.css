@@ -459,3 +459,16 @@ body {
 .img-pair figure{margin:0;position:relative;border-radius:14px;background:var(--surface-1);width:min(calc(var(--h) * .8),100%);aspect-ratio:4/5;justify-self:center;overflow:hidden}
 .img-pair img{width:100%;height:100%;object-fit:cover;display:block}
 .img-pair figcaption{position:absolute;left:8px;bottom:8px;font:600 10px 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--text-secondary);background:rgba(255,255,255,.88);padding:3px 7px;border-radius:6px}
+
+/* ---- blocco completato: sola lettura ---- */
+.lettura-nota { font-size: 13px; color: var(--text-secondary); margin: 4px 0 14px; line-height: 1.4; }
+.lettura-vuoto { font-size: 13px; color: var(--text-muted); margin: 6px 0; }
+.lettura-giorno { margin-bottom: 18px; }
+.lettura-giorno-titolo { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.02em; margin: 0 0 8px; }
+.lettura-seduta { background: var(--surface-1); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
+.lettura-seduta summary { font-weight: 700; font-size: 14px; cursor: pointer; }
+.lettura-riga { padding: 10px 0; border-top: 1px solid var(--border); }
+.lettura-seduta summary + .lettura-riga { margin-top: 10px; }
+.lettura-es { font-weight: 600; font-size: 14px; margin: 0 0 3px; }
+.lettura-serie { font-size: 13px; color: var(--text-primary); margin: 0; }
+.lettura-extra { font-size: 12px; color: var(--text-secondary); margin: 3px 0 0; font-style: italic; }

@@ -7,6 +7,7 @@ let clientiList = [];     // elenco Codice/Cliente/Link scheda
 let eserciziTotali = []; // tutte le righe del foglio del cliente, tutti i blocchi
 let esercizi = [];        // sottoinsieme del blocco attualmente aperto
 let currentBloccoNumero = 1;
+let storicoCliente = [];  // tutte le sedute concluse (tutti i blocchi), per la consultazione dei blocchi chiusi
 let archivio = {};        // nome esercizio -> {video, descrizione, alternative[]}
 let fotoGruppi = {};      // gruppo muscolare -> url foto
 let giorni = [];          // elenco ordinato dei giorni
@@ -75,6 +76,7 @@ async function caricaSchedaCliente() {
     eserciziTotali = datiCliente.filter(r => r.Esercizio && r.Esercizio.trim() !== "");
     currentBloccoNumero = Math.max(1, ...eserciziTotali.map(r => parseBloccoNum(r.Blocco)));
     applicaProgressi(progressi.progressi);
+    storicoCliente = progressi.storico || [];
     applicaStorico(progressi.storico);
     riprovaCoda(progressi.progressi);
     archivio = {};
@@ -246,7 +248,7 @@ function applicaStorico(righe) {
       const parti = t => String(t || "").split("+").map(x => x.trim()).filter(Boolean);
       const par = eserciziTotali.find(x => x.Giorno === giorno && (x["Gruppo muscolare"] || "") === gruppo && parti(x.Esercizio).length > 1 && parti(x.Esercizio).some(sn => normNomeP(sn) === normNomeP(es)));
       if (par) { nome = par.Esercizio; idx = parti(par.Esercizio).findIndex(sn => normNomeP(sn) === normNomeP(es)); }
-      const key = storageKey("input_" + giorno + "|" + gruppo + "|" + nome + "|s" + sess);
+      const key = inKey(giorno + "|" + gruppo + "|" + nome + "|s" + sess);
       let o = {};
       try { o = JSON.parse(localStorage.getItem(key) || "{}"); } catch (e) {}
       const sfx = idx >= 0 ? "_" + idx : "";
@@ -307,6 +309,11 @@ function fetchCsvGoogle(url) {
 // ============================================================
 // ACCESSO (vedi provaAccesso() piu' in alto)
 // ============================================================
+// i dati inseriti negli allenamenti sono separati per blocco (il blocco 1 mantiene le chiavi di sempre)
+function inKey(chiave, blocco) {
+  const b = blocco || currentBloccoNumero;
+  return storageKey("input_" + (b > 1 ? "b" + b + "_" : "") + chiave);
+}
 function storageKey(suffix) {
   return "gm_palestra_" + btoa(clienteCsvUrl).slice(0, 40) + "_" + suffix;
 }
@@ -402,10 +409,12 @@ function buildBlocchi() {
       card.innerHTML = `
         <div style="flex:1;">
           <p class="blocco-nome">Blocco ${i}</p>
-          <p class="blocco-stato">Completato</p>
+          <p class="blocco-stato">Completato &middot; solo lettura</p>
         </div>
         <span style="font-size:16px;">&#10003;</span>
       `;
+      card.style.cursor = "pointer";
+      card.addEventListener("click", () => apriBloccoLettura(i));
     } else {
       card.className = "blocco-card attivo";
       card.innerHTML = `
@@ -430,6 +439,65 @@ function buildBlocchi() {
     <span style="font-size:16px;">&#128274;</span>
   `;
   list.appendChild(prossimo);
+}
+
+// ============================================================
+// BLOCCHI COMPLETATI: SOLA LETTURA
+// ============================================================
+function escHtml(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+function formattaSerie(r, tipoCorpo) {
+  const kg = String(r.Kg || "").split("-").map(x => x.trim()).filter(x => x !== "");
+  const rep = String(r.Rep || "").split("-").map(x => x.trim()).filter(x => x !== "");
+  if (!tipoCorpo && kg.length && rep.length && kg.length === rep.length) {
+    return rep.map((x, i) => escHtml(kg[i]) + " kg &times; " + escHtml(x)).join(" &middot; ");
+  }
+  const parti = [];
+  if (!tipoCorpo && kg.length) parti.push(escHtml(kg.join(" - ")) + " kg");
+  if (rep.length) parti.push(escHtml(rep.join(" - ")) + " rep");
+  return parti.join(" &middot; ");
+}
+
+function apriBloccoLettura(numero) {
+  const righeBlocco = eserciziTotali.filter(r => parseBloccoNum(r.Blocco) === numero)
+    .sort((a, b) => (parseInt(a.Ordine) || 0) - (parseInt(b.Ordine) || 0));
+  const sedute = (storicoCliente || []).filter(r => parseBloccoNum(String(r.Blocco || "")) === numero);
+  document.getElementById("lettura-title").textContent = "Blocco " + numero;
+
+  const giorniOrd = [];
+  righeBlocco.forEach(r => { if (r.Giorno && !giorniOrd.includes(r.Giorno)) giorniOrd.push(r.Giorno); });
+  sedute.forEach(r => { if (r.Giorno && !giorniOrd.includes(r.Giorno)) giorniOrd.push(r.Giorno); });
+
+  let html = '<p class="lettura-nota">Blocco concluso: puoi rivedere quello che hai fatto, ma non modificarlo.</p>';
+  if (!sedute.length) html += '<p class="lettura-vuoto">Non ci sono dati registrati per questo blocco.</p>';
+
+  giorniOrd.forEach(giorno => {
+    const sedGiorno = sedute.filter(r => r.Giorno === giorno);
+    const nSedute = [...new Set(sedGiorno.map(r => parseInt(r.Sessione, 10)).filter(Boolean))].sort((a, b) => a - b);
+    html += '<div class="lettura-giorno"><p class="lettura-giorno-titolo">' + escHtml(giorno) + '</p>';
+    if (!nSedute.length) html += '<p class="lettura-vuoto">Nessun allenamento registrato.</p>';
+    nSedute.forEach(n => {
+      const righe = sedGiorno.filter(r => parseInt(r.Sessione, 10) === n);
+      const ordine = nome => { const i = righeBlocco.findIndex(x => normNomeP(x.Esercizio) === normNomeP(nome)); return i < 0 ? 999 : i; };
+      righe.sort((a, b) => ordine(a.Esercizio) - ordine(b.Esercizio));
+      html += '<details class="lettura-seduta"><summary>Allenamento ' + n + '</summary>';
+      righe.forEach(r => {
+        const def = righeBlocco.find(x => normNomeP(x.Esercizio) === normNomeP(r.Esercizio));
+        const corpo = def && String(def.Tipo || "").toLowerCase().includes("corpo");
+        const m = String(r.Commento || "").match(/^Fatica:\s*(\d+)\/10\.\s?([\s\S]*)$/);
+        const fatica = m ? m[1] : "";
+        const com = m ? m[2] : String(r.Commento || "");
+        html += '<div class="lettura-riga"><p class="lettura-es">' + escHtml(r.Esercizio) + '</p>' +
+          '<p class="lettura-serie">' + (formattaSerie(r, corpo) || "&ndash;") + '</p>' +
+          (fatica ? '<p class="lettura-extra">Fatica ' + escHtml(fatica) + '/10</p>' : "") +
+          (com ? '<p class="lettura-extra">&ldquo;' + escHtml(com) + '&rdquo;</p>' : "") + '</div>';
+      });
+      html += '</details>';
+    });
+    html += '</div>';
+  });
+  document.getElementById("lettura-body").innerHTML = html;
+  showScreen("screen-lettura");
 }
 
 function apriBlocco(numero) {
@@ -461,7 +529,7 @@ function resetAllenamenti() {
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     if (!k || !k.startsWith(storageKey("input_"))) continue;
-    const appartieneAlBlocco = giorniBlocco.some(g => k.startsWith(storageKey("input_" + g + "|")));
+    const appartieneAlBlocco = giorniBlocco.some(g => k.startsWith(inKey(g + "|")));
     if (appartieneAlBlocco) daRimuovere.push(k);
   }
   daRimuovere.forEach(k => localStorage.removeItem(k));
@@ -668,7 +736,7 @@ function openGiorno(giorno) {
 
 function getSavedInputRefs(giorno, gruppo, esercizio, campo) {
   const chiave = giorno + "|" + gruppo + "|" + esercizio + "|s" + currentSessione;
-  const saved = localStorage.getItem(storageKey("input_" + chiave));
+  const saved = localStorage.getItem(inKey(chiave));
   if (!saved) return null;
   return JSON.parse(saved)[campo];
 }
@@ -1261,7 +1329,7 @@ function inputKeyFor(dett) {
 }
 function getSavedInput(campo) {
   if (!currentDettaglio) return null;
-  const saved = localStorage.getItem(storageKey("input_" + inputKeyFor(currentDettaglio)));
+  const saved = localStorage.getItem(inKey(inputKeyFor(currentDettaglio)));
   if (!saved) return null;
   const obj = JSON.parse(saved);
   return obj[campo];
@@ -1269,14 +1337,14 @@ function getSavedInput(campo) {
 function getSavedInputSessione(sessione, campo) {
   if (!currentDettaglio) return null;
   const chiave = currentDettaglio.giorno + "|" + currentDettaglio.gruppo + "|" + currentDettaglio.esercizio + "|s" + sessione;
-  const saved = localStorage.getItem(storageKey("input_" + chiave));
+  const saved = localStorage.getItem(inKey(chiave));
   if (!saved) return null;
   const obj = JSON.parse(saved);
   return obj[campo];
 }
 function saveInput(campo, valore) {
   if (!currentDettaglio) return;
-  const key = storageKey("input_" + inputKeyFor(currentDettaglio));
+  const key = inKey(inputKeyFor(currentDettaglio));
   const obj = localStorage.getItem(key) ? JSON.parse(localStorage.getItem(key)) : {};
   obj[campo] = valore;
   localStorage.setItem(key, JSON.stringify(obj));
