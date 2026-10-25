@@ -2057,7 +2057,18 @@
                 <option value="Cena - Secondo piatto">Cena - Secondo piatto</option>
               </select>
             </div>
-            <div class="field" style="grid-column:1 / -1;"><label>Link foto (Google Drive)</label><input type="text" id="radm-foto" placeholder="Incolla qui il link di condivisione Drive dell'immagine del piatto"></div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label>Foto del piatto</label>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <img id="radm-foto-preview" alt="" style="display:none; width:64px; height:64px; object-fit:cover; border-radius:10px; border:1px solid var(--border);">
+                <label class="btn small ghost" style="margin:0; cursor:pointer;">
+                  <span id="radm-foto-btn-text">Carica foto</span>
+                  <input type="file" id="radm-foto-file" accept="image/*" style="display:none;" onchange="caricaFotoRicetta(this)">
+                </label>
+                <button type="button" class="btn small ghost" id="radm-foto-rimuovi" style="display:none;" onclick="rimuoviFotoRicetta()">Rimuovi</button>
+              </div>
+              <input type="hidden" id="radm-foto">
+            </div>
             <div class="field"><label>Porzioni della ricetta come scritta</label><input type="number" id="radm-porzioni" min="1" max="20" value="1"></div>
           </div>
 
@@ -6702,6 +6713,7 @@
     document.getElementById('radm-nome').value = ricetta ? ricetta.nome : '';
     document.getElementById('radm-categoria').value = ricetta ? ricetta.categoria : '';
     document.getElementById('radm-foto').value = ricetta ? ricetta.foto : '';
+    aggiornaAnteprimaFotoRicetta_();
     document.getElementById('radm-porzioni').value = ricetta ? ricetta.porzioni : 1;
     document.getElementById('radm-procedimento').value = ricetta ? ricetta.procedimento : '';
     document.getElementById('radm-commento').value = ricetta ? ricetta.commento : '';
@@ -6836,6 +6848,61 @@
       } else if(e.key === 'Escape'){ box.hidden = true; }
     });
   })();
+
+  // ---- Foto ricette: caricamento sul bucket Storage "ricette" (ridimensionata nel browser) ----
+  function aggiornaAnteprimaFotoRicetta_(){
+    const url = document.getElementById('radm-foto').value;
+    const img = document.getElementById('radm-foto-preview');
+    img.style.display = url ? '' : 'none';
+    if(url) img.src = url;
+    document.getElementById('radm-foto-rimuovi').style.display = url ? '' : 'none';
+    document.getElementById('radm-foto-btn-text').textContent = url ? 'Cambia foto' : 'Carica foto';
+  }
+  function rimuoviFotoRicetta(){
+    document.getElementById('radm-foto').value = '';
+    document.getElementById('radm-foto-file').value = '';
+    aggiornaAnteprimaFotoRicetta_();
+  }
+  function ridimensionaImmagine_(file, lato){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const urlTmp = URL.createObjectURL(file);
+      img.onload = () => {
+        const k = Math.min(1, lato / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(urlTmp);
+        c.toBlob(b => b ? resolve(b) : reject(new Error('Conversione non riuscita')), 'image/jpeg', 0.82);
+      };
+      img.onerror = () => { URL.revokeObjectURL(urlTmp); reject(new Error('Immagine non leggibile')); };
+      img.src = urlTmp;
+    });
+  }
+  async function caricaFotoRicetta(input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const errEl = document.getElementById('radm-form-error');
+    const testoEl = document.getElementById('radm-foto-btn-text');
+    errEl.textContent = '';
+    testoEl.textContent = 'Carico…';
+    try{
+      const blob = await ridimensionaImmagine_(file, 1000);
+      const nomeBase = (document.getElementById('radm-nome').value || 'ricetta').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40) || 'ricetta';
+      const percorso = nomeBase + '_' + Date.now() + '.jpg';
+      const res = await fetch(SUPABASE_URL + '/storage/v1/object/ricette/' + encodeURIComponent(percorso), {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'image/jpeg' },
+        body: blob,
+      });
+      if(!res.ok) throw new Error('Caricamento non riuscito (' + res.status + ')');
+      document.getElementById('radm-foto').value = SUPABASE_URL + '/storage/v1/object/public/ricette/' + encodeURIComponent(percorso);
+    } catch(err){
+      errEl.textContent = 'Foto non caricata: ' + err.message;
+    }
+    input.value = '';
+    aggiornaAnteprimaFotoRicetta_();
+  }
 
   async function salvaFormRicetta(){
     const errEl = document.getElementById('radm-form-error');
