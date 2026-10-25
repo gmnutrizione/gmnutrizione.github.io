@@ -44,6 +44,9 @@
     --font-display:'Fraunces', Georgia, 'Times New Roman', serif;
     --font-body:'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
     --font-mono:'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    /* Stesso sfumato verde scuro usato per il tag "N opzioni" nel Piano Generico */
+    --hdr-grad-1:#04352D;
+    --hdr-grad-2:#0A6E60;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark){
@@ -248,19 +251,50 @@
   .patient-status{ margin-top:5px; }
 
   .main{ min-width:0; }
+  /* ====== Intestazione paziente — sfumato verde scuro (stesso del tag "N opzioni" del Piano Generico) ====== */
   .patient-header{
-    display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap;
-    padding:20px 22px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-m);
-    box-shadow:var(--shadow-1); margin-bottom:22px;
+    background:linear-gradient(135deg, var(--hdr-grad-1) 0%, var(--hdr-grad-2) 100%);
+    border-radius:var(--radius-m); box-shadow:var(--shadow-2); padding:20px 22px;
+    margin-bottom:22px; position:relative; overflow:hidden;
   }
-  .patient-header h1{ font-size:23px; display:flex; align-items:center; gap:10px; }
-  .patient-header .goal{ font-size:13.5px; color:var(--ink-soft); margin-top:5px; max-width:46ch; }
-  .next-visit{ text-align:right; font-size:14.5px; font-weight:600; color:var(--ink-soft); }
-  .next-visit .date{ display:block; font-family:var(--font-mono); font-size:16px; color:var(--ink); font-weight:600; margin-top:3px; }
-  .status-led{ width:11px; height:11px; border-radius:50%; flex:none; }
-  .status-led.good{ background:var(--good); }
-  .status-led.warning{ background:var(--warning); }
-  .status-led.critical{ background:var(--critical); }
+  .patient-header::before{
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,.07), transparent 55%);
+  }
+  .patient-header > *{ position:relative; }
+  .phdr-top{ display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .patient-header .avatar{
+    width:40px; height:40px; font-size:15px; color:#fff;
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.26); flex:none;
+  }
+  .patient-header h1{ font-family:var(--font-display); font-size:21px; font-weight:600; margin:0; color:#fff; }
+  .status-led{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .status-led.good{ background:#49E3B4; box-shadow:0 0 0 3px rgba(73,227,180,.22); }
+  .status-led.warning{ background:#F5C457; box-shadow:0 0 0 3px rgba(245,196,87,.22); }
+  .status-led.critical{ background:#FF7A68; box-shadow:0 0 0 3px rgba(255,122,104,.22); }
+  .patient-header #patient-status-select{
+    font-family:var(--font-body); font-size:11.5px; font-weight:600; color:#fff;
+    border:1px solid rgba(255,255,255,.4); background:rgba(255,255,255,.14);
+    border-radius:999px; padding:4px 11px 4px 9px; cursor:pointer;
+  }
+  .patient-header #patient-status-select option{ color:#17221D; }
+  .btn-modifica{
+    display:inline-flex; align-items:center; gap:6px; font-size:12.3px; font-weight:600;
+    padding:7px 12px; border-radius:999px; cursor:pointer; font-family:inherit; white-space:nowrap;
+    border:1px solid rgba(255,255,255,.4); background:rgba(255,255,255,.08); color:#fff;
+    transition:background .15s ease; margin-left:auto;
+  }
+  .btn-modifica:hover{ background:rgba(255,255,255,.2); }
+  .btn-modifica svg{ width:11px; height:11px; }
+  .phdr-chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
+  .phdr-chip{
+    display:inline-flex; align-items:baseline; gap:6px; font-size:12.3px; border-radius:999px; padding:6px 13px;
+    background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16);
+  }
+  .phdr-chip .k{ color:rgba(255,255,255,.64); font-weight:500; }
+  .phdr-chip .v{ color:#fff; font-weight:600; font-family:var(--font-mono); font-size:12px; }
+  .phdr-chip.accent{ background:rgba(255,255,255,.2); border-color:rgba(255,255,255,.34); }
+  .phdr-chip.accent .k{ color:rgba(255,255,255,.82); }
   #patient-status-select{
     font-family:var(--font-body); font-size:12px; font-weight:600; color:var(--ink-soft);
     border:1px solid var(--border); background:var(--surface-raised); border-radius:999px;
@@ -2177,25 +2211,25 @@
 
     <div class="main">
       <div class="patient-header">
-        <div>
-          <h1>
-            <span id="patient-name">—</span>
-            <span class="status-led good" id="patient-status-led"></span>
-            <select id="patient-status-select" onchange="updatePatientStatus()" title="Stato del paziente nello studio">
-              <option value="good">Attivo</option>
-              <option value="warning">Sospeso</option>
-              <option value="critical">Inattivo</option>
-            </select>
-            <button class="btn small ghost" type="button" onclick="openEditPatientModal()" title="Modifica dati paziente" style="margin-left:6px; vertical-align:middle;">
-              <svg viewBox="0 0 24 24" fill="none" style="width:12px; height:12px;"><path d="M16.5 3.5C17.33 2.67 18.67 2.67 19.5 3.5C20.33 4.33 20.33 5.67 19.5 6.5L7 19L3 20L4 16L16.5 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Modifica
-            </button>
-          </h1>
-          <div class="goal" id="patient-goal">—</div>
+        <div class="phdr-top">
+          <div class="avatar" id="patient-avatar">—</div>
+          <h1><span id="patient-name">—</span></h1>
+          <span class="status-led good" id="patient-status-led"></span>
+          <select id="patient-status-select" onchange="updatePatientStatus()" title="Stato del paziente nello studio">
+            <option value="good">Attivo</option>
+            <option value="warning">Sospeso</option>
+            <option value="critical">Inattivo</option>
+          </select>
+          <button class="btn-modifica" type="button" onclick="openEditPatientModal()" title="Modifica dati paziente">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M16.5 3.5C17.33 2.67 18.67 2.67 19.5 3.5C20.33 4.33 20.33 5.67 19.5 6.5L7 19L3 20L4 16L16.5 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Modifica
+          </button>
         </div>
-        <div class="next-visit">
-          Prossimo controllo
-          <span class="date" id="patient-next-visit">—</span>
+        <div class="phdr-chip-row">
+          <span class="phdr-chip"><span class="k">Età</span><span class="v" id="patient-age">—</span></span>
+          <span class="phdr-chip"><span class="k">Obiettivo</span><span class="v" id="patient-goal">—</span></span>
+          <span class="phdr-chip accent"><span class="k">Prossimo controllo</span><span class="v" id="patient-next-visit">—</span></span>
+          <span class="phdr-chip"><span class="k">Data anamnesi</span><span class="v" id="patient-anamnesi-date">—</span></span>
         </div>
       </div>
 
@@ -3151,6 +3185,7 @@
     // ---- Scheda Anamnesi + Controlli (vedi istruzioni SQL in chat) ----
     anamnesiLeggi:   { fn:'anamnesi_leggi',   args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
     anamnesiSalva:   { fn:'anamnesi_salva',   args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_dati: b.dati }) },
+    anamnesiData:    { fn:'anamnesi_data',    args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
     controlliLeggi:  { fn:'controlli_leggi',  args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
     controlloSalva:  { fn:'controllo_salva',  args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_id: b.id || null, p_data: b.data, p_campi: b.campi, p_domande: b.domande }) },
     salvaPianoStrutturato: { fn:'salva_piano_strutturato', args:b => ({
@@ -5457,6 +5492,19 @@
     cpBottoneFinito_(btn);
   }
 
+  function fmtDataAnamnesi_(iso){
+    if(!iso) return 'Mai svolta';
+    const d = new Date(iso);
+    if(isNaN(d.getTime())) return 'Mai svolta';
+    return d.toLocaleDateString('it-IT', { day:'numeric', month:'short', year:'numeric' });
+  }
+
+  function phdrAggiornaDataAnamnesi_(res){
+    const el = document.getElementById('patient-anamnesi-date');
+    if(!el) return;
+    el.textContent = (res && res.ok) ? fmtDataAnamnesi_(res.creatoIl) : 'Mai svolta';
+  }
+
   async function selectPatientByCode(codice){
     await anFlushIfDirty_(); // salva subito eventuali modifiche non ancora scritte prima di cambiare paziente
     codice = codiceStr_(codice);
@@ -5466,14 +5514,21 @@
     renderPatientList(); // aggiorna subito l'ordine dei "recenti" e l'evidenziazione di chi è aperto ora
     if(currentPatientMeta){
       document.getElementById('patient-name').textContent = currentPatientMeta.Nome || '—';
-      document.getElementById('patient-goal').textContent = (currentPatientMeta.Eta ? currentPatientMeta.Eta+' anni · ' : '') + 'Obiettivo: ' + (currentPatientMeta.Obiettivo || '—');
+      document.getElementById('patient-avatar').textContent = (currentPatientMeta.Nome||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      document.getElementById('patient-age').textContent = currentPatientMeta.Eta ? (currentPatientMeta.Eta+' anni') : '—';
+      document.getElementById('patient-goal').textContent = currentPatientMeta.Obiettivo || '—';
       document.getElementById('patient-next-visit').textContent = conOra_(currentPatientMeta.ProssimoControllo);
       const stato = currentPatientMeta.StatoTipo || 'good';
       document.getElementById('patient-status-led').className = 'status-led ' + stato;
       document.getElementById('patient-status-select').value = stato;
     }
+    document.getElementById('patient-anamnesi-date').textContent = '—';
     currentMetric = 'peso'; misCategoriaAttiva = 'peso';
-    await Promise.all([loadMisurazioni(codice), loadPiano(codice), loadPianoStrutturato(codice)]);
+    const risultati = await Promise.all([
+      loadMisurazioni(codice), loadPiano(codice), loadPianoStrutturato(codice),
+      apiGet('anamnesiData', { codice: SESSION.codice, paziente: codice }).catch(function(){ return null; })
+    ]);
+    phdrAggiornaDataAnamnesi_(risultati[3]);
     const activeTab = document.querySelector('#view-nutri .tab-btn.active');
     setNutriTab(activeTab ? activeTab.dataset.tab : 'panoramica');
   }
@@ -8738,8 +8793,10 @@
   async function anDoSave(){
     if(!currentPatientCode) return;
     var chiamate = [];
+    var stavaSalvandoAnamnesi = false;
     if(anDirtyAnamnesi){
       anDirtyAnamnesi = false;
+      stavaSalvandoAnamnesi = true;
       var statoDaSalvare = anState;
       chiamate.push(apiPost('anamnesiSalva', { codice: SESSION.codice, paziente: currentPatientCode, dati: statoDaSalvare }).catch(function(){ anDirtyAnamnesi = true; }));
     }
@@ -8755,6 +8812,15 @@
     if(!chiamate.length){ anSetIndicator('', 'Salvato'); return; }
     await Promise.all(chiamate);
     anSetIndicator('', 'Salvato alle ' + new Date().toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' }));
+    if(stavaSalvandoAnamnesi && !anDirtyAnamnesi){
+      // La "Data anamnesi" resta fissa alla data della prima visita: la impostiamo SOLO se prima
+      // non c'era ancora nessuna data (primissimo salvataggio in assoluto per questo paziente),
+      // mai nei salvataggi successivi — anche se poi si modifica la scheda, la data non deve cambiare.
+      var elAnData = document.getElementById('patient-anamnesi-date');
+      if(elAnData && elAnData.textContent === 'Mai svolta'){
+        phdrAggiornaDataAnamnesi_({ ok:true, creatoIl: new Date().toISOString() });
+      }
+    }
   }
 
   function anScheduleSave(){
