@@ -13,8 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=24">
-<link rel="stylesheet" href="funzionale.css?v=9">
+<meta http-equiv="Cache-Control" content="no-cache">
 </head>
 <body>
 
@@ -343,9 +342,36 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="config.js?v=6"></script>
-<script src="app.js?v=43"></script>
-<script src="funzionale.js?v=9"></script>
-<script src="gestione.js?v=10"></script>
+<script>
+/* Caricatore: a ogni apertura controlla su GitHub se stili e script sono cambiati (richiesta leggera: se sono uguali non scarica nulla)
+   e usa sempre la versione piu' recente. Cosi' gli aggiornamenti arrivano da soli, senza reinstallare l'app. */
+(function () {
+  var FILE_CSS = ["style.css", "funzionale.css"];
+  var FILE_JS = ["config.js", "app.js", "funzionale.js", "gestione.js"];
+  function testo(f) {
+    return fetch(f, { cache: "no-cache" }).then(function (r) { if (!r.ok) throw new Error(f); return r.text(); });
+  }
+  function aggiungiCss(css) { var s = document.createElement("style"); s.textContent = css; document.head.appendChild(s); }
+  function eseguiJs(js) { var s = document.createElement("script"); s.text = js; document.body.appendChild(s); }
+  function viaFile(f, js) { // ripiego: carico il file nel modo normale
+    return new Promise(function (res) {
+      var e = document.createElement(js ? "script" : "link");
+      if (js) { e.src = f; e.async = false; } else { e.rel = "stylesheet"; e.href = f; }
+      e.onload = e.onerror = res; (js ? document.body : document.head).appendChild(e);
+    });
+  }
+  Promise.all(FILE_CSS.map(function (f) { return testo(f).then(aggiungiCss, function () { return viaFile(f, false); }); }))
+    .then(function () { return Promise.all(FILE_JS.map(function (f) { return testo(f).then(function (t) { return [f, t]; }, function () { return [f, null]; }); })); })
+    .then(function (lista) {
+      var p = Promise.resolve();
+      lista.forEach(function (x) { p = p.then(function () { if (x[1] !== null) { eseguiJs(x[1]); } else { return viaFile(x[0], true); } }); });
+      return p;
+    })
+    .then(function () {
+      /* gli script partono dopo il caricamento della pagina: faccio partire i loro avvii */
+      document.dispatchEvent(new Event("DOMContentLoaded", { bubbles: true }));
+    });
+})();
+</script>
 </body>
 </html>
