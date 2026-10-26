@@ -7716,10 +7716,89 @@
   function pgHtmlIntroPunti_(testo){
     // Un punto per paragrafo (righe vuote a separarli): dentro lo stesso punto, un singolo "a capo"
     // resta una riga della stessa voce (reso con white-space:pre-line), non un nuovo pallino.
-    const paragrafi = (testo || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-    return paragrafi.map(par => {
-      return `<div class="pg-intro-punto">${pgIntroInlineHtml_(par)}</div>`;
-    }).join('');
+    return pgParagrafiIntro_(testo).map(html => `<div class="pg-intro-punto">${html}</div>`).join('');
+  }
+  // Array dei singoli paragrafi (gia' passati da pgIntroInlineHtml_), usato sia per disegnare
+  // l'introduzione sia per impaginarla pezzo per pezzo in pgImpaginaIntro_ qui sotto.
+  function pgParagrafiIntro_(testo){
+    return (testo || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map(pgIntroInlineHtml_);
+  }
+  // Impagina il testo libero dell'Introduzione (e dell'eventuale Nota personalizzata) su quanti
+  // fogli fisici servono davvero, misurando l'altezza reale del testo con lo stesso carattere
+  // usato in stampa (i valori qui sotto DEVONO restare allineati a ".pg-pagina-intro
+  // .pg-section-title"/".pg-pagina-intro .pg-intro-punto" nel CSS: font-size 20.75px / 15.5px).
+  // Prima, con un'unica pagina di altezza fissa (263mm) e il piè di pagina ancorato con
+  // position:absolute, se il testo era più lungo di un foglio lo sforamento finiva su un secondo
+  // foglio fisico ma il piè di pagina restava ancorato al fondo del CONTENITORE intero (cioè
+  // subito sotto l'ultima riga di testo, a metà del secondo foglio) invece che al fondo di OGNI
+  // foglio realmente stampato (Giovanni, 26/10). Qui calcoliamo quanti fogli servono davvero e
+  // ripetiamo il piè di pagina, identico, alla fine di ciascuno — esattamente come già fanno tutte
+  // le altre pagine del documento (che però non sforano mai perché il loro contenuto è sempre
+  // fisso e ci sta sempre in un foglio solo, quindi per loro questa funzione non serve).
+  function pgImpaginaIntro_(introTesto, spuntinopExtra, notaTitolo, footerHtml){
+    const PAGINA_CONTENUTO_MM = 247; // 263mm di pagina meno 16mm riservati al piè di pagina
+    const MM_PX = 96 / 25.4;
+    const budgetPx = PAGINA_CONTENUTO_MM * MM_PX;
+
+    const misura = document.createElement('div');
+    misura.className = 'pg-doc';
+    misura.innerHTML = '<style>.pg-misura-intro .pg-section-title{font-size:20.75px;} .pg-misura-intro .pg-intro-punto{font-size:15.5px;}</style><div class="pg-misura-intro" style="width:186mm;"></div>';
+    misura.style.cssText = 'position:fixed; left:-9999px; top:0; visibility:hidden;';
+    document.body.appendChild(misura);
+    const area = misura.querySelector('.pg-misura-intro');
+
+    const sezioni = [];
+    if(introTesto) sezioni.push({ titolo:'Introduzione al percorso alimentare', paragrafi: pgParagrafiIntro_(introTesto) });
+    if(spuntinopExtra) sezioni.push({ titolo:notaTitolo, paragrafi: pgParagrafiIntro_(spuntinopExtra) });
+
+    // Ogni "unità" è un pezzo che non si spezza mai tra due pagine: il primo paragrafo di una
+    // sezione porta con sé il titolo (così il titolo non resta mai da solo in fondo a una pagina).
+    const unita = [];
+    sezioni.forEach((sez, si) => {
+      sez.paragrafi.forEach((html, pi) => {
+        const pezzi = [];
+        if(pi === 0){
+          const titoloEl = document.createElement('div');
+          titoloEl.className = 'pg-section-title';
+          if(si === 0) titoloEl.style.marginTop = '0';
+          titoloEl.textContent = sez.titolo;
+          area.appendChild(titoloEl);
+          pezzi.push(titoloEl.outerHTML);
+        }
+        const listaEl = document.createElement('div');
+        listaEl.className = 'pg-intro-lista';
+        listaEl.style.marginTop = pi === 0 ? '2px' : '8px';
+        const puntoEl = document.createElement('div');
+        puntoEl.className = 'pg-intro-punto';
+        puntoEl.innerHTML = html;
+        listaEl.appendChild(puntoEl);
+        area.appendChild(listaEl);
+        pezzi.push(listaEl.outerHTML);
+        unita.push({ html: pezzi.join(''), nodo: listaEl });
+      });
+    });
+
+    const inizioMisura = area.getBoundingClientRect().top;
+    const pagine = [[]];
+    let topPaginaCorrente = 0;
+    unita.forEach(u => {
+      const fondo = u.nodo.getBoundingClientRect().bottom - inizioMisura;
+      const paginaCorrente = pagine[pagine.length - 1];
+      if(paginaCorrente.length && (fondo - topPaginaCorrente) > budgetPx){
+        const precedente = paginaCorrente[paginaCorrente.length - 1];
+        topPaginaCorrente = precedente.nodo.getBoundingClientRect().bottom - inizioMisura;
+        pagine.push([]);
+      }
+      pagine[pagine.length - 1].push(u);
+    });
+
+    document.body.removeChild(misura);
+
+    return pagine.map(pagina => `
+      <div class="pg-pagina pg-break-after pg-pagina-intro">
+        ${pagina.map(u => u.html).join('')}
+        ${footerHtml}
+      </div>`).join('');
   }
   function pgHtmlStampaCompleta_(piano, imp, meta){
     imp = imp || {};
@@ -7782,16 +7861,7 @@
         <div class="pg-cover-bottom">${slogan ? '«' + cpEsc(slogan) + '»' : ''}</div>
       </div>
 
-      ${(introTesto || spuntinopExtra) ? `
-      <div class="pg-pagina pg-break-after pg-pagina-intro">
-        ${introTesto ? `
-        <div class="pg-section-title">Introduzione al percorso alimentare</div>
-        <div class="pg-intro-lista">${pgHtmlIntroPunti_(introTesto)}</div>` : ''}
-        ${spuntinopExtra ? `
-        <div class="pg-section-title">${cpEsc(notaTitolo)}</div>
-        <div class="pg-intro-lista">${pgHtmlIntroPunti_(spuntinopExtra)}</div>` : ''}
-        ${footer()}
-      </div>` : ''}
+      ${(introTesto || spuntinopExtra) ? pgImpaginaIntro_(introTesto, spuntinopExtra, notaTitolo, footer()) : ''}
 
       <div class="pg-pagina pg-break-before pg-pagina-categorie">
         <div class="pg-section-title">Categorie alimentari</div>
