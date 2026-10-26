@@ -296,6 +296,7 @@
       </div>
       <span class="chip-tecnica" id="chip-tecnica" style="display:none;"></span>
       <div class="video-box" id="video-box"></div>
+      <div class="video-btns" id="video-btns"></div>
 
       <!-- esercizio singolo -->
       <div id="single-exercise-body">
@@ -350,6 +351,15 @@
     </div>
   </div>
 
+</div>
+
+<!-- finestra grande per il video dell'esercizio -->
+<div id="video-overlay" class="video-overlay">
+  <div class="video-overlay-top">
+    <p class="video-overlay-titolo" id="video-overlay-titolo"></p>
+    <button type="button" class="video-overlay-chiudi" id="video-overlay-chiudi" aria-label="Chiudi">&times;</button>
+  </div>
+  <div id="video-overlay-box" class="video-overlay-box"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>

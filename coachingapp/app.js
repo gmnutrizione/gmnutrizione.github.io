@@ -1057,6 +1057,43 @@ function aggiornaRapporto(img) {
   box.style.setProperty("--r", Math.min(1.4, Math.max(0.45, img.naturalWidth / img.naturalHeight)));
 }
 
+// ============================================================
+// VIDEO ESERCIZIO (finestra grande)
+// ============================================================
+function idYoutube(url) {
+  const m = String(url || "").match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/))([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : "";
+}
+
+function apriVideo(url, titolo) {
+  const ov = document.getElementById("video-overlay");
+  const box = document.getElementById("video-overlay-box");
+  if (!ov || !box) return;
+  const id = idYoutube(url);
+  const verticale = /youtube\.com\/shorts\//.test(url);
+  box.className = "video-overlay-box" + (verticale ? " verticale" : "");
+  if (id) {
+    box.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&playsinline=1&modestbranding=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+  } else if (/\.(mp4|webm|mov)(\?|$)/i.test(url)) {
+    box.innerHTML = '<video src="' + escHtml(url) + '" controls autoplay playsinline></video>';
+  } else {
+    box.innerHTML = '<iframe src="' + escHtml(toEmbedUrl(url)) + '" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>';
+  }
+  document.getElementById("video-overlay-titolo").textContent = titolo || "";
+  ov.classList.add("aperto");
+}
+
+function chiudiVideo() {
+  const ov = document.getElementById("video-overlay");
+  if (!ov) return;
+  ov.classList.remove("aperto");
+  document.getElementById("video-overlay-box").innerHTML = "";   // ferma la riproduzione
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("#video-overlay-chiudi") || e.target.id === "video-overlay") chiudiVideo();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") chiudiVideo(); });
+
 function apriDettaglio(ex, giorno, gruppo) {
   const nomeGrezzo = ex.Esercizio || ex.esercizio;
   const subNomi = nomeGrezzo.split("+").map(s => s.trim()).filter(Boolean);
@@ -1087,12 +1124,27 @@ function apriDettaglio(ex, giorno, gruppo) {
   if (imgs.length) {
     box.className = "img-pair" + (imgs.length === 1 ? " uno" : "");
     box.innerHTML = imgs.map(x => '<figure><img src="' + fzImg(x[0]).replace(/"/g, "&quot;") + '" alt="" onload="aggiornaRapporto(this)"><figcaption>' + x[1] + '</figcaption></figure>').join("");
-  } else if (video) {
-    box.className = "video-box";
-    box.innerHTML = `<iframe src="${toEmbedUrl(video)}" allowfullscreen allow="autoplay; encrypted-media"></iframe>`;
-  } else {
+  } else {   // il video, se c'e', si apre dal pulsante "Guarda il video"
     box.className = "";
     box.innerHTML = "";
+  }
+
+  // pulsante/i "Guarda il video" (finestra grande); per i super-set uno per ciascun esercizio
+  const wrapVid = document.getElementById("video-btns");
+  if (wrapVid) {
+    wrapVid.innerHTML = "";
+    const elenco = subNomi.map((n, i) => ({
+      nome: n,
+      url: ((i === 0 && (ex.Video || "").trim()) || (archivio[n.trim()] || {}).video || "").trim()
+    })).filter(x => x.url);
+    elenco.forEach(x => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn-video";
+      b.innerHTML = '<span class="btn-video-ico">&#9654;</span> ' + (subNomi.length > 1 ? "Video: " + escHtml(x.nome) : "Guarda il video");
+      b.addEventListener("click", () => apriVideo(x.url, x.nome));
+      wrapVid.appendChild(b);
+    });
   }
 
   const chip = document.getElementById("chip-tecnica");
