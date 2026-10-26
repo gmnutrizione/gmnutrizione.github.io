@@ -197,6 +197,40 @@
   #view-nutri{ display:grid; grid-template-columns:266px 1fr; gap:26px; align-items:start; }
   @media (max-width: 880px){ #view-nutri{ grid-template-columns:1fr; } }
 
+  /* ---------- Vista divisa (split screen) — solo desktop ---------- */
+  .nutri-split-toggle-btn{
+    margin-left:auto; display:inline-flex; align-items:center; gap:6px; align-self:center;
+    padding:6px 13px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface); color:var(--ink-soft); font-family:inherit;
+    font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;
+    transition:color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .nutri-split-toggle-btn:hover{ border-color:var(--accent); color:var(--ink); }
+  .nutri-split-toggle-btn.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .nutri-split-controls{ display:none; align-items:center; gap:18px; flex-wrap:wrap; margin:-10px 0 22px; }
+  .nutri-split-field{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft); font-family:inherit; }
+  .nutri-split-field label{ font-weight:600; white-space:nowrap; }
+  .nutri-split-field select{
+    padding:6px 10px; border-radius:7px; border:1px solid var(--border);
+    background:var(--surface); color:var(--ink); font-family:inherit; font-size:13px;
+  }
+  #nutri-main.split-mode{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  #nutri-main.split-mode > .patient-header,
+  #nutri-main.split-mode > .tabs,
+  #nutri-main.split-mode > .nutri-split-controls{ grid-column:1 / -1; }
+  #nutri-main.split-mode > .tab-panel{ display:none; }
+  #nutri-main.split-mode > .tab-panel.split-pane-left{ display:block; grid-column:1; }
+  #nutri-main.split-mode > .tab-panel.split-pane-right{ display:block; grid-column:2; }
+  #nutri-main.split-mode > .tab-panel.split-pane-left,
+  #nutri-main.split-mode > .tab-panel.split-pane-right{
+    max-height:calc(100vh - 160px); overflow-y:auto; overflow-x:hidden; padding-right:6px;
+  }
+  /* La vista divisa ha senso solo su schermi larghi: sotto 1100px il controllo resta nascosto
+     (Giovanni, richiesta esplicita: funzione riservata al PC, mai su mobile/tablet). */
+  @media (max-width: 1100px){
+    .nutri-split-toggle-btn, .nutri-split-controls{ display:none !important; }
+  }
+
   .panel{
     background:var(--surface); border:1px solid var(--border);
     border-radius:var(--radius-m); box-shadow:var(--shadow-1);
@@ -2232,7 +2266,7 @@
       </div>
     </div>
 
-    <div class="main">
+    <div class="main" id="nutri-main">
       <div class="patient-header">
         <div class="phdr-top">
           <div class="avatar" id="patient-avatar">—</div>
@@ -2263,6 +2297,37 @@
         <button class="tab-btn" data-tab="pianogenerico" onclick="setNutriTab('pianogenerico')">Piano Generico</button>
         <button class="tab-btn" data-tab="misurazioni" onclick="setNutriTab('misurazioni')">Misurazioni</button>
         <button class="tab-btn" data-tab="confronto" onclick="setNutriTab('confronto')">Confronto controlli</button>
+        <button class="nutri-split-toggle-btn" type="button" id="nutri-split-toggle-btn" onclick="toggleNutriSplit()" title="Visualizza due sezioni affiancate">
+          <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><rect x="3" y="4" width="8" height="16" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="4" width="8" height="16" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+          Vista divisa
+        </button>
+      </div>
+
+      <div class="nutri-split-controls" id="nutri-split-controls">
+        <div class="nutri-split-field">
+          <label>Sinistra</label>
+          <select id="nutri-split-left-select" onchange="nutriSplitLeft=this.value; renderNutriSplitPanes_();">
+            <option value="panoramica">Panoramica</option>
+            <option value="anamnesi" selected>Anamnesi</option>
+            <option value="piano">Piano alimentare</option>
+            <option value="creapiano">Crea piano</option>
+            <option value="pianogenerico">Piano Generico</option>
+            <option value="misurazioni">Misurazioni</option>
+            <option value="confronto">Confronto controlli</option>
+          </select>
+        </div>
+        <div class="nutri-split-field">
+          <label>Destra</label>
+          <select id="nutri-split-right-select" onchange="nutriSplitRight=this.value; renderNutriSplitPanes_();">
+            <option value="panoramica">Panoramica</option>
+            <option value="anamnesi">Anamnesi</option>
+            <option value="piano">Piano alimentare</option>
+            <option value="creapiano" selected>Crea piano</option>
+            <option value="pianogenerico">Piano Generico</option>
+            <option value="misurazioni">Misurazioni</option>
+            <option value="confronto">Confronto controlli</option>
+          </select>
+        </div>
       </div>
 
       <!-- ---- PANORAMICA ---- -->
@@ -8979,9 +9044,17 @@
 
   /* ================= TAB SWITCHING (nutrizionista) ================= */
   function setNutriTab(name){
+    // Un clic su una scheda normale riporta sempre alla vista singola: le schede restano
+    // la navigazione "a tutta pagina", i due menu della vista divisa sono un controllo separato.
+    if(nutriSplitOn) toggleNutriSplit();
     document.querySelectorAll('#view-nutri .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===name));
     document.querySelectorAll('#view-nutri .tab-panel').forEach(p => p.classList.remove('active'));
     document.getElementById('tab-'+name).classList.add('active');
+    renderNutriTabContent_(name);
+  }
+  // Chiamate di rendering condivise tra la vista normale (setNutriTab) e la vista divisa
+  // (renderNutriSplitPanes_), così ogni sezione viene popolata allo stesso modo in entrambe.
+  function renderNutriTabContent_(name){
     if(name==='panoramica') renderPanoramica();
     if(name==='piano') renderPianoTab();
     if(name==='creapiano') renderCreaPianoTab();
@@ -8990,6 +9063,43 @@
     if(name==='confronto') renderCompareTable();
     if(name==='anamnesi') renderAnamnesiTab();
   }
+
+  /* ================= VISTA DIVISA (split screen) — lato nutrizionista ================= */
+  // Richiesta di Giovanni: poter vedere due sezioni affiancate (es. Crea piano + Anamnesi)
+  // invece di ridimensionare manualmente due finestre del browser. Scelta libera su entrambi i
+  // lati, pulsante accanto alle schede, funzione nascosta su schermi stretti (vedi CSS
+  // "@media (max-width: 1100px)").
+  let nutriSplitOn = false;
+  let nutriSplitLeft = 'anamnesi';
+  let nutriSplitRight = 'creapiano';
+  function toggleNutriSplit(){
+    nutriSplitOn = !nutriSplitOn;
+    const mainEl = document.getElementById('nutri-main');
+    const btnEl = document.getElementById('nutri-split-toggle-btn');
+    const controlsEl = document.getElementById('nutri-split-controls');
+    if(mainEl) mainEl.classList.toggle('split-mode', nutriSplitOn);
+    if(btnEl) btnEl.classList.toggle('active', nutriSplitOn);
+    if(controlsEl) controlsEl.style.display = nutriSplitOn ? 'flex' : 'none';
+    if(nutriSplitOn){
+      renderNutriSplitPanes_();
+    } else {
+      document.querySelectorAll('#view-nutri .tab-panel').forEach(p => p.classList.remove('split-pane-left', 'split-pane-right'));
+    }
+  }
+  function renderNutriSplitPanes_(){
+    document.querySelectorAll('#view-nutri .tab-panel').forEach(p => p.classList.remove('split-pane-left', 'split-pane-right'));
+    const leftEl = document.getElementById('tab-'+nutriSplitLeft);
+    const rightEl = document.getElementById('tab-'+nutriSplitRight);
+    if(leftEl) leftEl.classList.add('split-pane-left');
+    if(rightEl) rightEl.classList.add('split-pane-right');
+    renderNutriTabContent_(nutriSplitLeft);
+    renderNutriTabContent_(nutriSplitRight);
+  }
+  // Funzione riservata al PC: se la finestra viene ristretta sotto la soglia mentre la vista
+  // divisa è attiva, la disattiva automaticamente (il pulsante stesso è comunque nascosto dal CSS).
+  window.addEventListener('resize', () => {
+    if(nutriSplitOn && window.innerWidth <= 1100) toggleNutriSplit();
+  });
 
   /* ================= LOGIN / LOGOUT ================= */
   async function handleLogin(evt){
