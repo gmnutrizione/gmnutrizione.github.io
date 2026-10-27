@@ -214,16 +214,21 @@
     padding:6px 10px; border-radius:7px; border:1px solid var(--border);
     background:var(--surface); color:var(--ink); font-family:inherit; font-size:13px;
   }
-  #nutri-main.split-mode{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  /* In vista divisa la pagina non deve più essere incorniciata a 1320px né tenere la colonna dei
+     pazienti: Giovanni vuole che le due metà occupino DAVVERO tutto lo schermo, bordo a bordo. */
+  .shell.nutri-split-wide{ max-width:none; }
+  #view-nutri.split-mode{ grid-template-columns:1fr; }
+  #view-nutri.split-mode > .sidebar{ display:none; }
+  #nutri-main.split-mode{ display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; }
   #nutri-main.split-mode > .patient-header,
   #nutri-main.split-mode > .tabs,
   #nutri-main.split-mode > .nutri-split-controls{ grid-column:1 / -1; }
   #nutri-main.split-mode > .tab-panel{ display:none; }
-  #nutri-main.split-mode > .tab-panel.split-pane-left{ display:block; grid-column:1; }
-  #nutri-main.split-mode > .tab-panel.split-pane-right{ display:block; grid-column:2; }
+  #nutri-main.split-mode > .tab-panel.split-pane-left{ display:block; grid-column:1; min-width:0; }
+  #nutri-main.split-mode > .tab-panel.split-pane-right{ display:block; grid-column:2; min-width:0; }
   #nutri-main.split-mode > .tab-panel.split-pane-left,
   #nutri-main.split-mode > .tab-panel.split-pane-right{
-    max-height:calc(100vh - 160px); overflow-y:auto; overflow-x:hidden; padding-right:6px;
+    max-height:calc(100vh - 150px); overflow-y:auto; overflow-x:auto; padding-right:6px;
   }
   /* La vista divisa ha senso solo su schermi larghi: sotto 1100px il controllo resta nascosto
      (Giovanni, richiesta esplicita: funzione riservata al PC, mai su mobile/tablet). */
@@ -7415,10 +7420,17 @@
   // (pg_pane_baseline_g / pg_olio_baseline_g), a parità di kcal circa. Arrotonda al grammo, così se
   // la quantità reale coincide col riferimento il valore stampato resta esattamente quello inserito
   // in Impostazioni (nessun arrotondamento superfluo quando non serve scalare).
+  // Le quantità delle sostituzioni (carboidrati e grassi) vanno sempre arrotondate al multiplo di
+  // 5 più vicino — 1-2 g sopra il multiplo si arrotonda per difetto, 3-4 g sopra per eccesso
+  // (Giovanni, 27/10: es. 56g -> 55g, 42g -> 40g, 63g -> 65g). È il normale arrotondamento
+  // all'intero più vicino applicato a valore/5, poi moltiplicato di nuovo per 5.
+  function pgArrotondaMultiplo5_(valore){
+    return Math.round(valore / 5) * 5;
+  }
   function pgScalaEquivalenza_(righe, valoreReale, baseline){
-    if(!baseline) return righe.map(r => ({ alimento:r.alimento, grammi:r.grammi }));
+    if(!baseline) return righe.map(r => ({ alimento:r.alimento, grammi: pgArrotondaMultiplo5_(r.grammi) }));
     const fattore = valoreReale / baseline;
-    return righe.map(r => ({ alimento:r.alimento, grammi: Math.max(1, Math.round(r.grammi * fattore)) }));
+    return righe.map(r => ({ alimento:r.alimento, grammi: Math.max(5, pgArrotondaMultiplo5_(r.grammi * fattore)) }));
   }
 
   // pgGenera(plan, sesso, foodsById, imp) — funzione principale: dato il piano settimanale REALE
@@ -9074,9 +9086,16 @@
   let nutriSplitRight = 'creapiano';
   function toggleNutriSplit(){
     nutriSplitOn = !nutriSplitOn;
+    const shellEl = document.querySelector('.shell');
+    const viewEl = document.getElementById('view-nutri');
     const mainEl = document.getElementById('nutri-main');
     const btnEl = document.getElementById('nutri-split-toggle-btn');
     const controlsEl = document.getElementById('nutri-split-controls');
+    // In vista divisa togliamo il limite di larghezza della pagina e nascondiamo la colonna dei
+    // pazienti, così le due metà si dividono TUTTO lo schermo (Giovanni, 27/10: niente più spazio
+    // vuoto ai due lati).
+    if(shellEl) shellEl.classList.toggle('nutri-split-wide', nutriSplitOn);
+    if(viewEl) viewEl.classList.toggle('split-mode', nutriSplitOn);
     if(mainEl) mainEl.classList.toggle('split-mode', nutriSplitOn);
     if(btnEl) btnEl.classList.toggle('active', nutriSplitOn);
     if(controlsEl) controlsEl.style.display = nutriSplitOn ? 'flex' : 'none';
