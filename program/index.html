@@ -236,6 +236,41 @@
     .nutri-split-toggle-btn, .nutri-split-controls{ display:none !important; }
   }
 
+  /* ---------- Piano Settimanale ----------
+     Griglia a 8 colonne (etichetta pasto + 7 giorni): i figli vengono emessi riga per riga senza
+     grid-row/grid-column espliciti, così ogni riga si alza automaticamente all'altezza della sua
+     cella più alta (il pasto con più scritte "decide" per tutti i giorni, richiesta di Giovanni) —
+     eccetto Pranzo/Cena che hanno un'altezza minima fissa (.ps-fixed) uguale fra loro e indipendente
+     dal contenuto. Il Dopo cena è una riga come le altre e viene semplicemente omessa (nessuna cella
+     emessa) quando non presente in nessun giorno del piano. */
+  .ps-wrap{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-m); box-shadow:var(--shadow-1); overflow:hidden; }
+  .ps-band{ padding:16px 22px; background:linear-gradient(135deg, var(--hdr-grad-1) 0%, var(--hdr-grad-2) 100%); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .ps-band-title{ font-family:var(--font-display); font-size:18px; font-weight:600; color:#fff; }
+  .ps-body{ padding:20px 22px 22px; }
+  .ps-grid-scroll{ overflow-x:auto; }
+  .ps-grid{ display:grid; grid-template-columns:116px repeat(7, minmax(112px, 1fr)); column-gap:0; row-gap:0; min-width:980px; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .ps-head{ background:var(--accent-ink); color:#fff; text-align:center; padding:9px 6px 7px; }
+  .ps-head-label{ background:var(--accent-ink); }
+  .ps-day{ font-family:var(--font-display); font-size:12.5px; font-weight:600; }
+  .ps-cell{ box-sizing:border-box; border-left:1px solid var(--border-soft); border-top:1px solid var(--border-soft); background:var(--surface); padding:8px 10px; overflow:hidden; }
+  .ps-grid > .ps-head:first-child, .ps-grid > .ps-cell:nth-child(8n+1){ border-left:none; }
+  .ps-grid > .ps-head{ border-top:none; }
+  .ps-row-label{ font-family:var(--font-display); font-size:11.5px; font-weight:600; color:var(--ink-soft); display:flex; align-items:center; background:var(--accent-soft); }
+  .ps-entry-text{ font-size:10.3px; line-height:1.42; color:var(--ink-soft); }
+  .ps-entry-text b{ font-family:var(--font-mono); font-weight:600; color:var(--ink); }
+  .ps-cell.ps-fixed{ min-height:96px; display:flex; align-items:flex-start; }
+  .ps-cell.ps-fixed .ps-entry-text{ display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden; }
+  .ps-vuoto{ color:var(--ink-faint); }
+  .ps-opzione-badge{ display:inline-block; font-family:var(--font-mono); font-size:9.5px; font-weight:600; color:var(--accent-ink); background:var(--accent-soft); padding:2.5px 8px; border-radius:999px; }
+  .ps-footnote{ font-size:11.5px; color:var(--ink-faint); margin-top:12px; line-height:1.5; }
+  .ps-notes{ margin-top:22px; border-top:1px solid var(--border); padding-top:16px; }
+  .ps-notes-title-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #ps-nota-titolo{ flex:1; min-width:180px; }
+  #ps-nota-testo{ width:100%; min-height:90px; resize:vertical; }
+  .ps-notes-saved{ font-size:11.5px; color:var(--accent); display:none; }
+  .ps-notes-saved.show{ display:inline; }
+  .ps-empty{ padding:30px 10px; text-align:center; color:var(--ink-faint); font-size:13px; }
+
   .panel{
     background:var(--surface); border:1px solid var(--border);
     border-radius:var(--radius-m); box-shadow:var(--shadow-1);
@@ -561,42 +596,60 @@
   .spark-delta.good{ color:var(--good); }
   .spark-card svg{ width:100%; height:36px; margin-top:6px; overflow:visible; }
 
-  /* ---------- Comparison ---------- */
-  .compare-controls{ display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; margin-bottom:14px; }
-  .compare-field label{ display:block; font-size:11.5px; color:var(--ink-faint); margin-bottom:4px; }
-  .compare-field select{
-    font-family:var(--font-body); font-size:13.5px; font-weight:500; padding:9px 12px; border-radius:var(--radius-s);
-    border:1px solid var(--border); background:var(--surface-raised); color:var(--ink); min-width:190px;
+  /* ---------- Confronto controlli ----------
+     Scheda pensata anche per lo screenshot da inviare al paziente (richiesta di Giovanni,
+     28/10): banda col nome del paziente, poi un numero solo (singola rilevazione) o le 4
+     tessere di variazione SEMPRE sulla stessa riga (anche confrontando 3 controlli — mai
+     due righe di tessere), poi la tabella compatta per categoria con una riga per OGNI
+     misurazione inserita (mai accorpate dx/sx), uguale in tutte le modalità. */
+  .cf-wrap{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-m); box-shadow:var(--shadow-1); overflow:hidden; }
+  .cf-band{ padding:18px 24px 16px; background:linear-gradient(150deg, var(--hdr-grad-1) 0%, var(--hdr-grad-2) 100%); color:#fff; }
+  .cf-toggles{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .cf-toggle{ display:inline-flex; background:rgba(255,255,255,.14); border-radius:999px; padding:3px; gap:2px; }
+  .cf-toggle-sub{ display:none; }
+  .cf-toggle-sub.show{ display:inline-flex; }
+  .cf-toggle-btn{
+    padding:5px 13px; border-radius:999px; font-family:inherit; font-size:11.5px; font-weight:600;
+    color:rgba(255,255,255,.68); background:none; border:none; cursor:pointer;
   }
-  .compare-vs{ color:var(--ink-faint); font-size:13px; padding-bottom:9px; }
-  .headline-row{ display:flex; gap:20px; flex-wrap:wrap; padding:13px 18px; background:var(--accent-soft); border-radius:var(--radius-m); margin-bottom:14px; }
-  .headline-stat .hv{ font-family:var(--font-mono); font-size:22px; font-weight:700; color:var(--accent-ink); }
-  .headline-stat .hl{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
-
-  #card-confronto{ padding:16px 18px; }
-
-  table.compare-table{ width:100%; border-collapse:collapse; }
-  .compare-table th{
-    text-align:left; font-size:13.5px; text-transform:none; letter-spacing:0; color:var(--ink);
-    font-weight:700; padding:0 10px 8px; border-bottom:1px solid var(--border);
+  .cf-toggle-btn.on{ background:#fff; color:var(--hdr-grad-1); }
+  .cf-toggle-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .cf-toggle-sub .cf-toggle-btn{ padding:4px 10px; font-size:10.5px; }
+  .cf-name{ font-family:var(--font-display); font-size:19px; font-weight:600; margin-top:12px; }
+  .cf-date{ font-size:12px; color:rgba(255,255,255,.75); margin-top:3px; }
+  .cf-body{ padding:16px 24px 22px; }
+  .cf-selects{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .cf-field label{ display:block; font-size:11px; color:var(--ink-faint); margin-bottom:4px; }
+  .cf-field select{
+    font-family:var(--font-body); font-size:13px; font-weight:500; padding:7px 10px; border-radius:var(--radius-s);
+    border:1px solid var(--border); background:var(--surface-raised); color:var(--ink); min-width:168px;
   }
-  .compare-table td{ padding:8px 10px; border-bottom:1px solid var(--border-soft); vertical-align:middle; font-size:13.3px; }
-  .compare-table tr:last-child td{ border-bottom:none; }
-  .row-label{ font-weight:600; white-space:nowrap; }
-  .row-label .unit{ font-weight:400; color:var(--ink-faint); font-size:11.5px; }
-  .bars{ min-width:140px; }
-  .bar-track{ height:6px; border-radius:4px; background:var(--border-soft); position:relative; margin:3px 0; }
-  .bar-fill{ height:100%; border-radius:4px; }
-  .bar-fill.old{ background:var(--sage); }
-  .bar-fill.new{ background:var(--accent); }
-  .compare-val{ font-family:var(--font-mono); white-space:nowrap; }
-  .delta-cell{ display:flex; align-items:center; gap:4px; font-family:var(--font-mono); font-weight:600; white-space:nowrap; }
-  .delta-cell svg{ width:12px; height:12px; }
-  .delta-cell.good{ color:var(--good); }
-  .delta-cell.neutral{ color:var(--ink-faint); }
-  .legend-row{ display:flex; gap:18px; font-size:12px; color:var(--ink-soft); margin-top:14px; }
-  .legend-row span{ display:inline-flex; align-items:center; gap:6px; }
-  .legend-dot{ width:9px; height:9px; border-radius:50%; }
+  .cf-hero{ text-align:center; padding:12px 0 6px; }
+  .cf-hero-label{ font-size:10.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint); }
+  .cf-hero-val{ font-family:var(--font-mono); font-size:42px; font-weight:600; color:var(--hdr-grad-1); line-height:1; margin-top:5px; }
+  .cf-hero-val .u{ font-size:15px; font-weight:500; color:var(--accent); margin-left:3px; }
+  .cf-headline{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:6px; }
+  .cf-htile{ background:var(--accent-soft); border-radius:12px; padding:10px 11px 9px; }
+  .cf-hval{ font-family:var(--font-mono); font-size:16px; font-weight:700; color:var(--hdr-grad-1); }
+  .cf-hlabel{ font-size:9.8px; color:var(--ink-soft); margin-top:2px; font-weight:500; }
+  table.cf-table{ width:100%; border-collapse:collapse; margin-top:6px; }
+  .cf-table thead th{
+    text-align:right; font-size:9.6px; font-weight:600; color:var(--ink-faint); text-transform:uppercase;
+    letter-spacing:.02em; padding:0 5px 6px; border-bottom:1.5px solid var(--hdr-grad-1);
+  }
+  .cf-table thead th:first-child{ text-align:left; }
+  .cf-cat-row td{ padding:12px 5px 5px; font-family:var(--font-display); font-size:12px; font-weight:600; color:var(--accent); }
+  .cf-table tbody tr:not(.cf-cat-row) td{ padding:4.5px 5px; border-bottom:1px solid var(--border-soft); font-size:11.3px; }
+  .cf-table tbody tr:last-child td{ border-bottom:none; }
+  .cf-table td.cf-label{ color:var(--ink-soft); }
+  .cf-table td.cf-val{ font-family:var(--font-mono); font-weight:600; color:var(--ink); text-align:right; white-space:nowrap; }
+  .cf-table td.cf-val.mid{ color:var(--ink-faint); font-weight:500; }
+  .cf-table td.cf-delta{ text-align:right; font-family:var(--font-mono); font-weight:600; white-space:nowrap; }
+  .cf-table td.cf-delta.good{ color:var(--good); }
+  .cf-table td.cf-delta.neutral{ color:var(--ink-faint); }
+  .cf-footer{ text-align:center; margin-top:18px; padding-top:14px; border-top:1px solid var(--border-soft); font-family:var(--font-display); font-style:italic; font-size:11px; color:var(--ink-faint); }
+  .cf-footer b{ font-style:normal; color:var(--ink-soft); }
+  .cf-empty{ padding:30px 10px; text-align:center; color:var(--ink-faint); font-size:13px; }
 
   /* ---------- Patient (app) view ---------- */
   #view-paziente{ }
@@ -2300,6 +2353,7 @@
         <button class="tab-btn" data-tab="piano" onclick="setNutriTab('piano')">Piano alimentare</button>
         <button class="tab-btn" data-tab="creapiano" onclick="setNutriTab('creapiano')">Crea piano</button>
         <button class="tab-btn" data-tab="pianogenerico" onclick="setNutriTab('pianogenerico')">Piano Generico</button>
+        <button class="tab-btn" data-tab="pianosettimanale" onclick="setNutriTab('pianosettimanale')">Piano Settimanale</button>
         <button class="tab-btn" data-tab="misurazioni" onclick="setNutriTab('misurazioni')">Misurazioni</button>
         <button class="tab-btn" data-tab="confronto" onclick="setNutriTab('confronto')">Confronto controlli</button>
         <button class="nutri-split-toggle-btn" type="button" id="nutri-split-toggle-btn" onclick="toggleNutriSplit()" title="Visualizza due sezioni affiancate">
@@ -2317,6 +2371,7 @@
             <option value="piano">Piano alimentare</option>
             <option value="creapiano">Crea piano</option>
             <option value="pianogenerico">Piano Generico</option>
+            <option value="pianosettimanale">Piano Settimanale</option>
             <option value="misurazioni">Misurazioni</option>
             <option value="confronto">Confronto controlli</option>
           </select>
@@ -2329,6 +2384,7 @@
             <option value="piano">Piano alimentare</option>
             <option value="creapiano" selected>Crea piano</option>
             <option value="pianogenerico">Piano Generico</option>
+            <option value="pianosettimanale">Piano Settimanale</option>
             <option value="misurazioni">Misurazioni</option>
             <option value="confronto">Confronto controlli</option>
           </select>
@@ -2589,6 +2645,24 @@
         </div>
       </div>
 
+      <!-- ---- PIANO SETTIMANALE ---- -->
+      <div class="tab-panel" id="tab-pianosettimanale">
+        <div class="note-strip">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 8V13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="16" r="0.9" fill="currentColor"/></svg>
+          <div>Il Piano Settimanale riprende quanto compilato in "Crea piano": per Pranzo e Cena mostra cereale, fonte proteica e verdure (l'olio non viene riportato qui); per Colazione, Spuntini e Dopo cena, quando nella settimana compaiono più combinazioni diverse, i giorni vengono etichettati come opzioni intercambiabili. Il Dopo cena appare solo se presente nel piano.</div>
+        </div>
+
+        <div class="ps-wrap">
+          <div class="ps-band">
+            <div class="ps-band-title">Piano Settimanale</div>
+          </div>
+          <div class="ps-body">
+            <div class="login-error" id="ps-error"></div>
+            <div id="ps-contenuto"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- ---- MISURAZIONI ---- -->
       <div class="tab-panel" id="tab-misurazioni">
         <div class="card" id="card-nuova-rilevazione">
@@ -2678,31 +2752,24 @@
 
       <!-- ---- CONFRONTO ---- -->
       <div class="tab-panel" id="tab-confronto">
-        <div class="card" id="card-confronto">
-          <div class="compare-controls">
-            <div class="compare-field">
-              <label>Controllo meno recente</label>
-              <select id="compare-old" onchange="renderCompareTable()"></select>
+        <div class="cf-wrap">
+          <div class="cf-band">
+            <div class="cf-toggles">
+              <div class="cf-toggle">
+                <button type="button" class="cf-toggle-btn" id="cf-btn-singola" onclick="cfSetMode('singola')">Singola rilevazione</button>
+                <button type="button" class="cf-toggle-btn" id="cf-btn-confronto" onclick="cfSetMode('confronto')">Confronto</button>
+              </div>
+              <div class="cf-toggle cf-toggle-sub" id="cf-sub-toggle">
+                <button type="button" class="cf-toggle-btn" id="cf-btn-c2" onclick="cfSetNumero(2)">2 controlli</button>
+                <button type="button" class="cf-toggle-btn" id="cf-btn-c3" onclick="cfSetNumero(3)">3 controlli</button>
+              </div>
             </div>
-            <div class="compare-vs">confrontato con</div>
-            <div class="compare-field">
-              <label>Controllo più recente</label>
-              <select id="compare-new" onchange="renderCompareTable()"></select>
-            </div>
+            <div class="cf-name" id="cf-name">—</div>
+            <div class="cf-date" id="cf-date">—</div>
           </div>
-
-          <div class="headline-row" id="headline-row"></div>
-
-          <table class="compare-table">
-            <thead>
-              <tr><th>Parametro</th><th id="compare-th-old">—</th><th id="compare-th-new">—</th><th>Confronto</th><th>Variazione</th></tr>
-            </thead>
-            <tbody id="compare-body"></tbody>
-          </table>
-
-          <div class="legend-row">
-            <span><span class="legend-dot" style="background:var(--sage)"></span> controllo meno recente</span>
-            <span><span class="legend-dot" style="background:var(--accent)"></span> controllo più recente</span>
+          <div class="cf-body">
+            <div class="cf-selects" id="cf-selects"></div>
+            <div id="cf-contenuto"></div>
           </div>
         </div>
       </div>
@@ -3330,6 +3397,8 @@
     pgTitoloImposta:          { fn:'piano_generico_titolo_imposta',          args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_chiave_opzione: b.chiaveOpzione, p_titolo: b.titolo }) },
     pgLeggi:                  { fn:'piano_generico_leggi',                   args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
     pgSalva:                  { fn:'piano_generico_salva',                   args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_piano_json: b.pianoJson, p_generato_da_riga: b.generatoDaRiga || null }) },
+    // ---- Piano Settimanale: nota libera (vedi migrazione piano_settimanale_nota) ----
+    psNotaSalva:              { fn:'piano_settimanale_nota_salva',           args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_titolo: b.titolo, p_testo: b.testo }) },
   };
 
   async function apiRpcChiamata_(action, params){
@@ -3791,6 +3860,15 @@
   ];
   let misCategoriaAttiva = 'peso';
 
+  // Righe della tabella di "Confronto controlli": una per OGNI misurazione inserita (mai
+  // accorpate, es. coscia dx/sx separate — Giovanni, 28/10), raggruppate per categoria come in
+  // "Tutti i parametri", ma senza il Peso (che ha già il suo numero grande/tessera a parte).
+  const CF_TABLE_CATEGORIE = [
+    { label:'Circonferenze (cm)', defs: MIS_CATEGORIE.find(c => c.key==='circonferenze').metriche.map(k => METRIC_DEFS.find(d => d.key===k)) },
+    { label:'Plicometria (mm)', defs: MIS_CATEGORIE.find(c => c.key==='plicometria').metriche.map(k => METRIC_DEFS.find(d => d.key===k)) },
+    { label:'Bioimpedenziometria', defs: MIS_CATEGORIE.find(c => c.key==='bia').metriche.map(k => METRIC_DEFS.find(d => d.key===k)) },
+  ];
+
   function renderBigChart(){
     const m = METRICS[currentMetric];
     document.getElementById('big-chart-title').textContent = 'Andamento — ' + m.label;
@@ -3872,63 +3950,189 @@
     document.querySelectorAll('.spark-card').forEach(c => c.classList.toggle('selected', c.dataset.k===currentMetric));
   }
 
-  /* ================= COMPARE TABLE ================= */
+  /* ================= CONFRONTO CONTROLLI ================= */
+  // Stato della scheda "Confronto controlli": singola rilevazione oppure confronto fra 2 o 3
+  // controlli. Gli indici in cfIdx2/cfIdx3 puntano a currentRows e non devono essere per forza
+  // in ordine cronologico (l'utente può scegliere le date in qualsiasi ordine nei <select>): li
+  // riordiniamo sempre per data al momento di disegnare la tabella.
+  let cfMode = 'confronto';
+  let cfNumero = 2;
+  let cfIdxSingola = 0;
+  let cfIdx2 = [0, 0];
+  let cfIdx3 = [0, 0, 0];
+
   function populateCompareSelects(){
-    const oldSel = document.getElementById('compare-old'), newSel = document.getElementById('compare-new');
-    if(!currentRows.length){ oldSel.innerHTML=''; newSel.innerHTML=''; return; }
-    const opts = currentRows.map((r,i) => `<option value="${i}">${fmtDateFull(new Date(r.Data))}</option>`).join('');
-    oldSel.innerHTML = opts; newSel.innerHTML = opts;
-    oldSel.value = 0; newSel.value = currentRows.length-1;
+    const n = currentRows.length;
+    cfIdxSingola = n ? n-1 : 0;
+    cfMode = n >= 2 ? 'confronto' : 'singola';
+    cfNumero = 2;
+    cfIdx2 = n >= 2 ? [0, n-1] : [0, 0];
+    cfIdx3 = n >= 3 ? [0, Math.floor((n-1)/2), n-1] : [0, 0, 0];
+  }
+
+  function cfSetMode(mode){
+    if(mode === 'confronto' && currentRows.length < 2) return;
+    cfMode = mode;
+    renderCompareTable();
+  }
+  function cfSetNumero(n){
+    if(n === 3 && currentRows.length < 3) return;
+    cfNumero = n;
+    renderCompareTable();
+  }
+  function cfSetSingola(v){
+    cfIdxSingola = +v;
+    cfUpdateHeader_();
+    cfRenderContenuto_();
+  }
+  function cfSetConfrontoIdx(pos, v){
+    const arr = cfNumero === 3 ? cfIdx3 : cfIdx2;
+    arr[pos] = +v;
+    cfUpdateHeader_();
+    cfRenderContenuto_();
+  }
+
+  function cfUpdateHeader_(){
+    document.getElementById('cf-name').textContent = (currentPatientMeta && currentPatientMeta.Nome) || '—';
+    const dateEl = document.getElementById('cf-date');
+    const n = currentRows.length;
+    if(!n){ dateEl.textContent = '—'; return; }
+    if(cfMode === 'singola'){
+      dateEl.textContent = fmtDateFull(new Date(currentRows[cfIdxSingola].Data));
+      return;
+    }
+    const idxArr = cfNumero === 3 ? cfIdx3 : cfIdx2;
+    const dates = idxArr.map(i => currentRows[i] ? new Date(currentRows[i].Data) : null).filter(Boolean).sort((a,b) => a-b);
+    dateEl.textContent = dates.length ? dates.map(d => fmtDateFull(d)).join(' → ') : '—';
+  }
+
+  function cfRenderSelects_(){
+    const el = document.getElementById('cf-selects');
+    const n = currentRows.length;
+    if(!n){ el.innerHTML = ''; return; }
+    const dateOpts = (selIdx) => currentRows.map((r,i) => `<option value="${i}" ${i===selIdx?'selected':''}>${fmtDateFull(new Date(r.Data))}</option>`).join('');
+
+    if(cfMode === 'singola'){
+      el.innerHTML = `<div class="cf-field"><label>Rilevazione</label>
+        <select onchange="cfSetSingola(this.value)">${dateOpts(cfIdxSingola)}</select></div>`;
+      return;
+    }
+    const idxArr = cfNumero === 3 ? cfIdx3 : cfIdx2;
+    const labels = cfNumero === 3 ? ['Controllo 1','Controllo 2','Controllo 3'] : ['Controllo 1','Controllo 2'];
+    el.innerHTML = idxArr.map((idx,i) => `<div class="cf-field"><label>${labels[i]}</label>
+        <select onchange="cfSetConfrontoIdx(${i},this.value)">${dateOpts(idx)}</select></div>`).join('');
+  }
+
+  function cfRenderContenuto_(){
+    const el = document.getElementById('cf-contenuto');
+    const n = currentRows.length;
+    if(!n){
+      el.innerHTML = `<div class="cf-empty">Nessuna misurazione registrata per questo paziente.</div>`;
+      return;
+    }
+
+    if(cfMode === 'singola'){
+      const row = currentRows[cfIdxSingola];
+      const pesoVal = parseNum(row['Peso']);
+      let html = `<div class="cf-hero">
+        <div class="cf-hero-label">Peso corporeo</div>
+        <div class="cf-hero-val">${pesoVal===null?'—':fmt(pesoVal)}<span class="u">kg</span></div>
+      </div>`;
+      html += `<table class="cf-table"><thead><tr><th>Parametro</th><th>Valore</th></tr></thead><tbody>`;
+      CF_TABLE_CATEGORIE.forEach(cat => {
+        html += `<tr class="cf-cat-row"><td colspan="2">${cat.label}</td></tr>`;
+        cat.defs.forEach(d => {
+          const v = parseNum(row[d.field]);
+          html += `<tr><td class="cf-label">${d.label}</td><td class="cf-val">${v===null?'—':fmt(v)+' '+d.unit}</td></tr>`;
+        });
+      });
+      html += `</tbody></table>`;
+      el.innerHTML = html;
+      return;
+    }
+
+    // Confronto fra 2 o 3 controlli: riordiniamo sempre le rilevazioni scelte per data, così le
+    // colonne vanno sempre dalla più vecchia alla più recente indipendentemente da quale select
+    // l'utente ha cambiato.
+    const idxArr = (cfNumero === 3 ? cfIdx3 : cfIdx2);
+    const sorted = idxArr.map(i => currentRows[i]).filter(Boolean)
+      .map(r => ({ row:r, date:new Date(r.Data) }))
+      .sort((a,b) => a.date - b.date);
+    if(sorted.length < 2){
+      el.innerHTML = `<div class="cf-empty">Servono almeno due controlli per poter fare un confronto.</div>`;
+      return;
+    }
+    const firstRow = sorted[0].row, lastRow = sorted[sorted.length-1].row;
+
+    const headlineDefs = [
+      { field:'Peso',         label:'peso corporeo', unit:'kg' },
+      { field:'Vita',         label:'vita',          unit:'cm' },
+      { field:'Massa grassa', label:'massa grassa',  unit:'%'  },
+      { field:'Massa magra',  label:'massa magra',   unit:'kg' },
+    ];
+    let html = `<div class="cf-headline">`;
+    headlineDefs.forEach(d => {
+      const oldV = parseNum(firstRow[d.field]), newV = parseNum(lastRow[d.field]);
+      let txt = '—';
+      if(oldV !== null && newV !== null){
+        const delta = newV - oldV;
+        txt = delta===0 ? 'invariato' : (delta<0?'−':'+') + fmt(Math.abs(delta)) + ' ' + d.unit;
+      }
+      html += `<div class="cf-htile"><div class="cf-hval">${txt}</div><div class="cf-hlabel">${d.label}</div></div>`;
+    });
+    html += `</div>`;
+
+    const colCount = sorted.length + 2;
+    html += `<table class="cf-table"><thead><tr><th>Parametro</th>`;
+    sorted.forEach(s => html += `<th>${fmtDateLabel(s.date)}</th>`);
+    html += `<th>Variaz.${sorted.length>2?' tot.':''}</th></tr></thead><tbody>`;
+
+    CF_TABLE_CATEGORIE.forEach(cat => {
+      html += `<tr class="cf-cat-row"><td colspan="${colCount}">${cat.label}</td></tr>`;
+      cat.defs.forEach(d => {
+        const vals = sorted.map(s => parseNum(s.row[d.field]));
+        const first = vals[0], last = vals[vals.length-1];
+        let deltaTxt = '—', deltaCls = 'neutral';
+        if(first !== null && last !== null){
+          const delta = last - first;
+          const isGood = (d.good==='down' && delta<0) || (d.good==='up' && delta>0);
+          deltaCls = delta===0 ? 'neutral' : (isGood ? 'good' : 'neutral');
+          deltaTxt = delta===0 ? 'invariato' : (delta<0?'−':'+') + fmt(Math.abs(delta));
+        }
+        html += `<tr><td class="cf-label">${d.label}</td>`;
+        vals.forEach((v,i) => {
+          const isLast = i === vals.length-1;
+          html += `<td class="cf-val${isLast?'':' mid'}">${v===null?'—':fmt(v)}</td>`;
+        });
+        html += `<td class="cf-delta ${deltaCls}">${deltaTxt}</td></tr>`;
+      });
+    });
+    html += `</tbody></table>`;
+    el.innerHTML = html;
   }
 
   function renderCompareTable(){
-    const body = document.getElementById('compare-body');
-    const headline = document.getElementById('headline-row');
-    if(currentRows.length < 2){
-      body.innerHTML = `<tr><td colspan="5" style="color:var(--ink-faint); padding:16px 10px;">Servono almeno due controlli per poter fare un confronto.</td></tr>`;
-      headline.innerHTML = '';
-      document.getElementById('compare-th-old').textContent = '—';
-      document.getElementById('compare-th-new').textContent = '—';
-      return;
-    }
-    const oldIdx = +document.getElementById('compare-old').value || 0;
-    const newIdx = +document.getElementById('compare-new').value || (currentRows.length-1);
-    const oldRow = currentRows[oldIdx], newRow = currentRows[newIdx];
-    document.getElementById('compare-th-old').textContent = fmtDateFull(new Date(oldRow.Data));
-    document.getElementById('compare-th-new').textContent = fmtDateFull(new Date(newRow.Data));
+    const n = currentRows.length;
+    if(cfMode === 'confronto' && n < 2) cfMode = 'singola';
+    if(cfNumero === 3 && n < 3) cfNumero = 2;
 
-    const rows = COMPARE_DEFS.map(d => ({ ...d, old: parseNum(oldRow[d.field]), nu: parseNum(newRow[d.field]) }))
-      .filter(r => r.old !== null && r.nu !== null);
+    const btnSingola = document.getElementById('cf-btn-singola');
+    const btnConfronto = document.getElementById('cf-btn-confronto');
+    const subToggle = document.getElementById('cf-sub-toggle');
+    const btnC2 = document.getElementById('cf-btn-c2');
+    const btnC3 = document.getElementById('cf-btn-c3');
 
-    body.innerHTML = rows.length ? rows.map(r => {
-      const delta = r.nu - r.old;
-      const isGood = (r.good==='down' && delta<0) || (r.good==='up' && delta>0) || delta===0;
-      const arrow = delta===0 ? '' : (delta<0 ? ARROW_DOWN : ARROW_UP);
-      const maxV = Math.max(Math.abs(r.old), Math.abs(r.nu)) || 1;
-      return `<tr>
-        <td class="row-label">${r.label} <span class="unit">${r.unit}</span></td>
-        <td class="compare-val">${fmt(r.old)}</td>
-        <td class="compare-val">${fmt(r.nu)}</td>
-        <td class="bars">
-          <div class="bar-track"><div class="bar-fill old" style="width:${(Math.abs(r.old)/maxV*100).toFixed(0)}%"></div></div>
-          <div class="bar-track"><div class="bar-fill new" style="width:${(Math.abs(r.nu)/maxV*100).toFixed(0)}%"></div></div>
-        </td>
-        <td><span class="delta-cell ${isGood?'good':'neutral'}">${arrow}${delta===0?'invariato':(delta<0?'−':'+')+fmt(Math.abs(delta))+' '+r.unit}</span></td>
-      </tr>`;
-    }).join('') : `<tr><td colspan="5" style="color:var(--ink-faint); padding:16px 10px;">Nessun dato numerico da confrontare tra questi due controlli.</td></tr>`;
+    btnSingola.classList.toggle('on', cfMode === 'singola');
+    btnConfronto.classList.toggle('on', cfMode === 'confronto');
+    btnConfronto.disabled = n < 2;
+    subToggle.classList.toggle('show', cfMode === 'confronto');
+    btnC2.classList.toggle('on', cfNumero === 2);
+    btnC3.classList.toggle('on', cfNumero === 3);
+    btnC3.disabled = n < 3;
 
-    const headlineDefs = [
-      { field:'Peso', label:'variazione peso', unit:'kg' },
-      { field:'Vita', label:'circonferenza vita', unit:'cm' },
-      { field:'Massa grassa', label:'massa grassa', unit:'%' },
-      { field:'Massa magra', label:'massa magra', unit:'kg' },
-    ];
-    headline.innerHTML = headlineDefs.map(d => {
-      const oldV = parseNum(oldRow[d.field]), newV = parseNum(newRow[d.field]);
-      if(oldV===null || newV===null) return '';
-      const delta = newV - oldV;
-      return `<div class="headline-stat"><div class="hv">${delta===0?'invariato':(delta<0?'−':'+')+fmt(Math.abs(delta))+' '+d.unit}</div><div class="hl">${d.label}</div></div>`;
-    }).join('');
+    cfUpdateHeader_();
+    cfRenderSelects_();
+    cfRenderContenuto_();
   }
 
   /* ================= PANORAMICA ================= */
@@ -8124,6 +8328,177 @@
       cpBottoneFinito_(btn);
     }
   }
+
+  /* ================= PIANO SETTIMANALE =================
+     Richiesta di Giovanni (27/10): una vista settimanale accanto al Piano Generico, con la stessa
+     grafica, che mostri però il piano REALE del paziente (da "Crea piano") giorno per giorno invece
+     delle combinazioni fisse/preimpostate. Per Pranzo e Cena segue l'ordine del Piano Generico
+     (cereale + fonte proteica + verdure, l'olio viene omesso qui); per i pasti "liberi" (Colazione,
+     Spuntini, Dopo cena) riusa la stessa logica di opzioni derivate del Piano Generico
+     (PG_PASTI_DERIVATI / pgOpzioniDerivate_ / pgFirmaCombo_, vedi sopra): se nella settimana c'è
+     una sola combinazione la scrive per intero su tutti i giorni; se ce ne sono più di una, etichetta
+     ogni giorno con "Opzione N" e aggiunge una postilla in fondo. Il Dopo cena viene mostrato solo se
+     presente in almeno un giorno del piano. A differenza del Piano Generico, qui non c'è uno stato
+     salvato da rigenerare: viene ricalcolato dal vivo ogni volta che si apre la scheda. */
+  const PS_PASTI_FISSI = ['Pranzo', 'Cena'];
+
+  function psLabelPasto_(pasto){ return pasto; }
+
+  // Testo ordinato per Pranzo/Cena di un singolo giorno: cereale, poi fonte proteica, poi eventuali
+  // altri alimenti del pasto, infine Verdure (valore preimpostato per sesso di questo paziente) se il
+  // pasto contiene almeno un cereale o una fonte proteica. L'olio (fonteGrassi) non viene mai scritto
+  // qui — Giovanni lo scrive altrove. Restituisce null se il giorno è vuoto o contiene solo olio.
+  function psOrdinaTestoPasto_(righe, foodsById, verdure){
+    const valide = (righe || []).filter(r => foodsById[r.id]);
+    if(!valide.length) return null;
+    const senzaOlio = valide.filter(r => !foodsById[r.id].fonteGrassi);
+    if(!senzaOlio.length) return null;
+    const cereale = senzaOlio.filter(r => foodsById[r.id].fonteCarboidrati);
+    const proteina = senzaOlio.filter(r => !foodsById[r.id].fonteCarboidrati && foodsById[r.id].categoriaProteica);
+    const strutturato = cereale.length > 0 || proteina.length > 0;
+    const idsNoti = new Set(cereale.concat(proteina).map(r => r.id + ':' + r.g));
+    const altro = senzaOlio.filter(r => !idsNoti.has(r.id + ':' + r.g));
+    const rigaConGrammi = r => `<b>${cpFmt(r.g)}g</b> ${cpEsc(cpNomeSenzaMix_(cpNomeSenzaMarca(foodsById[r.id].nome)))}`;
+    const pezzi = cereale.concat(proteina).map(rigaConGrammi).concat(altro.map(rigaConGrammi));
+    if(strutturato) pezzi.push(`Verdure <b>${cpFmt(verdure)}g</b>`);
+    return pezzi.join(', ');
+  }
+
+  // Per un pasto "libero": numero (1-based) dell'opzione derivata corrispondente al contenuto di
+  // questo specifico giorno, o null se il giorno è vuoto / non corrisponde a nessuna opzione nota.
+  function psNumeroOpzioneDelGiorno_(righeGiorno, foodsById, opzioni, pasto){
+    const valide = (righeGiorno || []).filter(r => foodsById[r.id]);
+    if(!valide.length) return null;
+    const chiave = pasto + '|' + pgFirmaCombo_(valide);
+    const idx = opzioni.findIndex(o => o.chiave === chiave);
+    return idx >= 0 ? idx + 1 : null;
+  }
+
+  function psTestoOpzione_(opzione){
+    return opzione.righe.map(r => `<b>${cpFmt(r.g)}g</b> ${cpEsc(cpNomeSenzaMix_(cpNomeSenzaMarca(r.nome)))}`).join(' + ');
+  }
+
+  // Costruisce la griglia (etichetta pasto + 7 giorni) e l'eventuale postilla sulle opzioni libere.
+  function psHtmlGriglia_(plan, giorni, foodsById, verdure){
+    const opzioniPerPasto = {};
+    PG_PASTI_DERIVATI.forEach(p => { opzioniPerPasto[p] = pgOpzioniDerivate_(plan, giorni, p, foodsById); });
+
+    // Dopo cena compare solo se presente in almeno un giorno del piano (richiesta di Giovanni).
+    const righeMeal = CP_MEALS.filter(m => m !== 'Dopo cena' || opzioniPerPasto['Dopo cena'].length > 0);
+    const pastiConPiuOpzioni = [];
+    const celle = [];
+
+    celle.push(`<div class="ps-cell ps-head ps-head-label"></div>`);
+    giorni.forEach(g => celle.push(`<div class="ps-cell ps-head"><span class="ps-day">${cpEsc(g)}</span></div>`));
+
+    righeMeal.forEach(pasto => {
+      const fisso = PS_PASTI_FISSI.includes(pasto);
+      const classiCella = 'ps-cell' + (fisso ? ' ps-fixed' : '');
+      celle.push(`<div class="${classiCella} ps-row-label">${cpEsc(psLabelPasto_(pasto))}</div>`);
+
+      const opzioni = fisso ? null : opzioniPerPasto[pasto];
+      if(opzioni && opzioni.length > 1) pastiConPiuOpzioni.push(pasto);
+
+      giorni.forEach(g => {
+        const righeGiorno = (plan[g] && plan[g][pasto]) || [];
+        let contenuto;
+        if(fisso){
+          const testo = psOrdinaTestoPasto_(righeGiorno, foodsById, verdure);
+          contenuto = testo ? `<div class="ps-entry-text">${testo}</div>` : `<div class="ps-entry-text ps-vuoto">—</div>`;
+        } else if(!opzioni || !opzioni.length){
+          contenuto = `<div class="ps-entry-text ps-vuoto">—</div>`;
+        } else if(opzioni.length === 1){
+          const haContenuto = righeGiorno.some(r => foodsById[r.id]);
+          contenuto = haContenuto
+            ? `<div class="ps-entry-text">${psTestoOpzione_(opzioni[0])}</div>`
+            : `<div class="ps-entry-text ps-vuoto">—</div>`;
+        } else {
+          const n = psNumeroOpzioneDelGiorno_(righeGiorno, foodsById, opzioni, pasto);
+          contenuto = n ? `<span class="ps-opzione-badge">Opzione ${n}</span>` : `<div class="ps-entry-text ps-vuoto">—</div>`;
+        }
+        celle.push(`<div class="${classiCella}">${contenuto}</div>`);
+      });
+    });
+
+    const footnote = pastiConPiuOpzioni.length
+      ? `<div class="ps-footnote">Per ${pastiConPiuOpzioni.map(p => p.toLowerCase()).join(', ')} le opzioni indicate sono sempre a scelta libera, per tutti i giorni della settimana.</div>`
+      : '';
+
+    return `<div class="ps-grid-scroll"><div class="ps-grid">${celle.join('')}</div></div>${footnote}`;
+  }
+
+  function psHtmlNote_(){
+    return `
+      <div class="ps-notes">
+        <div class="ps-notes-title-row">
+          <input type="text" id="ps-nota-titolo" maxlength="80" placeholder="Titolo (facoltativo)">
+          <button class="btn small primary" type="button" id="btn-ps-nota-salva" onclick="psSalvaNota()">Salva</button>
+          <span class="ps-notes-saved" id="ps-nota-saved">Salvato</span>
+        </div>
+        <textarea id="ps-nota-testo" placeholder="Scrivi qui eventuali note per questo piano settimanale…"></textarea>
+      </div>`;
+  }
+  function psInitNote_(){
+    const titoloEl = document.getElementById('ps-nota-titolo');
+    const testoEl = document.getElementById('ps-nota-testo');
+    if(!titoloEl || !testoEl) return;
+    titoloEl.value = (currentPatientMeta && currentPatientMeta.NotaPianoSettimanaleTitolo) || '';
+    testoEl.value = (currentPatientMeta && currentPatientMeta.NotaPianoSettimanale) || '';
+    const savedEl = document.getElementById('ps-nota-saved');
+    if(savedEl) savedEl.classList.remove('show');
+  }
+  async function psSalvaNota(){
+    if(!currentPatientCode) return;
+    const btn = document.getElementById('btn-ps-nota-salva');
+    const savedEl = document.getElementById('ps-nota-saved');
+    const titolo = document.getElementById('ps-nota-titolo').value.trim();
+    const testo = document.getElementById('ps-nota-testo').value.replace(/\r\n/g, '\n').trim();
+    cpBottoneCaricando_(btn, 'Salvataggio…');
+    if(savedEl) savedEl.classList.remove('show');
+    try{
+      const res = await apiPost('psNotaSalva', { codice: SESSION.codice, paziente: currentPatientCode, titolo, testo });
+      if(!res.ok){ showToast(res.error || 'Errore nel salvataggio.'); return; }
+      if(currentPatientMeta){ currentPatientMeta.NotaPianoSettimanale = testo; currentPatientMeta.NotaPianoSettimanaleTitolo = titolo; }
+      if(savedEl) savedEl.classList.add('show');
+    } catch(err){
+      showToast('Errore di connessione: ' + err.message);
+    } finally {
+      cpBottoneFinito_(btn);
+    }
+  }
+
+  async function renderPianoSettimanaleTab(){
+    const contEl = document.getElementById('ps-contenuto');
+    const errEl = document.getElementById('ps-error');
+    if(!contEl || !errEl) return;
+    errEl.textContent = '';
+    if(!currentPatientCode) return;
+    contEl.innerHTML = '<div class="ps-empty">Caricamento…</div>';
+    try{
+      await cpLoadFoods();
+      if(!CP_FOODS_BY_ID || CP_FOODS_ERROR){ errEl.textContent = 'Errore nel caricamento del database alimenti.'; contEl.innerHTML = ''; return; }
+      const [resPiano, resPreset] = await Promise.all([
+        apiGet('pianoStrutturato', { codice: SESSION.codice, paziente: currentPatientCode, soloAttivo: '1' }),
+        apiGet('pgPresetLeggi', { codice: SESSION.codice }),
+      ]);
+      if(!resPiano.ok || !resPiano.attivo || !resPiano.attivo.Plan){
+        contEl.innerHTML = '<div class="ps-empty">Questo paziente non ha ancora un piano settimanale composto in "Crea piano".</div>';
+        return;
+      }
+      const plan = resPiano.attivo.Plan;
+      CP_GIORNI.forEach(g => { if(!plan[g]) plan[g] = {}; CP_MEALS.forEach(m => { if(!plan[g][m]) plan[g][m] = []; }); });
+      const sesso = String((currentPatientMeta && currentPatientMeta.Sesso) || '').trim().toUpperCase() === 'F' ? 'F' : 'M';
+      const presetRighe = (resPreset.ok && resPreset.preset) || [];
+      const presetVerdureOlio = presetRighe.find(r => r.sesso === sesso) || { verdure:200, olio:10 };
+      const verdure = Number(presetVerdureOlio.verdure) || 200;
+      contEl.innerHTML = psHtmlGriglia_(plan, CP_GIORNI, CP_FOODS_BY_ID, verdure) + psHtmlNote_();
+      psInitNote_();
+    } catch(err){
+      errEl.textContent = 'Errore di connessione: ' + err.message;
+      contEl.innerHTML = '';
+    }
+  }
+
   function chiudiPgStampa(){
     document.getElementById('pg-stampa-overlay').style.display = 'none';
   }
@@ -9071,6 +9446,7 @@
     if(name==='piano') renderPianoTab();
     if(name==='creapiano') renderCreaPianoTab();
     if(name==='pianogenerico') renderPianoGenericoTab();
+    if(name==='pianosettimanale') renderPianoSettimanaleTab();
     if(name==='misurazioni'){ renderMisCategorie(); renderBigChart(); renderSparkGrid(); }
     if(name==='confronto') renderCompareTable();
     if(name==='anamnesi') renderAnamnesiTab();
