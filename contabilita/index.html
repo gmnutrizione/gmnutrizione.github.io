@@ -43,6 +43,10 @@
   .list{margin:0 20px;display:flex;flex-direction:column;gap:8px;}
   .row-btn{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:12px;padding:12px 14px;cursor:pointer;min-height:44px;}
   .row-btn:hover{background:#F8FAF9;}
+  .mov-row{display:flex;gap:6px;align-items:stretch;}
+  .mov-row .row-btn{flex:1;width:auto;min-width:0;}
+  .row-del{all:unset;box-sizing:border-box;flex:0 0 44px;display:flex;align-items:center;justify-content:center;background:var(--card);border-radius:12px;cursor:pointer;}
+  .row-del:hover{background:var(--danger-soft);}
   .row-title{font-size:14px;font-weight:600;color:var(--text);}
   .row-sub{font-size:12px;color:var(--faint);margin-top:2px;}
   .row-amount{font-size:15px;font-weight:700;white-space:nowrap;}
@@ -924,9 +928,25 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     }
   }
 
+  async function eliminaRiga(id) {
+    var mov = (state.movimenti || []).find(function (m) { return String(m.id) === String(id); });
+    var desc = mov ? (mov.categoria + " " + formatEUR(mov.importo) + " del " + formatDateLong(mov.data)) : "questa voce";
+    if (!window.confirm("Eliminare " + desc + "?")) return;
+    try {
+      await elimina("movimenti", id);
+      await ricarica();
+      caricaMeta();
+      caricaMese(state.year, state.month);
+      render();
+    } catch (e) {
+      alert("Impossibile eliminare, riprova.");
+    }
+  }
+
   async function eliminaMovimento() {
     var f = state.form;
     if (!f.id) return;
+    if (!window.confirm("Eliminare questa voce?")) return;
     try {
       await elimina("movimenti", f.id);
       await ricarica();
@@ -1203,10 +1223,13 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     var isSpesa = m.tipo === "spesa";
     var sub = formatDateLong(m.data) + ((m.tipo === "ricavo" || inGasolio()) && m.chiPagato ? " · " + esc(m.chiPagato) : "");
     return h(
-      '<button class="row-btn" data-action="modifica" data-id="' + esc(m.id) + '">' +
-        '<span><span class="row-title">' + esc(m.categoria) + '</span><br><span class="row-sub">' + sub + '</span></span>' +
-        '<span class="row-amount ' + (isSpesa ? "amount-neg" : "amount-pos") + '">' + (isSpesa ? "− " : "+ ") + formatEUR(m.importo) + '</span>' +
-      '</button>'
+      '<div class="mov-row">' +
+        '<button class="row-btn" data-action="modifica" data-id="' + esc(m.id) + '">' +
+          '<span><span class="row-title">' + esc(m.categoria) + '</span><br><span class="row-sub">' + sub + '</span></span>' +
+          '<span class="row-amount ' + (isSpesa ? "amount-neg" : "amount-pos") + '">' + (isSpesa ? "− " : "+ ") + formatEUR(m.importo) + '</span>' +
+        '</button>' +
+        '<button class="row-del" data-action="elimina-riga" data-id="' + esc(m.id) + '" aria-label="Elimina"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
+      '</div>'
     );
   }
 
@@ -1735,6 +1758,7 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
       case "apri-campo": goto("campo-home"); break;
       case "torna-campo": goto("campo-home"); break;
       case "entrata-veloce": entrataVeloce(); break;
+      case "elimina-riga": eliminaRiga(el.getAttribute("data-id")); break;
       case "apri-gasolio":
       case "apri-studio":
         AMBITO = action === "apri-gasolio" ? "campo_gasolio" : "studio";
