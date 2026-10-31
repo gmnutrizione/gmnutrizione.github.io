@@ -224,6 +224,10 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     "Consulenza nutrizionale"
   ];
   var AMBITO = "studio";
+  var AMBITI = {
+    studio: { nome: "Spese studio", hint: "Spese e ricavi dello studio" },
+    campo: { nome: "Spese campo", hint: "Spese e ricavi del campo" }
+  };
   var CODE_KEY = "percorso_codice"; // stessa chiave del programma Percorso: se sei già dentro lì, qui entri da solo
 
   var app = document.getElementById("app");
@@ -1050,6 +1054,10 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
           '<div class="ambito-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div>' +
           '<div><div class="ambito-name">Spese studio</div><div class="ambito-hint">Spese e ricavi dello studio</div></div>' +
         '</button>' +
+        '<button class="ambito-card" data-action="apri-campo">' +
+          '<div class="ambito-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="2"><path d="M12 2l7 4v6c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg></div>' +
+          '<div><div class="ambito-name">' + AMBITI.campo.nome + '</div><div class="ambito-hint">' + AMBITI.campo.hint + '</div></div>' +
+        '</button>' +
         '<button class="ambito-card" data-action="apri-fatture">' +
           '<div class="ambito-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="2"><path d="M9 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7z"/><path d="M9 2v7h7M9 13h6M9 17h6"/></svg></div>' +
           '<div><div class="ambito-name">Fatture</div><div class="ambito-hint">Emetti e gestisci le fatture</div></div>' +
@@ -1063,7 +1071,7 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     wrap.appendChild(h(
       '<div class="topbar">' +
         '<button class="iconbtn" data-action="torna-ambiti" aria-label="Indietro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>' +
-        '<h1>Spese studio</h1><div style="width:40px"></div>' +
+        '<h1>' + AMBITI[AMBITO].nome + '</h1><div style="width:40px"></div>' +
       '</div>'
     ));
     wrap.appendChild(h(
@@ -1525,7 +1533,7 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
   }
 
   function categorieSuggerite(tipo) {
-    var def = tipo === "spesa" ? DEFAULT_CAT_SPESA : DEFAULT_CAT_RICAVO;
+    var def = AMBITO !== "studio" ? [] : (tipo === "spesa" ? DEFAULT_CAT_SPESA : DEFAULT_CAT_RICAVO);
     var used = tipo === "spesa" ? state.meta.spese : state.meta.ricavi;
     var all = def.slice();
     (used || []).forEach(function (c) { if (all.indexOf(c) === -1) all.push(c); });
@@ -1661,7 +1669,10 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
     var el = e.currentTarget;
     var action = el.getAttribute("data-action");
     switch (action) {
+      case "apri-campo":
       case "apri-studio":
+        AMBITO = action === "apri-campo" ? "campo" : "studio";
+        caricaMeta(); caricaRicorrenti();
         state.year = today.getFullYear(); state.month = today.getMonth() + 1;
         subscribeMonth(state.year, state.month);
         goto("home");
