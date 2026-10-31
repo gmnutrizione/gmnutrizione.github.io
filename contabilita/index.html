@@ -1765,6 +1765,13 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
       case "salva-movimento": submitForm(); break;
       case "elimina-movimento": eliminaMovimento(); break;
       case "apri-calendario":
+        // salva quello che hai già scritto prima di aprire il calendario, altrimenti si cancella
+        var cE = document.getElementById("f-categoria"), pE = document.getElementById("f-chipagato"),
+            iE = document.getElementById("f-importo"), rE = document.getElementById("f-ricorrente");
+        if (cE) state.form.categoria = cE.value;
+        if (pE) state.form.chiPagato = pE.value;
+        if (iE) state.form.importo = iE.value;
+        if (rE) state.form.ricorrente = rE.checked;
         state.calendarTarget = "movimento";
         var parts = state.form.data.split("-");
         state.calendar.year = parseInt(parts[0], 10);
