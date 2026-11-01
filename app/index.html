@@ -277,6 +277,10 @@
   .cp-temp-text{ font-size:12.8px; line-height:1.5; color:var(--ink-soft); margin-bottom:10px; }
   .cp-temp-fields{ display:grid; gap:8px; margin-bottom:10px; }
   .cp-temp-fields input, .cp-temp-fields textarea{ width:100%; box-sizing:border-box; font:inherit; font-size:13px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); }
+  .cp-temp-row{ display:flex; gap:8px; }
+  .cp-temp-row select{ flex:1; min-width:0; font:inherit; font-size:13px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); }
+  .cp-temp-stato{ font-size:11.8px; color:var(--ink-faint); }
+  .cp-temp-stato.dirty{ color:var(--warning); }
   .cp-temp-actions{ display:flex; gap:8px; flex-wrap:wrap; }
   .cp-history-actions{ display:flex; gap:6px; }
   /* ---- Documento PDF del Piano Settimanale (piano temporaneo / versione salvata) ---- */
@@ -2686,15 +2690,22 @@
             <button type="button" class="cp-modo-btn" id="cp-modo-temp" onclick="cpSetModo('temporaneo')">Piano temporaneo</button>
           </div>
           <div class="cp-temp-card" id="cp-temp-card" style="display:none;">
-            <div class="cp-temp-text"><b>Stai lavorando sul piano temporaneo.</b> È un piano a parte, parallelo a quello ufficiale: non viene salvato nello storico e non cambia ciò che vede il paziente. Compila solo i giorni e i pasti che ti servono ed esportalo in PDF. Resta memorizzato su questo dispositivo finché non lo svuoti.</div>
+            <div class="cp-temp-text"><b>Stai lavorando su un piano temporaneo.</b> È parallelo a quello ufficiale: non va nello storico e non cambia ciò che vede il paziente. Compila solo i giorni e i pasti che ti servono, salvalo con un nome ed esportalo in PDF.</div>
             <div class="cp-temp-fields">
-              <input type="text" id="cp-temp-titolo" maxlength="80" placeholder="Titolo (facoltativo), es. Settimana gara" oninput="cpTempCampo_('titolo', this.value)">
+              <div class="cp-temp-row">
+                <select id="cp-temp-sel" onchange="cpTempScegli(this.value)" aria-label="Piani temporanei salvati"></select>
+                <button class="btn small ghost" type="button" onclick="cpTempNuovo()">Nuovo</button>
+              </div>
+              <input type="text" id="cp-temp-nome" maxlength="80" placeholder="Nome del piano, es. Piano gara" oninput="cpTempCampo_('nome', this.value)">
               <textarea id="cp-temp-nota" rows="2" placeholder="Note per il paziente (facoltative)" oninput="cpTempCampo_('nota', this.value)"></textarea>
+              <div class="cp-temp-stato" id="cp-temp-stato"></div>
             </div>
             <div class="cp-temp-actions">
-              <button class="btn small primary" type="button" onclick="cpTempEsporta()">Esporta PDF</button>
+              <button class="btn small primary" type="button" id="cp-temp-btn-salva" onclick="cpTempSalvaServer()">Salva</button>
+              <button class="btn small ghost" type="button" onclick="cpTempEsporta()">Esporta PDF</button>
               <button class="btn small ghost" type="button" onclick="cpTempDaUfficiale()">Parti dal piano ufficiale</button>
-              <button class="btn small ghost" type="button" onclick="cpTempSvuota()">Svuota piano temporaneo</button>
+              <button class="btn small ghost" type="button" onclick="cpTempSvuota()">Svuota</button>
+              <button class="btn small ghost" type="button" id="cp-temp-btn-elimina" onclick="cpTempElimina()" style="display:none;">Elimina piano salvato</button>
             </div>
           </div>
           <div class="note-strip draft" id="cp-draft-notice" style="display:none;">
@@ -3534,6 +3545,9 @@
       p_kcal: b.kcal, p_prot: b.prot, p_carb: b.carb, p_zuccheri: b.zuccheri,
       p_grassi: b.grassi, p_grassi_saturi: b.grassiSaturi, p_fibra: b.fibra, p_sale: b.sale,
     })},
+    pianiTemporaneiLeggi:    { fn:'piani_temporanei_leggi', args:p => ({ p_codice: p.codice, p_paziente: p.paziente }) },
+    pianoTemporaneoSalva:    { fn:'piano_temporaneo_salva', args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_id: b.id || null, p_nome: b.nome, p_nota: b.nota || '', p_plan: b.plan }) },
+    pianoTemporaneoElimina:  { fn:'piano_temporaneo_elimina', args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_id: b.id }) },
     eliminaPianoStrutturato: { fn:'elimina_piano_strutturato', args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_riga: b.riga }) },
     salvaModello:            { fn:'salva_modello', args:b => ({ p_codice: b.codice, p_nome: b.nome, p_descrizione: b.descrizione, p_target: b.target, p_day: b.day }) },
     salvaRicetta:            { fn:'salva_ricetta', args:b => ({ p_codice: b.codice, p_riga: b.riga || null, p_nome: b.nome, p_categoria: b.categoria, p_foto: b.foto, p_porzioni: b.porzioni, p_ingredienti: b.ingredienti, p_procedimento: b.procedimento, p_commento: b.commento }) },
@@ -5256,9 +5270,11 @@
      domenica con grammature diverse) da esportare in PDF con la grafica del Piano Settimanale. */
   let CP_MODO = 'ufficiale';   // 'ufficiale' | 'temporaneo'
   let CP_PLAN_UFF = null;      // piano ufficiale messo da parte mentre si lavora sul temporaneo
-  let CP_TEMP = { titolo:'', nota:'' };
+  // id: riga su Supabase (null = piano non ancora salvato); salvati: elenco dal server; dirty: modifiche non salvate.
+  let CP_TEMP = { id:null, nome:'', nota:'', salvati:[], dirty:false };
 
   function cpTempKey_(codice){ return 'percorsoPianoTemp::' + (SESSION && SESSION.codice) + '::' + codice; }
+  // Copia di lavoro nel browser: protegge dal perdere le modifiche non ancora salvate su Supabase.
   function cpTempLeggi_(codice){
     try{
       const raw = localStorage.getItem(cpTempKey_(codice));
@@ -5269,9 +5285,15 @@
   }
   function cpTempSalva_(){
     if(!currentPatientCode || CP_MODO !== 'temporaneo') return;
+    CP_TEMP.dirty = true;
     try{
-      localStorage.setItem(cpTempKey_(currentPatientCode), JSON.stringify({ plan: CP_PLAN, titolo: CP_TEMP.titolo, nota: CP_TEMP.nota, ts: Date.now() }));
+      localStorage.setItem(cpTempKey_(currentPatientCode), JSON.stringify({ plan: CP_PLAN, id: CP_TEMP.id, nome: CP_TEMP.nome, nota: CP_TEMP.nota, ts: Date.now() }));
     } catch(err){ /* localStorage non disponibile: il piano resta solo in memoria */ }
+    cpTempAggiornaStato_();
+  }
+  function cpTempCancellaLocale_(){
+    try{ localStorage.removeItem(cpTempKey_(currentPatientCode)); } catch(err){ /* ignora */ }
+    CP_TEMP.dirty = false;
   }
   function cpPianoCompleto_(plan){
     CP_GIORNI.forEach(g => { if(!plan[g]) plan[g] = {}; CP_MEALS.forEach(m => { if(!plan[g][m]) plan[g][m] = []; }); });
@@ -5283,22 +5305,44 @@
   function cpCopiaPiano_(plan){
     return cpPianoCompleto_(JSON.parse(JSON.stringify(plan || {})));
   }
-  function cpSetModo(modo){
+  async function cpTempCaricaElenco_(){
+    try{
+      const res = await apiGet('pianiTemporaneiLeggi', { codice: SESSION.codice, paziente: currentPatientCode });
+      CP_TEMP.salvati = (res.ok && res.piani) ? res.piani : [];
+      if(!res.ok) showToast(res.error || 'Errore nel caricamento dei piani temporanei.');
+    } catch(err){
+      CP_TEMP.salvati = [];
+      showToast('Errore di connessione: ' + err.message);
+    }
+  }
+  async function cpSetModo(modo){
     if(modo === CP_MODO || !currentPatientCode) return;
     if(modo === 'temporaneo'){
       CP_PLAN_UFF = CP_PLAN;
-      const salvato = cpTempLeggi_(currentPatientCode);
-      CP_PLAN = cpPianoCompleto_(salvato ? salvato.plan : cpEmptyPlan());
-      CP_TEMP = { titolo: (salvato && salvato.titolo) || '', nota: (salvato && salvato.nota) || '' };
+      const locale = cpTempLeggi_(currentPatientCode);
+      CP_PLAN = cpPianoCompleto_(locale ? locale.plan : cpEmptyPlan());
+      CP_TEMP = { id: locale ? (locale.id || null) : null, nome: (locale && (locale.nome || locale.titolo)) || '', nota: (locale && locale.nota) || '', salvati: [], dirty: !!locale };
       CP_MODO = 'temporaneo';
-    } else {
-      cpTempSalva_();
-      CP_PLAN = CP_PLAN_UFF || cpEmptyPlan();
-      CP_PLAN_UFF = null;
-      CP_MODO = 'ufficiale';
+      cpState.day = 'Lunedì';
+      cpRenderAll();
+      await cpTempCaricaElenco_();
+      if(CP_MODO === 'temporaneo') cpAggiornaModoUi_();
+      return;
     }
+    cpTempSalva_();
+    CP_PLAN = CP_PLAN_UFF || cpEmptyPlan();
+    CP_PLAN_UFF = null;
+    CP_MODO = 'ufficiale';
     cpState.day = 'Lunedì';
     cpRenderAll();
+  }
+  function cpTempAggiornaStato_(){
+    const el = document.getElementById('cp-temp-stato');
+    if(!el) return;
+    if(CP_TEMP.dirty){ el.textContent = CP_TEMP.id ? 'Modifiche non salvate' : 'Piano non ancora salvato'; el.classList.add('dirty'); }
+    else { el.textContent = CP_TEMP.id ? 'Salvato' : ''; el.classList.remove('dirty'); }
+    const elim = document.getElementById('cp-temp-btn-elimina');
+    if(elim) elim.style.display = CP_TEMP.id ? '' : 'none';
   }
   function cpAggiornaModoUi_(){
     const temp = CP_MODO === 'temporaneo';
@@ -5311,34 +5355,101 @@
     set('cp-btn-obiettivo', temp ? 'none' : '');
     set('cp-history-card', temp ? 'none' : '');
     if(temp){
-      const t = document.getElementById('cp-temp-titolo'), n = document.getElementById('cp-temp-nota');
-      if(t && t.value !== CP_TEMP.titolo) t.value = CP_TEMP.titolo;
+      const t = document.getElementById('cp-temp-nome'), n = document.getElementById('cp-temp-nota'), sel = document.getElementById('cp-temp-sel');
+      if(t && t.value !== CP_TEMP.nome) t.value = CP_TEMP.nome;
       if(n && n.value !== CP_TEMP.nota) n.value = CP_TEMP.nota;
+      if(sel){
+        const fmt = d => { try{ return new Date(d).toLocaleDateString('it-IT', { day:'numeric', month:'short' }); } catch(e){ return ''; } };
+        sel.innerHTML = `<option value="">— Nuovo piano temporaneo —</option>` +
+          CP_TEMP.salvati.map(x => `<option value="${x.id}" ${String(x.id)===String(CP_TEMP.id)?'selected':''}>${cpEsc(x.nome)} (${fmt(x.aggiornato)})</option>`).join('');
+        if(!CP_TEMP.id) sel.value = '';
+      }
+      cpTempAggiornaStato_();
     }
   }
   function cpTempCampo_(campo, valore){
     CP_TEMP[campo] = valore;
     cpTempSalva_();
   }
+  function cpTempConfermaPerdita_(){
+    return !(CP_TEMP.dirty && cpPianoHaContenuto_(CP_PLAN)) || confirm('Ci sono modifiche non salvate al piano temporaneo: verranno perse. Continuare?');
+  }
+  function cpTempNuovo(){
+    if(CP_MODO !== 'temporaneo' || !cpTempConfermaPerdita_()) { cpAggiornaModoUi_(); return; }
+    CP_PLAN = cpEmptyPlan();
+    CP_TEMP.id = null; CP_TEMP.nome = ''; CP_TEMP.nota = '';
+    cpTempCancellaLocale_();
+    cpState.day = 'Lunedì';
+    cpRenderAll();
+  }
+  function cpTempScegli(id){
+    if(CP_MODO !== 'temporaneo') return;
+    if(!id){ cpTempNuovo(); return; }
+    const x = CP_TEMP.salvati.find(p => String(p.id) === String(id));
+    if(!x) return;
+    if(!cpTempConfermaPerdita_()){ cpAggiornaModoUi_(); return; }
+    CP_PLAN = cpCopiaPiano_(x.plan);
+    CP_TEMP.id = x.id; CP_TEMP.nome = x.nome; CP_TEMP.nota = x.nota || '';
+    cpTempCancellaLocale_();
+    cpState.day = 'Lunedì';
+    cpRenderAll();
+  }
+  async function cpTempSalvaServer(){
+    if(CP_MODO !== 'temporaneo') return;
+    const nome = (CP_TEMP.nome || '').trim();
+    if(!nome){ showToast('Dai un nome al piano (es. Piano gara) prima di salvarlo.'); const t = document.getElementById('cp-temp-nome'); if(t) t.focus(); return; }
+    if(!cpPianoHaContenuto_(CP_PLAN)){ showToast('Il piano è vuoto: inserisci almeno un alimento.'); return; }
+    const btn = document.getElementById('cp-temp-btn-salva');
+    cpBottoneCaricando_(btn, 'Salvataggio…');
+    try{
+      const res = await apiPost('pianoTemporaneoSalva', { codice: SESSION.codice, paziente: currentPatientCode, id: CP_TEMP.id, nome, nota: CP_TEMP.nota, plan: CP_PLAN });
+      if(!res.ok){ showToast(res.error || 'Errore durante il salvataggio.'); return; }
+      CP_TEMP.id = res.id;
+      cpTempCancellaLocale_();
+      await cpTempCaricaElenco_();
+      cpAggiornaModoUi_();
+      showToast('Piano temporaneo "' + nome + '" salvato');
+    } catch(err){
+      showToast('Errore di connessione: ' + err.message);
+    } finally {
+      cpBottoneFinito_(btn);
+    }
+  }
+  async function cpTempElimina(){
+    if(CP_MODO !== 'temporaneo' || !CP_TEMP.id) return;
+    if(!confirm('Eliminare definitivamente il piano temporaneo "' + CP_TEMP.nome + '"?')) return;
+    try{
+      const res = await apiPost('pianoTemporaneoElimina', { codice: SESSION.codice, paziente: currentPatientCode, id: CP_TEMP.id });
+      if(!res.ok){ showToast(res.error || "Errore durante l'eliminazione."); return; }
+      CP_PLAN = cpEmptyPlan();
+      CP_TEMP.id = null; CP_TEMP.nome = ''; CP_TEMP.nota = '';
+      cpTempCancellaLocale_();
+      await cpTempCaricaElenco_();
+      cpRenderAll();
+      showToast('Piano temporaneo eliminato');
+    } catch(err){
+      showToast('Errore di connessione: ' + err.message);
+    }
+  }
+  // "Svuota" cancella solo il contenuto della schermata; un piano già salvato resta su Supabase
+  // finché non si usa "Elimina piano salvato".
   function cpTempSvuota(){
     if(CP_MODO !== 'temporaneo') return;
-    if(cpPianoHaContenuto_(CP_PLAN) && !confirm('Svuotare il piano temporaneo? Gli alimenti inseriti verranno cancellati.')) return;
+    if(cpPianoHaContenuto_(CP_PLAN) && !confirm('Svuotare il piano? Gli alimenti inseriti qui verranno tolti (un piano già salvato resta salvato finché non lo elimini).')) return;
     CP_PLAN = cpEmptyPlan();
-    CP_TEMP = { titolo:'', nota:'' };
     cpTempSalva_();
     cpRenderAll();
-    showToast('Piano temporaneo svuotato');
   }
   function cpTempDaUfficiale(){
     if(CP_MODO !== 'temporaneo' || !CP_PLAN_UFF) return;
-    if(cpPianoHaContenuto_(CP_PLAN) && !confirm('Sostituire il piano temporaneo con una copia di quello ufficiale?')) return;
+    if(cpPianoHaContenuto_(CP_PLAN) && !confirm('Sostituire il contenuto con una copia del piano ufficiale?')) return;
     CP_PLAN = cpCopiaPiano_(CP_PLAN_UFF);
     cpTempSalva_();
     cpRenderAll();
-    showToast('Copiato il piano ufficiale — ora puoi modificarlo senza toccare l\'originale');
+    showToast("Copiato il piano ufficiale — ora puoi modificarlo senza toccare l'originale");
   }
   function cpTempEsporta(){
-    return cpPtApriAnteprima_({ plan: CP_PLAN, titolo: CP_TEMP.titolo, nota: CP_TEMP.nota, perGiorno: true });
+    return cpPtApriAnteprima_({ plan: CP_PLAN, titolo: CP_TEMP.nome, nota: CP_TEMP.nota, perGiorno: true });
   }
 
   /* ---- PDF del Piano Settimanale (stessa grafica della scheda "Piano Settimanale") ----
