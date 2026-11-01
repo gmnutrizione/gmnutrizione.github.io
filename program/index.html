@@ -254,7 +254,7 @@
   .ps-day{ font-family:var(--font-display); font-size:12.5px; font-weight:600; }
   .ps-cell{ box-sizing:border-box; border-left:1px solid var(--border-soft); border-top:1px solid var(--border-soft); background:var(--surface); padding:8px 10px; overflow:hidden; }
   .ps-grid > .ps-head:first-child, .ps-grid > .ps-cell:nth-child(8n+1){ border-left:none; }
-  .ps-grid > .ps-head{ border-top:none; }
+  .ps-grid > .ps-head{ border-top:none; background:var(--accent-ink); color:#fff; }
   .ps-row-label{ font-family:var(--font-display); font-size:11.5px; font-weight:600; color:var(--ink-soft); display:flex; align-items:center; background:var(--accent-soft); }
   .ps-entry-text{ font-size:10.3px; line-height:1.42; color:var(--ink-soft); }
   .ps-entry-text b{ font-family:var(--font-mono); font-weight:600; color:var(--ink); }
@@ -269,6 +269,38 @@
   #ps-nota-testo{ width:100%; min-height:90px; resize:vertical; }
   .ps-notes-saved{ font-size:11.5px; color:var(--accent); display:none; }
   .ps-notes-saved.show{ display:inline; }
+  /* ---- Crea piano: scelta piano ufficiale / temporaneo ---- */
+  .cp-modo-bar{ display:inline-flex; background:var(--accent-soft); border-radius:999px; padding:3px; gap:2px; margin-bottom:14px; }
+  .cp-modo-btn{ border:none; background:none; padding:7px 16px; border-radius:999px; font:inherit; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; }
+  .cp-modo-btn.active{ background:var(--accent); color:#fff; }
+  .cp-temp-card{ border:1.5px dashed var(--warning); border-radius:12px; padding:14px 16px; margin-bottom:14px; background:var(--surface); }
+  .cp-temp-text{ font-size:12.8px; line-height:1.5; color:var(--ink-soft); margin-bottom:10px; }
+  .cp-temp-fields{ display:grid; gap:8px; margin-bottom:10px; }
+  .cp-temp-fields input, .cp-temp-fields textarea{ width:100%; box-sizing:border-box; font:inherit; font-size:13px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); }
+  .cp-temp-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .cp-history-actions{ display:flex; gap:6px; }
+  /* ---- Documento PDF del Piano Settimanale (piano temporaneo / versione salvata) ---- */
+  .ptpdf-doc{
+    --ink:#17221D; --ink-soft:#48564C; --ink-faint:#7C8A76; --surface:#FBFCF8; --border:#DCE2D3; --border-soft:#E7EBE0;
+    --accent:#0B8A78; --accent-ink:#04352D; --accent-soft:#E1F0EB; --hdr-grad-1:#04352D; --hdr-grad-2:#0A6E60;
+    background:#FBFCF8; color:var(--ink); font-family:var(--font-body); display:flex; flex-direction:column;
+  }
+  .ptpdf-band{ background:linear-gradient(150deg, var(--hdr-grad-1) 0%, var(--hdr-grad-2) 100%); color:#fff; padding:18px 24px 16px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .ptpdf-eyebrow{ font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.65); }
+  .ptpdf-name{ font-family:var(--font-display); font-size:24px; font-weight:600; margin-top:7px; }
+  .ptpdf-sub{ font-size:12.5px; color:rgba(255,255,255,.8); margin-top:4px; }
+  .ptpdf-logo{ flex:none; height:64px; max-width:200px; object-fit:contain; object-position:top right; }
+  .ptpdf-body{ padding:16px 24px 0; flex:1 1 auto; }
+  .ptpdf-doc .ps-grid{ min-width:0; }
+  .ptpdf-doc .ps-grid > .ps-cell{ border-left:1px solid var(--border-soft); }
+  .ptpdf-doc .ps-grid > .ps-row-label, .ptpdf-doc .ps-grid > .ps-head-label{ border-left:none; }
+  .ptpdf-doc .ps-cell.ps-fixed{ min-height:0; }
+  .ptpdf-doc .ps-cell.ps-fixed .ps-entry-text{ display:block; -webkit-line-clamp:unset; overflow:visible; }
+  .ptpdf-doc .ps-entry-text{ font-size:11px; }
+  .ptpdf-nota{ margin-top:14px; padding:10px 14px; border-left:3px solid var(--accent); background:var(--accent-soft); border-radius:6px; font-size:12px; line-height:1.5; color:var(--ink-soft); white-space:pre-wrap; }
+  .ptpdf-footer{ padding:12px 24px 14px; border-top:1px solid var(--border-soft); }
+  .ptpdf-footer-brand{ font-size:11px; color:var(--ink-soft); font-weight:600; }
+  .ptpdf-footer-tag{ font-family:var(--font-display); font-style:italic; font-size:11px; color:#B9C2B2; margin-top:2px; }
   .ps-empty{ padding:30px 10px; text-align:center; color:var(--ink-faint); font-size:13px; }
 
   .panel{
@@ -1009,6 +1041,18 @@
     body.printing-cf .modal-card > *:not(#cf-stampa-view){ display:none !important; }
     body.printing-cf #cf-stampa-view > h3, body.printing-cf #cf-stampa-view > p{ display:none !important; }
     body.printing-cf #cf-stampa-view button{ display:none !important; }
+    /* Piano Settimanale in PDF (piano temporaneo / versione salvata): stesso meccanismo di cf-stampa,
+       ma su foglio A4 orizzontale (pagina con nome "pt") perché la griglia ha fino a 7 colonne. */
+    body.printing-pt > *:not(.modal-overlay){ display:none !important; }
+    body.printing-pt .modal-overlay{ position:static !important; background:none !important; display:block !important; padding:0 !important; }
+    body.printing-pt .modal-overlay:not(#pt-stampa-overlay){ display:none !important; }
+    body.printing-pt .modal-card{ box-shadow:none !important; max-width:none !important; border:none !important; max-height:none !important; overflow:visible !important; }
+    body.printing-pt .modal-card > *:not(#pt-stampa-view){ display:none !important; }
+    body.printing-pt #pt-stampa-view > h3, body.printing-pt #pt-stampa-view > p{ display:none !important; }
+    body.printing-pt #pt-stampa-view button{ display:none !important; }
+    html:has(body.printing-pt), body.printing-pt{ height:auto !important; min-height:0 !important; overflow:visible !important; margin:0 !important; padding:0 !important; background:#fff !important; }
+    body.printing-pt .modal-overlay, body.printing-pt .modal-card, body.printing-pt #pt-stampa-view, body.printing-pt #pt-stampa-contenuto{ margin:0 !important; padding:0 !important; height:auto !important; min-height:0 !important; background:#fff !important; }
+    body.printing-pt .ptpdf-doc{ page:pt; width:273mm; min-height:182mm; break-inside:avoid; break-after:avoid; page-break-after:avoid; }
     html:has(body.printing-cf), body.printing-cf{ height:auto !important; min-height:0 !important; overflow:visible !important; margin:0 !important; padding:0 !important; }
     body.printing-cf .modal-overlay, body.printing-cf .modal-card, body.printing-cf #cf-stampa-view, body.printing-cf #cf-stampa-contenuto{ margin:0 !important; padding:0 !important; height:auto !important; min-height:0 !important; }
     html:has(body.printing-cf), body.printing-cf, body.printing-cf .modal-overlay, body.printing-cf .modal-card, body.printing-cf #cf-stampa-view, body.printing-cf #cf-stampa-contenuto{ background:#fff !important; }
@@ -1297,6 +1341,7 @@
        titolo pagina e link in automatico) — qui aggiungiamo SOLO il numero di pagina, disegnato da
        noi con i colori e il font del documento invece di quello generico del browser. */
     @page{ size:A4; margin:20mm 12mm 14mm 12mm; }
+    @page pt{ size:A4 landscape; margin:12mm; }
   }
 
   .p-checkin-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border-soft); }
@@ -2636,6 +2681,22 @@
         </div>
 
         <div id="cp-body" style="display:none;">
+          <div class="cp-modo-bar" role="tablist" aria-label="Quale piano modificare">
+            <button type="button" class="cp-modo-btn active" id="cp-modo-uff" onclick="cpSetModo('ufficiale')">Piano ufficiale</button>
+            <button type="button" class="cp-modo-btn" id="cp-modo-temp" onclick="cpSetModo('temporaneo')">Piano temporaneo</button>
+          </div>
+          <div class="cp-temp-card" id="cp-temp-card" style="display:none;">
+            <div class="cp-temp-text"><b>Stai lavorando sul piano temporaneo.</b> È un piano a parte, parallelo a quello ufficiale: non viene salvato nello storico e non cambia ciò che vede il paziente. Compila solo i giorni e i pasti che ti servono ed esportalo in PDF. Resta memorizzato su questo dispositivo finché non lo svuoti.</div>
+            <div class="cp-temp-fields">
+              <input type="text" id="cp-temp-titolo" maxlength="80" placeholder="Titolo (facoltativo), es. Settimana gara" oninput="cpTempCampo_('titolo', this.value)">
+              <textarea id="cp-temp-nota" rows="2" placeholder="Note per il paziente (facoltative)" oninput="cpTempCampo_('nota', this.value)"></textarea>
+            </div>
+            <div class="cp-temp-actions">
+              <button class="btn small primary" type="button" onclick="cpTempEsporta()">Esporta PDF</button>
+              <button class="btn small ghost" type="button" onclick="cpTempDaUfficiale()">Parti dal piano ufficiale</button>
+              <button class="btn small ghost" type="button" onclick="cpTempSvuota()">Svuota piano temporaneo</button>
+            </div>
+          </div>
           <div class="note-strip draft" id="cp-draft-notice" style="display:none;">
             <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7V12L15.5 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <div>Hai delle modifiche non salvate per questo paziente — le abbiamo tenute in memoria e ripristinate qui.</div>
@@ -2647,7 +2708,7 @@
               <p>Il piano di questo paziente, giorno per giorno.</p>
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn small ghost" type="button" onclick="cpOpenModal('target')">Obiettivo</button>
+              <button class="btn small ghost" type="button" id="cp-btn-obiettivo" onclick="cpOpenModal('target')">Obiettivo</button>
               <button class="btn small ghost" type="button" onclick="cpOpenModal('import')">Importa modello</button>
               <button class="btn small ghost" type="button" onclick="cpOpenDuplicateModal('day')">Duplica giorno</button>
               <button class="btn small ghost" type="button" onclick="cpOpenModal('save')">Salva come modello</button>
@@ -2682,7 +2743,7 @@
             </div>
           </div>
 
-          <div class="card">
+          <div class="card" id="cp-history-card">
             <div class="card-head"><h3>Storico piani</h3><p>Media settimanale, registrata ad ogni salvataggio</p></div>
             <div class="cp-history-list" id="cp-history-list"></div>
           </div>
@@ -2878,6 +2939,35 @@
       <div style="display:flex; gap:10px; margin-top:16px;">
         <button class="btn ghost" type="button" onclick="chiudiCfStampa()">Chiudi</button>
         <button class="btn primary" type="button" onclick="cfAvviaStampa_()">Stampa / salva PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visualizzazione di una versione salvata del piano (da "Storico piani" in Crea piano) -->
+  <div class="modal-overlay" id="cp-ver-overlay" style="display:none;" onclick="if(event.target===this) cpVerChiudi();">
+    <div class="modal-card" style="max-width:1100px;">
+      <h3 id="cp-ver-titolo">Versione del piano</h3>
+      <p id="cp-ver-sub" style="font-size:12.5px; color:var(--ink-faint); margin:2px 0 12px;">—</p>
+      <div id="cp-ver-contenuto"></div>
+      <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
+        <button class="btn ghost" type="button" onclick="cpVerChiudi()">Chiudi</button>
+        <button class="btn ghost" type="button" onclick="cpVerEsportaPdf()">Esporta PDF</button>
+        <button class="btn primary" type="button" onclick="cpVerCarica()">Carica in Crea piano</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Anteprima di stampa del Piano Settimanale (piano temporaneo o versione salvata) -->
+  <div class="modal-overlay" id="pt-stampa-overlay" style="display:none;" onclick="if(event.target===this) chiudiPtStampa();">
+    <div class="modal-card" style="max-width:1100px;">
+      <div id="pt-stampa-view">
+        <h3>Anteprima di stampa — Piano Settimanale</h3>
+        <p>—</p>
+        <div id="pt-stampa-contenuto"></div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="btn ghost" type="button" onclick="chiudiPtStampa()">Chiudi</button>
+        <button class="btn primary" type="button" onclick="ptAvviaStampa_()">Stampa / salva PDF</button>
       </div>
     </div>
   </div>
@@ -4772,6 +4862,7 @@
   function cpDraftKey_(codice){ return 'percorsoDraftPiano::' + (SESSION && SESSION.codice) + '::' + codice; }
   function cpSalvaDraftLocale(){
     if(!currentPatientCode) return;
+    if(CP_MODO === 'temporaneo'){ cpTempSalva_(); return; }
     try{
       localStorage.setItem(cpDraftKey_(currentPatientCode), JSON.stringify({ plan: CP_PLAN, target: CP_TARGET, ts: Date.now() }));
     } catch(err){ /* localStorage non disponibile — la bozza semplicemente non viene salvata */ }
@@ -4799,6 +4890,7 @@
 
   // soloAttivo: stessa logica di loadPiano qui sopra, applicata al piano "Crea piano".
   async function loadPianoStrutturato(codice, soloAttivo){
+    CP_MODO = 'ufficiale'; CP_PLAN_UFF = null;
     try{
       const params = { codice: SESSION.codice, paziente: codice };
       if(soloAttivo) params.soloAttivo = '1';
@@ -4849,7 +4941,8 @@
   }
 
   function cpRenderAll(){
-    document.getElementById('cp-draft-notice').style.display = CP_DRAFT_ATTIVO ? '' : 'none';
+    document.getElementById('cp-draft-notice').style.display = (CP_DRAFT_ATTIVO && CP_MODO === 'ufficiale') ? '' : 'none';
+    cpAggiornaModoUi_();
     document.getElementById('cp-target-summary').textContent = cpFmt(CP_TARGET.kcal) + ' kcal';
     const badgeEl = document.getElementById('cp-target-badge');
     badgeEl.innerHTML = CP_TARGET_ORIGINE === 'auto' ? '<span class="cp-badge-auto">calcolato automaticamente</span>'
@@ -5154,6 +5247,195 @@
     cpRenderWeekChart();
   }
 
+
+  /* ---- piano temporaneo (parallelo a quello ufficiale) ----
+     Lo stesso editor di "Crea piano" viene riusato scambiando CP_PLAN con un piano a parte: tutto
+     ciò che c'è già (ricerca alimenti, grammi, duplica giorno/pasto, riepilogo) funziona uguale.
+     Il piano temporaneo non viene mai inviato al server: resta nel browser (localStorage), per
+     paziente, finché non lo si svuota. Serve per prove e piani a tempo (es. solo da mercoledì a
+     domenica con grammature diverse) da esportare in PDF con la grafica del Piano Settimanale. */
+  let CP_MODO = 'ufficiale';   // 'ufficiale' | 'temporaneo'
+  let CP_PLAN_UFF = null;      // piano ufficiale messo da parte mentre si lavora sul temporaneo
+  let CP_TEMP = { titolo:'', nota:'' };
+
+  function cpTempKey_(codice){ return 'percorsoPianoTemp::' + (SESSION && SESSION.codice) + '::' + codice; }
+  function cpTempLeggi_(codice){
+    try{
+      const raw = localStorage.getItem(cpTempKey_(codice));
+      if(!raw) return null;
+      const d = JSON.parse(raw);
+      return (d && d.plan) ? d : null;
+    } catch(err){ return null; }
+  }
+  function cpTempSalva_(){
+    if(!currentPatientCode || CP_MODO !== 'temporaneo') return;
+    try{
+      localStorage.setItem(cpTempKey_(currentPatientCode), JSON.stringify({ plan: CP_PLAN, titolo: CP_TEMP.titolo, nota: CP_TEMP.nota, ts: Date.now() }));
+    } catch(err){ /* localStorage non disponibile: il piano resta solo in memoria */ }
+  }
+  function cpPianoCompleto_(plan){
+    CP_GIORNI.forEach(g => { if(!plan[g]) plan[g] = {}; CP_MEALS.forEach(m => { if(!plan[g][m]) plan[g][m] = []; }); });
+    return plan;
+  }
+  function cpPianoHaContenuto_(plan){
+    return CP_GIORNI.some(g => CP_MEALS.some(m => ((plan[g] && plan[g][m]) || []).length > 0));
+  }
+  function cpCopiaPiano_(plan){
+    return cpPianoCompleto_(JSON.parse(JSON.stringify(plan || {})));
+  }
+  function cpSetModo(modo){
+    if(modo === CP_MODO || !currentPatientCode) return;
+    if(modo === 'temporaneo'){
+      CP_PLAN_UFF = CP_PLAN;
+      const salvato = cpTempLeggi_(currentPatientCode);
+      CP_PLAN = cpPianoCompleto_(salvato ? salvato.plan : cpEmptyPlan());
+      CP_TEMP = { titolo: (salvato && salvato.titolo) || '', nota: (salvato && salvato.nota) || '' };
+      CP_MODO = 'temporaneo';
+    } else {
+      cpTempSalva_();
+      CP_PLAN = CP_PLAN_UFF || cpEmptyPlan();
+      CP_PLAN_UFF = null;
+      CP_MODO = 'ufficiale';
+    }
+    cpState.day = 'Lunedì';
+    cpRenderAll();
+  }
+  function cpAggiornaModoUi_(){
+    const temp = CP_MODO === 'temporaneo';
+    const set = (id, disp) => { const el = document.getElementById(id); if(el) el.style.display = disp; };
+    document.getElementById('cp-modo-uff').classList.toggle('active', !temp);
+    document.getElementById('cp-modo-temp').classList.toggle('active', temp);
+    set('cp-temp-card', temp ? '' : 'none');
+    set('cp-btn-salva', temp ? 'none' : '');
+    set('cp-btn-bozza', temp ? 'none' : '');
+    set('cp-btn-obiettivo', temp ? 'none' : '');
+    set('cp-history-card', temp ? 'none' : '');
+    if(temp){
+      const t = document.getElementById('cp-temp-titolo'), n = document.getElementById('cp-temp-nota');
+      if(t && t.value !== CP_TEMP.titolo) t.value = CP_TEMP.titolo;
+      if(n && n.value !== CP_TEMP.nota) n.value = CP_TEMP.nota;
+    }
+  }
+  function cpTempCampo_(campo, valore){
+    CP_TEMP[campo] = valore;
+    cpTempSalva_();
+  }
+  function cpTempSvuota(){
+    if(CP_MODO !== 'temporaneo') return;
+    if(cpPianoHaContenuto_(CP_PLAN) && !confirm('Svuotare il piano temporaneo? Gli alimenti inseriti verranno cancellati.')) return;
+    CP_PLAN = cpEmptyPlan();
+    CP_TEMP = { titolo:'', nota:'' };
+    cpTempSalva_();
+    cpRenderAll();
+    showToast('Piano temporaneo svuotato');
+  }
+  function cpTempDaUfficiale(){
+    if(CP_MODO !== 'temporaneo' || !CP_PLAN_UFF) return;
+    if(cpPianoHaContenuto_(CP_PLAN) && !confirm('Sostituire il piano temporaneo con una copia di quello ufficiale?')) return;
+    CP_PLAN = cpCopiaPiano_(CP_PLAN_UFF);
+    cpTempSalva_();
+    cpRenderAll();
+    showToast('Copiato il piano ufficiale — ora puoi modificarlo senza toccare l\'originale');
+  }
+  function cpTempEsporta(){
+    return cpPtApriAnteprima_({ plan: CP_PLAN, titolo: CP_TEMP.titolo, nota: CP_TEMP.nota, perGiorno: true });
+  }
+
+  /* ---- PDF del Piano Settimanale (stessa grafica della scheda "Piano Settimanale") ----
+     Mostra solo i giorni con almeno un alimento e solo i pasti compilati; le celle vuote restano
+     bianche. Usato dal piano temporaneo e dalle versioni salvate dello storico. */
+  async function cpVerdurePreset_(){
+    try{
+      const res = await apiGet('pgPresetLeggi', { codice: SESSION.codice });
+      const sesso = String((currentPatientMeta && currentPatientMeta.Sesso) || '').trim().toUpperCase() === 'F' ? 'F' : 'M';
+      const riga = ((res.ok && res.preset) || []).find(r => r.sesso === sesso);
+      return (riga && Number(riga.verdure)) || 200;
+    } catch(err){ return 200; }
+  }
+  function cpPtHtml_(dati, giorni, verdure){
+    const nome = (currentPatientMeta && currentPatientMeta.Nome) || '—';
+    const griglia = psHtmlGriglia_(dati.plan, giorni, CP_FOODS_BY_ID, verdure, { soloCompilati:true, vuotoBianco:true, colonneFlessibili:true, contenutoPerGiorno: !!dati.perGiorno });
+    const sub = dati.titolo ? `<div class="ptpdf-sub">${cpEsc(dati.titolo)}</div>` : '';
+    const nota = dati.nota && dati.nota.trim() ? `<div class="ptpdf-nota">${cpEsc(dati.nota.trim())}</div>` : '';
+    return `<div class="ptpdf-doc">
+      <div class="ptpdf-band">
+        <div>
+          <div class="ptpdf-eyebrow">Piano Settimanale</div>
+          <div class="ptpdf-name">${cpEsc(nome)}</div>
+          ${sub}
+        </div>
+        <img class="ptpdf-logo" src="logo-bianco.png" alt="" onerror="this.remove()">
+      </div>
+      <div class="ptpdf-body">${griglia}${nota}</div>
+      <div class="ptpdf-footer">
+        <div class="ptpdf-footer-brand">Dott. Giovanni Murdaca &mdash; Nutrizionista Sportivo</div>
+        <div class="ptpdf-footer-tag">Percorso &middot; GM Nutrizione e Benessere</div>
+      </div>
+    </div>`;
+  }
+  async function cpPtApriAnteprima_(dati){
+    const plan = cpPianoCompleto_(dati.plan || {});
+    const giorni = CP_GIORNI.filter(g => CP_MEALS.some(m => (plan[g][m] || []).some(r => CP_FOODS_BY_ID && CP_FOODS_BY_ID[r.id])));
+    if(!giorni.length){ showToast('Il piano è vuoto: inserisci almeno un alimento.'); return; }
+    const verdure = await cpVerdurePreset_();
+    const nome = (currentPatientMeta && currentPatientMeta.Nome) || '';
+    document.querySelector('#pt-stampa-view > p').textContent = 'Anteprima per ' + nome + ' — controlla che sia tutto corretto prima di stampare o salvare come PDF.';
+    document.getElementById('pt-stampa-contenuto').innerHTML = cpPtHtml_({ plan, titolo: dati.titolo || '', nota: dati.nota || '', perGiorno: !!dati.perGiorno }, giorni, verdure);
+    document.getElementById('pt-stampa-overlay').style.display = 'flex';
+  }
+  function chiudiPtStampa(){ document.getElementById('pt-stampa-overlay').style.display = 'none'; }
+  function ptAvviaStampa_(){
+    cpAssicuraOverlayInBody_('pt-stampa-overlay');
+    document.body.classList.add('printing-pt');
+    const nome = ((currentPatientMeta && currentPatientMeta.Nome) || '').replace(/[\\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+    const oggi = new Date();
+    const mese = oggi.toLocaleDateString('it-IT', { month:'long' });
+    const titoloPrima = document.title;
+    document.title = [nome, 'Piano Settimanale', mese.charAt(0).toUpperCase() + mese.slice(1), oggi.getFullYear()].filter(Boolean).join(' ');
+    const cleanup = () => { document.body.classList.remove('printing-pt'); document.title = titoloPrima; };
+    window.addEventListener('afterprint', cleanup, { once:true });
+    window.print();
+  }
+
+  /* ---- versioni salvate: visualizza / ricarica nell'editor ---- */
+  let CP_VER_IDX = -1;
+  async function cpVerVisualizza(i){
+    const h = CP_HISTORY[i];
+    if(!h || !h.Plan){ showToast('Questa versione non contiene il piano completo.'); return; }
+    CP_VER_IDX = i;
+    await cpLoadFoods();
+    const verdure = await cpVerdurePreset_();
+    const plan = cpCopiaPiano_(h.Plan);
+    document.getElementById('cp-ver-titolo').textContent = 'Versione del ' + fmtDateFull(new Date(h.Data));
+    document.getElementById('cp-ver-sub').textContent = (i === 0 ? 'È la versione attuale. ' : '') + 'Anteprima nella grafica del Piano Settimanale.';
+    document.getElementById('cp-ver-contenuto').innerHTML = psHtmlGriglia_(plan, CP_GIORNI, CP_FOODS_BY_ID, verdure);
+    document.getElementById('cp-ver-overlay').style.display = 'flex';
+  }
+  function cpVerChiudi(){ document.getElementById('cp-ver-overlay').style.display = 'none'; }
+  function cpVerEsportaPdf(){
+    const h = CP_HISTORY[CP_VER_IDX];
+    if(!h || !h.Plan) return;
+    cpPtApriAnteprima_({ plan: h.Plan, titolo: 'Versione del ' + fmtDateFull(new Date(h.Data)), nota:'' });
+  }
+  // Mette il piano di una versione vecchia nell'editor come bozza non salvata: per renderla di nuovo
+  // il piano attuale basta premere "Salva piano" (nasce una nuova versione, lo storico resta intatto).
+  // L'obiettivo (target) resta quello corrente.
+  function cpVerCarica(i){
+    if(typeof i !== 'number') i = CP_VER_IDX;
+    const h = CP_HISTORY[i];
+    if(!h || !h.Plan){ showToast('Questa versione non contiene il piano completo.'); return; }
+    if(!confirm('Caricare la versione del ' + fmtDateFull(new Date(h.Data)) + ' in Crea piano? Le modifiche non salvate del piano ufficiale verranno sostituite. Per renderla il piano attuale dovrai poi premere "Salva piano".')) return;
+    if(CP_MODO === 'temporaneo') cpSetModo('ufficiale');
+    CP_PLAN = cpCopiaPiano_(h.Plan);
+    cpState.day = 'Lunedì';
+    cpVerChiudi();
+    cpSalvaDraftLocale();
+    CP_DRAFT_ATTIVO = true;
+    cpRenderAll();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('Versione caricata come bozza — premi "Salva piano" per renderla quella attuale');
+  }
+
   /* ---- storico piani ---- */
   function cpRenderHistory(){
     const el = document.getElementById('cp-history-list');
@@ -5188,13 +5470,19 @@
           </div>
           <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex:none;">
             ${isLatest ? '<span class="badge-current">Versione attuale</span>' : ''}
-            <button type="button" class="cp-btn-remove" data-riga="${h.Riga||''}" title="Elimina questa versione">${CP_ICON_X}</button>
+            <div class="cp-history-actions">
+              <button type="button" class="btn small ghost cp-ver-vedi" data-i="${i}">Visualizza</button>
+              <button type="button" class="btn small ghost cp-ver-carica" data-i="${i}">Carica</button>
+              <button type="button" class="cp-btn-remove" data-riga="${h.Riga||''}" title="Elimina questa versione">${CP_ICON_X}</button>
+            </div>
           </div>
         </div>`;
     }).join('');
     el.querySelectorAll('.cp-btn-remove').forEach(btn => {
       btn.addEventListener('click', () => cpEliminaPiano(btn.dataset.riga));
     });
+    el.querySelectorAll('.cp-ver-vedi').forEach(btn => btn.addEventListener('click', () => cpVerVisualizza(+btn.dataset.i)));
+    el.querySelectorAll('.cp-ver-carica').forEach(btn => btn.addEventListener('click', () => cpVerCarica(+btn.dataset.i)));
   }
 
   // Elimina definitivamente una versione salvata: toglie la riga sia dall'app sia dal Google Sheet
@@ -5219,6 +5507,7 @@
 
   /* ---- salva piano ---- */
   async function cpSalvaPiano(){
+    if(CP_MODO === 'temporaneo') return;
     const btn = document.getElementById('cp-btn-salva');
     cpBottoneCaricando_(btn, 'Salvataggio…');
     try{
@@ -5244,7 +5533,7 @@
   }
 
   function cpSalvaBozza(){
-    if(!currentPatientCode) return;
+    if(!currentPatientCode || CP_MODO === 'temporaneo') return;
     cpSalvaDraftLocale();
     CP_DRAFT_ATTIVO = true;
     document.getElementById('cp-draft-notice').style.display = '';
@@ -8597,12 +8886,16 @@
   }
 
   // Costruisce la griglia (etichetta pasto + 7 giorni) e l'eventuale postilla sulle opzioni libere.
-  function psHtmlGriglia_(plan, giorni, foodsById, verdure){
+  function psHtmlGriglia_(plan, giorni, foodsById, verdure, opts){
+    opts = opts || {};
+    const VUOTO = opts.vuotoBianco ? '' : '—';
     const opzioniPerPasto = {};
     PG_PASTI_DERIVATI.forEach(p => { opzioniPerPasto[p] = pgOpzioniDerivate_(plan, giorni, p, foodsById); });
 
     // Dopo cena compare solo se presente in almeno un giorno del piano (richiesta di Giovanni).
-    const righeMeal = CP_MEALS.filter(m => m !== 'Dopo cena' || opzioniPerPasto['Dopo cena'].length > 0);
+    let righeMeal = CP_MEALS.filter(m => m !== 'Dopo cena' || opzioniPerPasto['Dopo cena'].length > 0);
+    // opts.soloCompilati: tiene solo i pasti che hanno almeno un alimento in uno dei giorni mostrati.
+    if(opts.soloCompilati) righeMeal = righeMeal.filter(m => giorni.some(g => ((plan[g] && plan[g][m]) || []).some(r => foodsById[r.id])));
     const pastiConPiuOpzioni = [];
     const celle = [];
 
@@ -8615,24 +8908,30 @@
       celle.push(`<div class="${classiCella} ps-row-label">${cpEsc(psLabelPasto_(pasto))}</div>`);
 
       const opzioni = fisso ? null : opzioniPerPasto[pasto];
-      if(opzioni && opzioni.length > 1) pastiConPiuOpzioni.push(pasto);
+      if(opzioni && opzioni.length > 1 && !opts.contenutoPerGiorno) pastiConPiuOpzioni.push(pasto);
 
       giorni.forEach(g => {
         const righeGiorno = (plan[g] && plan[g][pasto]) || [];
         let contenuto;
-        if(fisso){
+        if(!fisso && opts.contenutoPerGiorno){
+          // Piano personalizzato: ogni giorno mostra ciò che è stato davvero compilato, senza "Opzione N".
+          const val = righeGiorno.filter(r => foodsById[r.id]);
+          contenuto = val.length
+            ? `<div class="ps-entry-text">${psTestoOpzione_({ righe: val.map(r => ({ g:r.g, nome:foodsById[r.id].nome })) })}</div>`
+            : `<div class="ps-entry-text ps-vuoto">${VUOTO}</div>`;
+        } else if(fisso){
           const testo = psOrdinaTestoPasto_(righeGiorno, foodsById, verdure);
-          contenuto = testo ? `<div class="ps-entry-text">${testo}</div>` : `<div class="ps-entry-text ps-vuoto">—</div>`;
+          contenuto = testo ? `<div class="ps-entry-text">${testo}</div>` : `<div class="ps-entry-text ps-vuoto">${VUOTO}</div>`;
         } else if(!opzioni || !opzioni.length){
-          contenuto = `<div class="ps-entry-text ps-vuoto">—</div>`;
+          contenuto = `<div class="ps-entry-text ps-vuoto">${VUOTO}</div>`;
         } else if(opzioni.length === 1){
           const haContenuto = righeGiorno.some(r => foodsById[r.id]);
           contenuto = haContenuto
             ? `<div class="ps-entry-text">${psTestoOpzione_(opzioni[0])}</div>`
-            : `<div class="ps-entry-text ps-vuoto">—</div>`;
+            : `<div class="ps-entry-text ps-vuoto">${VUOTO}</div>`;
         } else {
           const n = psNumeroOpzioneDelGiorno_(righeGiorno, foodsById, opzioni, pasto);
-          contenuto = n ? `<span class="ps-opzione-badge">Opzione ${n}</span>` : `<div class="ps-entry-text ps-vuoto">—</div>`;
+          contenuto = n ? `<span class="ps-opzione-badge">Opzione ${n}</span>` : `<div class="ps-entry-text ps-vuoto">${VUOTO}</div>`;
         }
         celle.push(`<div class="${classiCella}">${contenuto}</div>`);
       });
@@ -8642,7 +8941,8 @@
       ? `<div class="ps-footnote">Per ${pastiConPiuOpzioni.map(p => p.toLowerCase()).join(', ')} le opzioni indicate sono sempre a scelta libera, per tutti i giorni della settimana.</div>`
       : '';
 
-    return `<div class="ps-grid-scroll"><div class="ps-grid">${celle.join('')}</div></div>${footnote}`;
+    const stileGrid = opts.colonneFlessibili ? ` style="grid-template-columns:104px repeat(${giorni.length}, minmax(0, 1fr));"` : '';
+    return `<div class="ps-grid-scroll"><div class="ps-grid"${stileGrid}>${celle.join('')}</div></div>${footnote}`;
   }
 
   function psHtmlNote_(){
