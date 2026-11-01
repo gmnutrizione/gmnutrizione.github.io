@@ -618,7 +618,8 @@
   .cf-name{ font-family:var(--font-display); font-size:19px; font-weight:600; margin-top:12px; }
   .cf-date{ font-size:12px; color:rgba(255,255,255,.75); margin-top:3px; }
   .cf-body{ padding:16px 24px 22px; }
-  .cf-selects{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .cf-toolbar{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .cf-selects{ display:flex; gap:12px; flex-wrap:wrap; }
   .cf-field label{ display:block; font-size:11px; color:var(--ink-faint); margin-bottom:4px; }
   .cf-field select{
     font-family:var(--font-body); font-size:13px; font-weight:500; padding:7px 10px; border-radius:var(--radius-s);
@@ -650,6 +651,49 @@
   .cf-footer{ text-align:center; margin-top:18px; padding-top:14px; border-top:1px solid var(--border-soft); font-family:var(--font-display); font-style:italic; font-size:11px; color:var(--ink-faint); }
   .cf-footer b{ font-style:normal; color:var(--ink-soft); }
   .cf-empty{ padding:30px 10px; text-align:center; color:var(--ink-faint); font-size:13px; }
+
+  /* ---------- Confronto controlli: esportazione PDF ("Il Referto", approvato 1/11) ----------
+     Documento stampabile indipendente dal tema chiaro/scuro dell'app: colori FISSI (come già
+     fa .pg-doc per il Piano Generico), mai var(--ink) ecc. — altrimenti col tema scuro attivo a
+     schermo la stampa uscirebbe con i colori invertiti. Una sola pagina A4 (vedi @page globale). */
+  .cfpdf-doc{
+    --cfpdf-ink:#17221D; --cfpdf-ink-soft:#48564C; --cfpdf-ink-faint:#7C8A76;
+    --cfpdf-border-soft:#E7EBE0; --cfpdf-accent:#0B8A78; --cfpdf-accent-soft:#E1F0EB;
+    --cfpdf-grad-1:#04352D; --cfpdf-grad-2:#0A6E60; --cfpdf-good:#1F9463;
+    background:#FBFCF8; color:var(--cfpdf-ink); font-family:var(--font-body);
+  }
+  .cfpdf-band{ background:linear-gradient(150deg, var(--cfpdf-grad-1) 0%, var(--cfpdf-grad-2) 100%); color:#fff; padding:22px 26px 20px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .cfpdf-eyebrow{ font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.65); }
+  .cfpdf-name{ font-family:var(--font-display); font-size:26px; font-weight:600; margin-top:9px; }
+  .cfpdf-date{ font-size:12.5px; color:rgba(255,255,255,.78); margin-top:5px; }
+  /* Logo bianco monocromatico di Giovanni: file da caricare a parte (vedi nota a fine file),
+     stesso meccanismo di icon-192.png/icon-180.png già usati per le icone PWA. Se il file manca
+     si auto-rimuove (onerror) invece di mostrare l'icona di immagine rotta. */
+  .cfpdf-logo{ flex:none; height:84px; max-width:220px; object-fit:contain; object-position:top right; }
+  .cfpdf-body{ padding:26px 26px 0; }
+  .cfpdf-hero{ text-align:center; padding:4px 0 22px; }
+  .cfpdf-hero-label{ font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--cfpdf-ink-faint); }
+  .cfpdf-hero-val{ font-family:var(--font-mono); font-size:40px; font-weight:600; color:var(--cfpdf-grad-1); line-height:1; margin-top:6px; }
+  .cfpdf-hero-val .u{ font-size:14px; font-weight:500; color:var(--cfpdf-accent); margin-left:3px; }
+  .cfpdf-headline{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:22px; }
+  .cfpdf-htile{ background:var(--cfpdf-accent-soft); border-radius:12px; padding:13px 14px 11px; }
+  .cfpdf-hval{ font-family:var(--font-mono); font-size:19px; font-weight:700; color:var(--cfpdf-grad-1); }
+  .cfpdf-hlabel{ font-size:10.5px; color:#355147; margin-top:3px; font-weight:500; }
+  table.cfpdf-table{ width:100%; border-collapse:collapse; margin-bottom:18px; }
+  .cfpdf-table thead th{ text-align:right; font-size:10px; font-weight:600; color:var(--cfpdf-ink-faint); text-transform:uppercase; letter-spacing:.02em; padding:0 6px 7px; border-bottom:1.5px solid var(--cfpdf-grad-1); }
+  .cfpdf-table thead th:first-child{ text-align:left; }
+  .cfpdf-cat-row td{ padding:13px 6px 6px; font-family:var(--font-display); font-size:13px; font-weight:600; color:var(--cfpdf-accent); }
+  .cfpdf-table tbody tr:not(.cfpdf-cat-row) td{ padding:4.8px 6px; border-bottom:1px solid var(--cfpdf-border-soft); font-size:11.8px; }
+  .cfpdf-table tbody tr:last-child td{ border-bottom:none; }
+  .cfpdf-table td.lbl{ color:var(--cfpdf-ink-soft); }
+  .cfpdf-table td.val{ font-family:var(--font-mono); font-weight:600; color:var(--cfpdf-ink); text-align:right; white-space:nowrap; }
+  .cfpdf-table td.val.mid{ color:var(--cfpdf-ink-faint); font-weight:500; }
+  .cfpdf-table td.delta{ text-align:right; font-family:var(--font-mono); font-weight:600; white-space:nowrap; }
+  .cfpdf-table td.delta.good{ color:var(--cfpdf-good); }
+  .cfpdf-table td.delta.neutral{ color:var(--cfpdf-ink-faint); }
+  .cfpdf-footer{ padding:16px 26px 24px; border-top:1px solid var(--cfpdf-border-soft); }
+  .cfpdf-footer-brand{ font-size:11px; color:var(--cfpdf-ink-soft); font-weight:600; }
+  .cfpdf-footer-tag{ font-family:var(--font-display); font-style:italic; font-size:11px; color:#B9C2B2; margin-top:2px; }
 
   /* ---------- Patient (app) view ---------- */
   #view-paziente{ }
@@ -955,6 +999,15 @@
     body.printing-pg #pg-stampa-view > h3, body.printing-pg #pg-stampa-view > p{ display:none !important; }
     body.printing-pg #pg-stampa-view button{ display:none !important; }
     body.printing-pg #p-piano-generico > *:not(#p-piano-generico-contenuto){ display:none !important; }
+
+    /* Esportazione PDF di "Confronto controlli" ("Il Referto"): stessa finestra modale, stesso
+       meccanismo di pg-stampa-overlay qui sopra. */
+    body.printing-cf > *:not(.modal-overlay){ display:none !important; }
+    body.printing-cf .modal-overlay{ position:static !important; background:none !important; display:block !important; padding:0 !important; }
+    body.printing-cf .modal-card{ box-shadow:none !important; max-width:none !important; border:none !important; max-height:none !important; overflow:visible !important; }
+    body.printing-cf .modal-card > *:not(#cf-stampa-view){ display:none !important; }
+    body.printing-cf #cf-stampa-view > h3, body.printing-cf #cf-stampa-view > p{ display:none !important; }
+    body.printing-cf #cf-stampa-view button{ display:none !important; }
   }
 
   /* ---- Piano Generico: sezioni/opzioni nella scheda Studio e nell'anteprima di stampa ---- */
@@ -2768,7 +2821,10 @@
             <div class="cf-date" id="cf-date">—</div>
           </div>
           <div class="cf-body">
-            <div class="cf-selects" id="cf-selects"></div>
+            <div class="cf-toolbar">
+              <div class="cf-selects" id="cf-selects"></div>
+              <button class="btn small primary" type="button" id="cf-btn-esporta" onclick="cfEsportaPdf()">Esporta PDF</button>
+            </div>
             <div id="cf-contenuto"></div>
           </div>
         </div>
@@ -2790,6 +2846,22 @@
       <div style="display:flex; gap:10px; margin-top:16px;">
         <button class="btn ghost" type="button" onclick="chiudiPgStampa()">Chiudi</button>
         <button class="btn primary" type="button" onclick="pgAvviaStampa_()">Stampa / salva PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Anteprima di stampa di "Confronto controlli" (esportazione misurazioni) — stesso
+       meccanismo del Piano Generico qui sopra, finestra separata. -->
+  <div class="modal-overlay" id="cf-stampa-overlay" style="display:none;" onclick="if(event.target===this) chiudiCfStampa();">
+    <div class="modal-card" style="max-width:860px;">
+      <div id="cf-stampa-view">
+        <h3>Anteprima di stampa — Confronto controlli</h3>
+        <p>—</p>
+        <div id="cf-stampa-contenuto"></div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="btn ghost" type="button" onclick="chiudiCfStampa()">Chiudi</button>
+        <button class="btn primary" type="button" onclick="cfAvviaStampa_()">Stampa / salva PDF</button>
       </div>
     </div>
   </div>
@@ -4023,6 +4095,14 @@
         <select onchange="cfSetConfrontoIdx(${i},this.value)">${dateOpts(idx)}</select></div>`).join('');
   }
 
+  // Una categoria (Circonferenze/Plicometria/BIA) compare SOLO se almeno una delle sue misure ha
+  // un valore in almeno una delle righe passate — così, per un paziente senza dati BIA o senza
+  // plicometria, quella sezione non viene mai mostrata (né a schermo né nel PDF esportato) invece
+  // di comparire vuota con tutti "—" (Giovanni, 1/11).
+  function cfCategorieConDati_(righe){
+    return CF_TABLE_CATEGORIE.filter(cat => cat.defs.some(d => righe.some(r => parseNum(r[d.field]) !== null)));
+  }
+
   function cfRenderContenuto_(){
     const el = document.getElementById('cf-contenuto');
     const n = currentRows.length;
@@ -4039,7 +4119,7 @@
         <div class="cf-hero-val">${pesoVal===null?'—':fmt(pesoVal)}<span class="u">kg</span></div>
       </div>`;
       html += `<table class="cf-table"><thead><tr><th>Parametro</th><th>Valore</th></tr></thead><tbody>`;
-      CF_TABLE_CATEGORIE.forEach(cat => {
+      cfCategorieConDati_([row]).forEach(cat => {
         html += `<tr class="cf-cat-row"><td colspan="2">${cat.label}</td></tr>`;
         cat.defs.forEach(d => {
           const v = parseNum(row[d.field]);
@@ -4087,7 +4167,7 @@
     sorted.forEach(s => html += `<th>${fmtDateLabel(s.date)}</th>`);
     html += `<th>Variaz.${sorted.length>2?' tot.':''}</th></tr></thead><tbody>`;
 
-    CF_TABLE_CATEGORIE.forEach(cat => {
+    cfCategorieConDati_(sorted.map(s => s.row)).forEach(cat => {
       html += `<tr class="cf-cat-row"><td colspan="${colCount}">${cat.label}</td></tr>`;
       cat.defs.forEach(d => {
         const vals = sorted.map(s => parseNum(s.row[d.field]));
@@ -4129,10 +4209,139 @@
     btnC2.classList.toggle('on', cfNumero === 2);
     btnC3.classList.toggle('on', cfNumero === 3);
     btnC3.disabled = n < 3;
+    document.getElementById('cf-btn-esporta').disabled = n < 1;
 
     cfUpdateHeader_();
     cfRenderSelects_();
     cfRenderContenuto_();
+  }
+
+  // ---- Esportazione PDF di "Confronto controlli" ("Il Referto") ----
+  // Documento indipendente dalla scheda a schermo: stessa logica (stato cfMode/cfNumero/cfIdx*,
+  // stesse categorie-con-dati), ma markup e colori propri (.cfpdf-*, sempre chiari) così la stampa
+  // non dipende dal tema chiaro/scuro attivo in quel momento nell'app.
+  function cfHtmlEsportazione_(){
+    const nome = (currentPatientMeta && currentPatientMeta.Nome) || '—';
+    const n = currentRows.length;
+    if(!n){
+      return `<div class="cfpdf-doc"><div class="cfpdf-body" style="padding:40px 26px;"><p class="cf-empty">Nessuna misurazione registrata per questo paziente.</p></div></div>`;
+    }
+
+    let dateTxt, heroHtml, righeDati;
+
+    if(cfMode === 'singola'){
+      const row = currentRows[cfIdxSingola];
+      dateTxt = fmtDateFull(new Date(row.Data));
+      righeDati = [row];
+      const pesoVal = parseNum(row['Peso']);
+      heroHtml = `<div class="cfpdf-hero">
+        <div class="cfpdf-hero-label">Peso corporeo</div>
+        <div class="cfpdf-hero-val">${pesoVal===null?'—':fmt(pesoVal)}<span class="u">kg</span></div>
+      </div>`;
+    } else {
+      const idxArr = cfNumero === 3 ? cfIdx3 : cfIdx2;
+      const sorted = idxArr.map(i => currentRows[i]).filter(Boolean)
+        .map(r => ({ row:r, date:new Date(r.Data) }))
+        .sort((a,b) => a.date - b.date);
+      righeDati = sorted.map(s => s.row);
+      dateTxt = sorted.map(s => fmtDateFull(s.date)).join(' → ');
+      const firstRow = sorted[0].row, lastRow = sorted[sorted.length-1].row;
+      const headlineDefs = [
+        { field:'Peso',         label:'peso corporeo', unit:'kg' },
+        { field:'Vita',         label:'vita',          unit:'cm' },
+        { field:'Massa grassa', label:'massa grassa',  unit:'%'  },
+        { field:'Massa magra',  label:'massa magra',   unit:'kg' },
+      ];
+      heroHtml = `<div class="cfpdf-headline">` + headlineDefs.map(d => {
+        const oldV = parseNum(firstRow[d.field]), newV = parseNum(lastRow[d.field]);
+        let txt = '—';
+        if(oldV !== null && newV !== null){
+          const delta = newV - oldV;
+          txt = delta===0 ? 'invariato' : (delta<0?'−':'+') + fmt(Math.abs(delta)) + ' ' + d.unit;
+        }
+        return `<div class="cfpdf-htile"><div class="cfpdf-hval">${txt}</div><div class="cfpdf-hlabel">${d.label}</div></div>`;
+      }).join('') + `</div>`;
+    }
+
+    const categorie = cfCategorieConDati_(righeDati);
+    let tableHtml;
+    if(!categorie.length){
+      tableHtml = `<p class="cf-empty">Nessun dato di circonferenze, plicometria o BIA per questa rilevazione.</p>`;
+    } else if(cfMode === 'singola'){
+      const row = righeDati[0];
+      tableHtml = `<table class="cfpdf-table"><thead><tr><th>Parametro</th><th>Valore</th></tr></thead><tbody>` +
+        categorie.map(cat => {
+          let h = `<tr class="cfpdf-cat-row"><td colspan="2">${cat.label}</td></tr>`;
+          cat.defs.forEach(d => {
+            const v = parseNum(row[d.field]);
+            h += `<tr><td class="lbl">${d.label}</td><td class="val">${v===null?'—':fmt(v)+' '+d.unit}</td></tr>`;
+          });
+          return h;
+        }).join('') + `</tbody></table>`;
+    } else {
+      const idxArr = cfNumero === 3 ? cfIdx3 : cfIdx2;
+      const sorted = idxArr.map(i => currentRows[i]).filter(Boolean)
+        .map(r => ({ row:r, date:new Date(r.Data) })).sort((a,b) => a.date - b.date);
+      const colCount = sorted.length + 2;
+      tableHtml = `<table class="cfpdf-table"><thead><tr><th>Parametro</th>` +
+        sorted.map(s => `<th>${fmtDateLabel(s.date)}</th>`).join('') +
+        `<th>Variaz.${sorted.length>2?' tot.':''}</th></tr></thead><tbody>` +
+        categorie.map(cat => {
+          let h = `<tr class="cfpdf-cat-row"><td colspan="${colCount}">${cat.label}</td></tr>`;
+          cat.defs.forEach(d => {
+            const vals = sorted.map(s => parseNum(s.row[d.field]));
+            const first = vals[0], last = vals[vals.length-1];
+            let deltaTxt = '—', deltaCls = 'neutral';
+            if(first !== null && last !== null){
+              const delta = last - first;
+              const isGood = (d.good==='down' && delta<0) || (d.good==='up' && delta>0);
+              deltaCls = delta===0 ? 'neutral' : (isGood ? 'good' : 'neutral');
+              deltaTxt = delta===0 ? 'invariato' : (delta<0?'−':'+') + fmt(Math.abs(delta));
+            }
+            h += `<tr><td class="lbl">${d.label}</td>`;
+            vals.forEach((v,i) => {
+              const isLast = i === vals.length-1;
+              h += `<td class="val${isLast?'':' mid'}">${v===null?'—':fmt(v)}</td>`;
+            });
+            h += `<td class="delta ${deltaCls}">${deltaTxt}</td></tr>`;
+          });
+          return h;
+        }).join('') + `</tbody></table>`;
+    }
+
+    return `<div class="cfpdf-doc">
+      <div class="cfpdf-band">
+        <div>
+          <div class="cfpdf-eyebrow">Confronto controlli &middot; esportazione</div>
+          <div class="cfpdf-name">${cpEsc(nome)}</div>
+          <div class="cfpdf-date">${dateTxt}</div>
+        </div>
+        <img class="cfpdf-logo" src="logo-bianco.png" alt="" onerror="this.remove()">
+      </div>
+      <div class="cfpdf-body">
+        ${heroHtml}
+        ${tableHtml}
+      </div>
+      <div class="cfpdf-footer">
+        <div class="cfpdf-footer-brand">Dott. Giovanni Murdaca &mdash; Nutrizionista Sportivo</div>
+        <div class="cfpdf-footer-tag">Percorso &middot; GM Nutrizione e Benessere</div>
+      </div>
+    </div>`;
+  }
+
+  function cfEsportaPdf(){
+    document.getElementById('cf-stampa-contenuto').innerHTML = cfHtmlEsportazione_();
+    document.getElementById('cf-stampa-overlay').style.display = 'flex';
+  }
+  function chiudiCfStampa(){
+    document.getElementById('cf-stampa-overlay').style.display = 'none';
+  }
+  function cfAvviaStampa_(){
+    cpAssicuraOverlayInBody_('cf-stampa-overlay');
+    document.body.classList.add('printing-cf');
+    const cleanup = () => document.body.classList.remove('printing-cf');
+    window.addEventListener('afterprint', cleanup, { once:true });
+    window.print();
   }
 
   /* ================= PANORAMICA ================= */
