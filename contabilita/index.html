@@ -1153,6 +1153,19 @@ var SUPABASE_ANON_KEY = "sb_publishable_-HemDJnuJp3OWZ0hZABiYA_ytBJa_Fo";
         '<h1>' + AMBITI[AMBITO].nome + '</h1><div style="width:40px"></div>' +
       '</div>'
     ));
+    var tutti = totals(DB.movimenti.filter(function (m) { return m.ambito === AMBITO; }));
+    var nTutti = DB.movimenti.filter(function (m) { return m.ambito === AMBITO; }).length;
+    var classTutti = tutti.saldo >= 0 ? "amount-pos" : "amount-neg";
+    wrap.appendChild(h(
+      '<div class="card balance-card" style="margin-bottom:6px;">' +
+        '<div class="balance-label">Totale complessivo · tutti i mesi</div>' +
+        '<div class="balance-amount ' + classTutti + '">' + (tutti.saldo >= 0 ? "+ " : "− ") + formatEUR(Math.abs(tutti.saldo)) + '</div>' +
+        '<div class="balance-split">' +
+          '<div><span>' + lblRicavi() + '</span><span class="amount-pos">+ ' + formatEUR(tutti.ricavi) + '</span></div>' +
+          '<div><span>Spese</span><span class="amount-neg">− ' + formatEUR(tutti.spese) + '</span></div>' +
+        '</div>' +
+      '</div>'
+    ));
     wrap.appendChild(h(
       '<div class="month-nav">' +
         '<button class="iconbtn" data-action="mese-prec" aria-label="Mese precedente"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>' +
