@@ -4316,9 +4316,24 @@
   function cfAvviaStampa_(){
     cpAssicuraOverlayInBody_('cf-stampa-overlay');
     document.body.classList.add('printing-cf');
-    const cleanup = () => document.body.classList.remove('printing-cf');
+    // Il nome proposto dal browser per il file PDF è il titolo della pagina: lo impostiamo a
+    // "Nome Cognome Misure Mese Anno" (mese/anno dell'ultimo controllo mostrato) e poi lo ripristiniamo.
+    const titoloPrima = document.title;
+    document.title = cfNomeFile_();
+    const cleanup = () => { document.body.classList.remove('printing-cf'); document.title = titoloPrima; };
     window.addEventListener('afterprint', cleanup, { once:true });
     window.print();
+  }
+  function cfNomeFile_(){
+    const nome = ((currentPatientMeta && currentPatientMeta.Nome) || '').replace(/[\\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+    let righe = [];
+    if(cfMode === 'singola') righe = [currentRows[cfIdxSingola]];
+    else righe = cfArr_().map(i => currentRows[i]);
+    const date = righe.filter(Boolean).map(r => new Date(r.Data)).filter(d => !isNaN(d)).sort((a,b) => a-b);
+    const d = date.length ? date[date.length-1] : new Date();
+    const mese = d.toLocaleDateString('it-IT', { month:'long' });
+    const meseCap = mese.charAt(0).toUpperCase() + mese.slice(1);
+    return [nome, 'Misure', meseCap, d.getFullYear()].filter(Boolean).join(' ');
   }
 
   /* ================= PANORAMICA ================= */
