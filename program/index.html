@@ -3936,6 +3936,7 @@
   // accorpate, es. coscia dx/sx separate — Giovanni, 28/10), raggruppate per categoria come in
   // "Tutti i parametri", ma senza il Peso (che ha già il suo numero grande/tessera a parte).
   const CF_TABLE_CATEGORIE = [
+    { label:'Peso', defs: [METRIC_DEFS.find(d => d.key==='peso')] },
     { label:'Circonferenze (cm)', defs: MIS_CATEGORIE.find(c => c.key==='circonferenze').metriche.map(k => METRIC_DEFS.find(d => d.key===k)) },
     { label:'Plicometria (mm)', defs: MIS_CATEGORIE.find(c => c.key==='plicometria').metriche.map(k => METRIC_DEFS.find(d => d.key===k)) },
     { label:'Bioimpedenziometria', defs: MIS_CATEGORIE.find(c => c.key==='bia').metriche.map(k => METRIC_DEFS.find(d => d.key===k)) },
@@ -4113,11 +4114,7 @@
 
     if(cfMode === 'singola'){
       const row = currentRows[cfIdxSingola];
-      const pesoVal = parseNum(row['Peso']);
-      let html = `<div class="cf-hero">
-        <div class="cf-hero-label">Peso corporeo</div>
-        <div class="cf-hero-val">${pesoVal===null?'—':fmt(pesoVal)}<span class="u">kg</span></div>
-      </div>`;
+      let html = '';
       html += `<table class="cf-table"><thead><tr><th>Parametro</th><th>Valore</th></tr></thead><tbody>`;
       cfCategorieConDati_([row]).forEach(cat => {
         html += `<tr class="cf-cat-row"><td colspan="2">${cat.label}</td></tr>`;
@@ -4142,25 +4139,7 @@
       el.innerHTML = `<div class="cf-empty">Servono almeno due controlli per poter fare un confronto.</div>`;
       return;
     }
-    const firstRow = sorted[0].row, lastRow = sorted[sorted.length-1].row;
-
-    const headlineDefs = [
-      { field:'Peso',         label:'peso corporeo', unit:'kg' },
-      { field:'Vita',         label:'vita',          unit:'cm' },
-      { field:'Massa grassa', label:'massa grassa',  unit:'%'  },
-      { field:'Massa magra',  label:'massa magra',   unit:'kg' },
-    ];
-    let html = `<div class="cf-headline">`;
-    headlineDefs.forEach(d => {
-      const oldV = parseNum(firstRow[d.field]), newV = parseNum(lastRow[d.field]);
-      let txt = '—';
-      if(oldV !== null && newV !== null){
-        const delta = newV - oldV;
-        txt = delta===0 ? 'invariato' : (delta<0?'−':'+') + fmt(Math.abs(delta)) + ' ' + d.unit;
-      }
-      html += `<div class="cf-htile"><div class="cf-hval">${txt}</div><div class="cf-hlabel">${d.label}</div></div>`;
-    });
-    html += `</div>`;
+    let html = '';
 
     const colCount = sorted.length + 2;
     html += `<table class="cf-table"><thead><tr><th>Parametro</th>`;
@@ -4233,11 +4212,7 @@
       const row = currentRows[cfIdxSingola];
       dateTxt = fmtDateFull(new Date(row.Data));
       righeDati = [row];
-      const pesoVal = parseNum(row['Peso']);
-      heroHtml = `<div class="cfpdf-hero">
-        <div class="cfpdf-hero-label">Peso corporeo</div>
-        <div class="cfpdf-hero-val">${pesoVal===null?'—':fmt(pesoVal)}<span class="u">kg</span></div>
-      </div>`;
+      heroHtml = '';
     } else {
       const idxArr = cfNumero === 3 ? cfIdx3 : cfIdx2;
       const sorted = idxArr.map(i => currentRows[i]).filter(Boolean)
@@ -4245,28 +4220,13 @@
         .sort((a,b) => a.date - b.date);
       righeDati = sorted.map(s => s.row);
       dateTxt = sorted.map(s => fmtDateFull(s.date)).join(' → ');
-      const firstRow = sorted[0].row, lastRow = sorted[sorted.length-1].row;
-      const headlineDefs = [
-        { field:'Peso',         label:'peso corporeo', unit:'kg' },
-        { field:'Vita',         label:'vita',          unit:'cm' },
-        { field:'Massa grassa', label:'massa grassa',  unit:'%'  },
-        { field:'Massa magra',  label:'massa magra',   unit:'kg' },
-      ];
-      heroHtml = `<div class="cfpdf-headline">` + headlineDefs.map(d => {
-        const oldV = parseNum(firstRow[d.field]), newV = parseNum(lastRow[d.field]);
-        let txt = '—';
-        if(oldV !== null && newV !== null){
-          const delta = newV - oldV;
-          txt = delta===0 ? 'invariato' : (delta<0?'−':'+') + fmt(Math.abs(delta)) + ' ' + d.unit;
-        }
-        return `<div class="cfpdf-htile"><div class="cfpdf-hval">${txt}</div><div class="cfpdf-hlabel">${d.label}</div></div>`;
-      }).join('') + `</div>`;
+      heroHtml = '';
     }
 
     const categorie = cfCategorieConDati_(righeDati);
     let tableHtml;
     if(!categorie.length){
-      tableHtml = `<p class="cf-empty">Nessun dato di circonferenze, plicometria o BIA per questa rilevazione.</p>`;
+      tableHtml = `<p class="cf-empty">Nessun dato per questa rilevazione.</p>`;
     } else if(cfMode === 'singola'){
       const row = righeDati[0];
       tableHtml = `<table class="cfpdf-table"><thead><tr><th>Parametro</th><th>Valore</th></tr></thead><tbody>` +
