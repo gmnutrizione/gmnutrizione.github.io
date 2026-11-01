@@ -1009,6 +1009,15 @@
     body.printing-cf .modal-card > *:not(#cf-stampa-view){ display:none !important; }
     body.printing-cf #cf-stampa-view > h3, body.printing-cf #cf-stampa-view > p{ display:none !important; }
     body.printing-cf #cf-stampa-view button{ display:none !important; }
+    html:has(body.printing-cf), body.printing-cf{ height:auto !important; min-height:0 !important; overflow:visible !important; margin:0 !important; padding:0 !important; }
+    body.printing-cf .modal-overlay, body.printing-cf .modal-card, body.printing-cf #cf-stampa-view, body.printing-cf #cf-stampa-contenuto{ margin:0 !important; padding:0 !important; height:auto !important; min-height:0 !important; }
+    body.printing-cf .cfpdf-doc{ break-inside:avoid; break-after:avoid; page-break-after:avoid; }
+    body.printing-cf .cfpdf-band{ padding:16px 22px 14px; }
+    body.printing-cf .cfpdf-body{ padding:16px 22px 0; }
+    body.printing-cf .cfpdf-cat-row td{ padding:9px 6px 4px; }
+    body.printing-cf .cfpdf-table tbody tr:not(.cfpdf-cat-row) td{ padding:3px 6px; }
+    body.printing-cf table.cfpdf-table{ margin-bottom:8px; }
+    body.printing-cf .cfpdf-footer{ padding:10px 22px 12px; }
   }
 
   /* ---- Piano Generico: sezioni/opzioni nella scheda Studio e nell'anteprima di stampa ---- */
@@ -4131,6 +4140,7 @@
         html += `<tr class="cf-cat-row"><td colspan="2">${cat.label}</td></tr>`;
         cat.defs.forEach(d => {
           const v = parseNum(row[d.field]);
+          if(v === null) return;
           html += `<tr><td class="cf-label">${d.label}</td><td class="cf-val">${v===null?'—':fmt(v)+' '+d.unit}</td></tr>`;
         });
       });
@@ -4161,6 +4171,7 @@
       html += `<tr class="cf-cat-row"><td colspan="${colCount}">${cat.label}</td></tr>`;
       cat.defs.forEach(d => {
         const vals = sorted.map(s => parseNum(s.row[d.field]));
+        if(vals.every(v => v === null)) return;
         const first = vals[0], last = vals[vals.length-1];
         let deltaTxt = '—', deltaCls = 'neutral';
         if(first !== null && last !== null){
@@ -4251,6 +4262,7 @@
           let h = `<tr class="cfpdf-cat-row"><td colspan="2">${cat.label}</td></tr>`;
           cat.defs.forEach(d => {
             const v = parseNum(row[d.field]);
+            if(v === null) return;
             h += `<tr><td class="lbl">${d.label}</td><td class="val">${v===null?'—':fmt(v)+' '+d.unit}</td></tr>`;
           });
           return h;
@@ -4267,6 +4279,7 @@
           let h = `<tr class="cfpdf-cat-row"><td colspan="${colCount}">${cat.label}</td></tr>`;
           cat.defs.forEach(d => {
             const vals = sorted.map(s => parseNum(s.row[d.field]));
+            if(vals.every(v => v === null)) return;
             const first = vals[0], last = vals[vals.length-1];
             let deltaTxt = '—', deltaCls = 'neutral';
             if(first !== null && last !== null){
