@@ -1011,7 +1011,11 @@
     body.printing-cf #cf-stampa-view button{ display:none !important; }
     html:has(body.printing-cf), body.printing-cf{ height:auto !important; min-height:0 !important; overflow:visible !important; margin:0 !important; padding:0 !important; }
     body.printing-cf .modal-overlay, body.printing-cf .modal-card, body.printing-cf #cf-stampa-view, body.printing-cf #cf-stampa-contenuto{ margin:0 !important; padding:0 !important; height:auto !important; min-height:0 !important; }
-    body.printing-cf .cfpdf-doc{ break-inside:avoid; break-after:avoid; page-break-after:avoid; }
+    html:has(body.printing-cf), body.printing-cf, body.printing-cf .modal-overlay, body.printing-cf .modal-card, body.printing-cf #cf-stampa-view, body.printing-cf #cf-stampa-contenuto{ background:#fff !important; }
+    /* Il documento occupa tutta l'area stampabile (A4 297mm - 20mm - 14mm di @page): così il fondo
+       è dello stesso colore del foglio e il piè di pagina resta attaccato in basso. */
+    body.printing-cf .cfpdf-doc{ break-inside:avoid; break-after:avoid; page-break-after:avoid; display:flex; flex-direction:column; min-height:261mm; }
+    body.printing-cf .cfpdf-body{ flex:1 1 auto; }
     body.printing-cf .cfpdf-band{ padding:16px 22px 14px; }
     body.printing-cf .cfpdf-body{ padding:16px 22px 0; }
     body.printing-cf .cfpdf-cat-row td{ padding:9px 6px 4px; }
