@@ -1449,6 +1449,9 @@
   .cp-btn-move{ display:flex; align-items:center; justify-content:center; width:16px; height:16px; border:none; background:none; color:var(--ink-faint); cursor:pointer; flex:none; padding:0; }
   .cp-btn-move:hover:not(:disabled){ color:var(--accent); }
   .cp-btn-move:disabled{ opacity:0.22; cursor:default; }
+  .cp-btn-copy-week{ display:flex; align-items:center; justify-content:center; width:16px; height:16px; border:none; background:none; color:var(--ink-faint); cursor:pointer; flex:none; padding:0; margin-left:3px; }
+  .cp-btn-copy-week:hover{ color:var(--accent); }
+  .cp-btn-copy-week svg{ width:11px; height:11px; }
   .cp-btn-move svg{ width:10px; height:10px; }
   .cp-btn-remove{ display:flex; align-items:center; justify-content:center; width:18px; height:18px; border:none; background:none; color:var(--ink-faint); cursor:pointer; flex:none; }
   .cp-btn-remove:hover{ color:var(--critical); }
@@ -1678,6 +1681,8 @@
     #tab-creapiano .cp-btn-remove svg, #diario-overlay .cp-btn-remove svg{ width:15px; height:15px; }
     #tab-creapiano .cp-btn-move, #diario-overlay .cp-btn-move{ width:24px; height:24px; }
     #tab-creapiano .cp-btn-move svg, #diario-overlay .cp-btn-move svg{ width:13px; height:13px; }
+    #tab-creapiano .cp-btn-copy-week{ width:24px; height:24px; }
+    #tab-creapiano .cp-btn-copy-week svg{ width:14px; height:14px; }
     #tab-creapiano .cp-day-tab{ padding:8px 14px; }
 
     /* Torta + legenda dell'obiettivo: una sopra l'altra invece che schiacciate fianco a fianco */
@@ -5018,6 +5023,7 @@
                 <div class="cp-meal-item-actions">
                   <button type="button" class="cp-btn-move" data-meal="${cpEsc(m)}" data-idx="${idx}" data-dir="-1" title="Sposta su" ${idx===0?'disabled':''}>${CP_ICON_UP}</button>
                   <button type="button" class="cp-btn-move" data-meal="${cpEsc(m)}" data-idx="${idx}" data-dir="1" title="Sposta giù" ${idx===items.length-1?'disabled':''}>${CP_ICON_DOWN}</button>
+                  <button type="button" class="cp-btn-copy-week" data-meal="${cpEsc(m)}" data-idx="${idx}" title="Copia questo alimento in tutti gli altri ${cpEsc(m.toLowerCase())} della settimana">${CP_ICON_DUP}</button>
                   <button type="button" class="cp-btn-remove" data-meal="${cpEsc(m)}" data-idx="${idx}" title="Rimuovi">${CP_ICON_X}</button>
                 </div>
               </div>`;
@@ -5085,6 +5091,28 @@
         const tmp = arr[idx]; arr[idx] = arr[j]; arr[j] = tmp;
         cpRenderMealList(); cpRenderSummary();
         cpSalvaDraftLocale();
+      });
+    });
+    // Copia un singolo alimento negli stessi pasti degli altri giorni (es. un alimento del pranzo ->
+    // tutti gli altri pranzi). Se nel pasto di destinazione c'è già lo stesso alimento ne allinea i
+    // grammi invece di duplicarlo; gli altri alimenti di quei pasti non vengono toccati.
+    el.querySelectorAll('.cp-btn-copy-week').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const m = btn.dataset.meal, idx = +btn.dataset.idx;
+        const item = CP_PLAN[cpState.day][m][idx];
+        if(!item) return;
+        let aggiunti = 0, aggiornati = 0;
+        CP_GIORNI.forEach(g => {
+          if(g === cpState.day) return;
+          if(!CP_PLAN[g][m]) CP_PLAN[g][m] = [];
+          const esistente = CP_PLAN[g][m].find(x => x.id === item.id);
+          if(esistente){ if(esistente.g !== item.g){ esistente.g = item.g; aggiornati++; } }
+          else { CP_PLAN[g][m].push({ id:item.id, g:item.g }); aggiunti++; }
+        });
+        cpRenderDayTabs(); cpRenderSummary();
+        cpSalvaDraftLocale();
+        const f = CP_FOODS_BY_ID[item.id];
+        showToast((f ? f.nome : 'Alimento') + ' — ' + m.toLowerCase() + ': aggiunto in ' + aggiunti + ' giorni' + (aggiornati ? ', grammi aggiornati in ' + aggiornati : ''));
       });
     });
     el.querySelectorAll('.cp-btn-dup-meal').forEach(btn => {
