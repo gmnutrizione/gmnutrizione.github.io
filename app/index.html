@@ -8229,6 +8229,18 @@
     return pasto === 'Pranzo' ? 'cereale' : 'pane';
   }
 
+  // Legumi: nel piano possono comparire sia secchi (crudi, es. 50 g) sia cotti (es. 120 g), e
+  // mescolarli falsa la quantità del Piano Generico (Giovanni, 2/11). Si usa quindi l'alimento
+  // "Legumi cotti MIX" (categoria proteica legumi, nome con "cotti" e "MIX"): se compare in almeno
+  // uno dei pasti principali della settimana, per i legumi contano SOLO le sue quantità (cotti),
+  // altrimenti resta il comportamento di prima.
+  function pgELegumiCottiMix_(f){
+    return !!f && f.categoriaProteica === 'legumi' && /\bmix\b/i.test(f.nome || '') && /cott/i.test(f.nome || '');
+  }
+  function pgPianoUsaLegumiMix_(plan, giorni, foodsById){
+    return giorni.some(g => ['Pranzo','Cena'].some(m => ((plan[g] && plan[g][m]) || []).some(r => pgELegumiCottiMix_(foodsById[r.id]))));
+  }
+
   function pgOpzioniFisse_(plan, giorni, pasto, foodsById, presetCategoria, sesso, pesoMedioUovo){
     const categorie = pasto === 'Pranzo' ? PG_CATEGORIE_PRANZO : PG_CATEGORIE_CENA;
     const baseTipo = pgTipoBase_(plan, giorni, pasto, foodsById);
@@ -8265,7 +8277,8 @@
         }
         return { chiave, categoria:cat, base, proteica:{ label, valore, unita, fonte } };
       }
-      const grDalPiano = pgDalPiano_(plan, giorni, pasto, foodsById, f => f.categoriaProteica === cat);
+      const soloMix = cat === 'legumi' && pgPianoUsaLegumiMix_(plan, giorni, foodsById);
+      const grDalPiano = pgDalPiano_(plan, giorni, pasto, foodsById, f => f.categoriaProteica === cat && (!soloMix || pgELegumiCottiMix_(f)));
       const preset = pgTrovaPreset_(presetCategoria, sesso, pasto, cat);
       const valore = grDalPiano != null ? grDalPiano : preset.valore;
       const fonte = grDalPiano != null ? 'piano' : 'preset';
