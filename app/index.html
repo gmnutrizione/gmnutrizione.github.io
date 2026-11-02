@@ -8242,8 +8242,10 @@
   }
 
   function pgOpzioniFisse_(plan, giorni, pasto, foodsById, presetCategoria, sesso, pesoMedioUovo){
-    const categorie = pasto === 'Pranzo' ? PG_CATEGORIE_PRANZO : PG_CATEGORIE_CENA;
     const baseTipo = pgTipoBase_(plan, giorni, pasto, foodsById);
+    // L'affettato è un'opzione da abbinare al PANE (Giovanni, 2/11): compare nel pasto che ha il pane
+    // (di solito la cena, ma con piano invertito il pranzo), non in quello col cereale.
+    const categorie = PG_CATEGORIE_CENA.filter(c => c !== 'affettato' || baseTipo === 'pane');
     const baseCategoria = baseTipo;
     const baseLabel = baseTipo === 'pane' ? 'Pane' : 'Cereale';
 
@@ -8279,7 +8281,12 @@
       }
       const soloMix = cat === 'legumi' && pgPianoUsaLegumiMix_(plan, giorni, foodsById);
       const grDalPiano = pgDalPiano_(plan, giorni, pasto, foodsById, f => f.categoriaProteica === cat && (!soloMix || pgELegumiCottiMix_(f)));
-      const preset = pgTrovaPreset_(presetCategoria, sesso, pasto, cat);
+      let preset = pgTrovaPreset_(presetCategoria, sesso, pasto, cat);
+      if(!preset.valore && cat === 'affettato'){
+        // I preset dell'affettato esistono solo per la Cena: se è stato spostato a Pranzo si usa quello.
+        const altroAff = pgTrovaPreset_(presetCategoria, sesso, pasto === 'Pranzo' ? 'Cena' : 'Pranzo', cat);
+        if(altroAff.valore) preset = altroAff;
+      }
       const valore = grDalPiano != null ? grDalPiano : preset.valore;
       const fonte = grDalPiano != null ? 'piano' : 'preset';
       return { chiave, categoria:cat, base, proteica:{ label, valore, unita: preset.unita || 'g', fonte } };
