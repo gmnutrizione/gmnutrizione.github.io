@@ -9226,7 +9226,12 @@
   function pgAvviaStampa_(elementoId){
     cpAssicuraOverlayInBody_(elementoId || 'pg-stampa-overlay');
     document.body.classList.add('printing-pg');
-    const cleanup = () => document.body.classList.remove('printing-pg');
+    // Nome file proposto dal browser per il PDF: "Nome Cognome Piano Alimentare" (nome del paziente).
+    const nomePaz = String((elementoId === 'p-piano-generico' ? (SESSION && SESSION.paziente && SESSION.paziente.Nome) : (currentPatientMeta && currentPatientMeta.Nome)) || '')
+      .replace(/[\\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+    const titoloPrima = document.title;
+    if(nomePaz) document.title = nomePaz + ' Piano Alimentare';
+    const cleanup = () => { document.body.classList.remove('printing-pg'); document.title = titoloPrima; };
     window.addEventListener('afterprint', cleanup, { once:true });
     window.print();
   }
