@@ -130,7 +130,7 @@
   ::selection{ background:var(--accent-soft); color:var(--accent-ink); }
 
   /* ---------- Shell / top bar ---------- */
-  .shell{ max-width:1320px; margin:0 auto; padding:calc(22px + env(safe-area-inset-top)) 28px 64px; }
+  .shell{ max-width:1600px; margin:0 auto; padding:calc(22px + env(safe-area-inset-top)) 28px 64px; }
   .topbar{
     display:flex; align-items:center; justify-content:space-between;
     gap:20px; flex-wrap:wrap; margin-bottom:6px;
@@ -181,7 +181,12 @@
   .login-note{ font-size:11.8px; color:var(--ink-faint); margin-top:18px; line-height:1.5; }
 
   /* ---------- Tabs (generic) ---------- */
-  .tabs{ display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:22px; overflow-x:auto; }
+  /* .tabs-row tiene insieme la barra delle schede (che scorre in orizzontale quando non ci stanno
+     tutte) e i controlli a fianco (es. "Vista divisa") che devono restare SEMPRE visibili e non
+     scorrere mai via con le schede — prima "Vista divisa" era dentro .tabs ed è finita fuori dallo
+     scroll quando sono state aggiunte "Piano Generico" e "Piano Settimanale". */
+  .tabs-row{ display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); margin-bottom:22px; }
+  .tabs{ display:flex; gap:4px; overflow-x:auto; flex:1; min-width:0; }
   .tab-btn{
     border:none; background:transparent; cursor:pointer; font-family:inherit;
     font-size:14px; font-weight:500; color:var(--ink-faint);
@@ -199,7 +204,7 @@
 
   /* ---------- Vista divisa (split screen) — solo desktop ---------- */
   .nutri-split-toggle-btn{
-    margin-left:auto; display:inline-flex; align-items:center; gap:6px; align-self:center;
+    flex:none; display:inline-flex; align-items:center; gap:6px; align-self:center;
     padding:6px 13px; border-radius:8px; border:1px solid var(--border);
     background:var(--surface); color:var(--ink-soft); font-family:inherit;
     font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;
@@ -221,7 +226,7 @@
   #view-nutri.split-mode > .sidebar{ display:none; }
   #nutri-main.split-mode{ display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; }
   #nutri-main.split-mode > .patient-header,
-  #nutri-main.split-mode > .tabs,
+  #nutri-main.split-mode > .tabs-row,
   #nutri-main.split-mode > .nutri-split-controls{ grid-column:1 / -1; }
   #nutri-main.split-mode > .tab-panel{ display:none; }
   #nutri-main.split-mode > .tab-panel.split-pane-left{ display:block; grid-column:1; min-width:0; }
@@ -2463,15 +2468,17 @@
         </div>
       </div>
 
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="panoramica" onclick="setNutriTab('panoramica')">Panoramica</button>
-        <button class="tab-btn" data-tab="anamnesi" onclick="setNutriTab('anamnesi')">Anamnesi</button>
-        <button class="tab-btn" data-tab="piano" onclick="setNutriTab('piano')">Piano alimentare</button>
-        <button class="tab-btn" data-tab="creapiano" onclick="setNutriTab('creapiano')">Crea piano</button>
-        <button class="tab-btn" data-tab="pianogenerico" onclick="setNutriTab('pianogenerico')">Piano Generico</button>
-        <button class="tab-btn" data-tab="pianosettimanale" onclick="setNutriTab('pianosettimanale')">Piano Settimanale</button>
-        <button class="tab-btn" data-tab="misurazioni" onclick="setNutriTab('misurazioni')">Misurazioni</button>
-        <button class="tab-btn" data-tab="confronto" onclick="setNutriTab('confronto')">Confronto controlli</button>
+      <div class="tabs-row">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="panoramica" onclick="setNutriTab('panoramica')">Panoramica</button>
+          <button class="tab-btn" data-tab="anamnesi" onclick="setNutriTab('anamnesi')">Anamnesi</button>
+          <button class="tab-btn" data-tab="piano" onclick="setNutriTab('piano')">Piano alimentare</button>
+          <button class="tab-btn" data-tab="creapiano" onclick="setNutriTab('creapiano')">Crea piano</button>
+          <button class="tab-btn" data-tab="pianogenerico" onclick="setNutriTab('pianogenerico')">Piano Generico</button>
+          <button class="tab-btn" data-tab="pianosettimanale" onclick="setNutriTab('pianosettimanale')">Piano Settimanale</button>
+          <button class="tab-btn" data-tab="misurazioni" onclick="setNutriTab('misurazioni')">Misurazioni</button>
+          <button class="tab-btn" data-tab="confronto" onclick="setNutriTab('confronto')">Confronto controlli</button>
+        </div>
         <button class="nutri-split-toggle-btn" type="button" id="nutri-split-toggle-btn" onclick="toggleNutriSplit()" title="Visualizza due sezioni affiancate">
           <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><rect x="3" y="4" width="8" height="16" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="4" width="8" height="16" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
           Vista divisa
