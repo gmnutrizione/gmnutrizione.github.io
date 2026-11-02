@@ -2083,7 +2083,7 @@
         <h4 style="font-size:14.5px; margin:22px 0 6px;">Valori preimpostati — Cena</h4>
         <table class="pg-preset-table" id="pg-preset-table-cena"><thead><tr><th></th><th>Uomo</th><th>Donna</th></tr></thead><tbody></tbody></table>
 
-        <h4 style="font-size:14.5px; margin:22px 0 6px;">Sostituzioni carboidrati (a cena, al posto del pane)</h4>
+        <h4 style="font-size:14.5px; margin:22px 0 6px;">Sostituzioni carboidrati (al posto del pane)</h4>
         <p style="font-size:12.5px; color:var(--ink-faint); margin:-2px 0 10px;">Quantità riferite al "Pane di riferimento" qui sotto: vengono scalate automaticamente sulla quantità reale di pane di ogni paziente.</p>
         <div id="pg-carbo-righe"></div>
         <button class="btn small ghost" type="button" onclick="pgAggiungiRiga_('carbo')">+ Aggiungi alimento</button>
@@ -8209,13 +8209,40 @@
 
   // Costruisce le 9 (Pranzo) o 10 (Cena) opzioni fisse di un pasto: Cereale/Pane + una categoria
   // proteica ciascuna. Formaggi non ha mai una quantità stampata (testo fisso "a scelta").
+  // Pane o cereale? Dipende da cosa c'è davvero nel pasto (Giovanni, 2/11): di solito il pranzo ha il
+  // cereale e la cena il pane, ma in alcuni piani sono invertiti. "Pane" = categoria alimento "Pane"
+  // o "Derivati del pane" (fette biscottate, cracker, gallette...); tutto il resto delle fonti di
+  // carboidrati (riso, pasta, patate...) conta come cereale. Vince il tipo più frequente nel pasto
+  // nei vari giorni; senza carboidrati nel pasto resta l'abitudine (Pranzo=cereale, Cena=pane).
+  function pgEPane_(f){
+    const c = String((f && f.categoria) || '').trim().toLowerCase();
+    return c === 'pane' || c === 'derivati del pane';
+  }
+  function pgTipoBase_(plan, giorni, pasto, foodsById){
+    let pane = 0, cereale = 0;
+    giorni.forEach(g => ((plan[g] && plan[g][pasto]) || []).forEach(r => {
+      const f = foodsById[r.id];
+      if(f && f.fonteCarboidrati){ if(pgEPane_(f)) pane++; else cereale++; }
+    }));
+    if(pane > cereale) return 'pane';
+    if(cereale > pane) return 'cereale';
+    return pasto === 'Pranzo' ? 'cereale' : 'pane';
+  }
+
   function pgOpzioniFisse_(plan, giorni, pasto, foodsById, presetCategoria, sesso, pesoMedioUovo){
     const categorie = pasto === 'Pranzo' ? PG_CATEGORIE_PRANZO : PG_CATEGORIE_CENA;
-    const baseCategoria = pasto === 'Pranzo' ? 'cereale' : 'pane';
-    const baseLabel = pasto === 'Pranzo' ? 'Cereale' : 'Pane';
+    const baseTipo = pgTipoBase_(plan, giorni, pasto, foodsById);
+    const baseCategoria = baseTipo;
+    const baseLabel = baseTipo === 'pane' ? 'Pane' : 'Cereale';
 
-    const baseDalPiano = pgDalPiano_(plan, giorni, pasto, foodsById, f => !!f.fonteCarboidrati);
-    const basePreset = pgTrovaPreset_(presetCategoria, sesso, pasto, baseCategoria);
+    const baseDalPiano = pgDalPiano_(plan, giorni, pasto, foodsById, f => !!f.fonteCarboidrati && pgEPane_(f) === (baseTipo === 'pane'));
+    let basePreset = pgTrovaPreset_(presetCategoria, sesso, pasto, baseCategoria);
+    if(!basePreset.valore){
+      // Nelle Impostazioni i preset esistono per Pranzo=cereale e Cena=pane: se il piano è invertito
+      // e non ha quantità, si usa quello dell'altro pasto per lo stesso tipo.
+      const altro = pgTrovaPreset_(presetCategoria, sesso, pasto === 'Pranzo' ? 'Cena' : 'Pranzo', baseCategoria);
+      if(altro.valore) basePreset = altro;
+    }
     const baseValore = baseDalPiano != null ? baseDalPiano : basePreset.valore;
     const baseFonte = baseDalPiano != null ? 'piano' : 'preset';
 
@@ -8245,7 +8272,7 @@
       return { chiave, categoria:cat, base, proteica:{ label, valore, unita: preset.unita || 'g', fonte } };
     });
 
-    return { opzioni, baseValore };
+    return { opzioni, baseValore, baseTipo };
   }
 
   // Firma stabile di una combinazione di alimenti (per confrontare/deduplicare le opzioni derivate
@@ -8309,6 +8336,9 @@
     const risPranzo = pgOpzioniFisse_(plan, giorni, 'Pranzo', foodsById, imp.presetCategoria || [], s, pesoMedioUovo);
     const risCena   = pgOpzioniFisse_(plan, giorni, 'Cena',   foodsById, imp.presetCategoria || [], s, pesoMedioUovo);
 
+    const carboRif = risCena.baseTipo === 'pane' ? risCena.baseValore
+      : (risPranzo.baseTipo === 'pane' ? risPranzo.baseValore : paneBaseline);
+
     const olioDalPiano = pgDalPianoDuePasti_(plan, giorni, 'Pranzo', 'Cena', foodsById, f => !!f.fonteGrassi);
     const olio = olioDalPiano != null ? olioDalPiano : (Number(presetVerdureOlio.olio) || 10);
     const olioFonte = olioDalPiano != null ? 'piano' : 'preset';
@@ -8322,7 +8352,10 @@
       derivati,
       pranzo: risPranzo.opzioni,
       cena: risCena.opzioni,
-      carboEquivalenza: pgScalaEquivalenza_(imp.carboEquivalenza || [], risCena.baseValore, paneBaseline),
+      // La tabella "in alternativa a Pane" si riferisce al pasto in cui c'è davvero il pane (di solito
+      // la cena, ma può essere il pranzo); se il pane non c'è in nessun pasto principale resta il riferimento.
+      carboRifValore: carboRif,
+      carboEquivalenza: pgScalaEquivalenza_(imp.carboEquivalenza || [], carboRif, paneBaseline),
       grassiEquivalenza: pgScalaEquivalenza_(imp.grassiEquivalenza || [], olioPerPasto, olioBaseline),
     };
   }
@@ -8549,7 +8582,7 @@
       ${sezDerivata('Dopo cena')}
       ${sezFissa('Pranzo', piano.pranzo)}
       ${sezFissa('Cena', piano.cena)}
-      ${sezEquivalenza('Sostituzioni carboidrati (a cena, al posto del pane)', piano.carboEquivalenza)}
+      ${sezEquivalenza('Sostituzioni carboidrati (al posto del pane)', piano.carboEquivalenza)}
       ${sezEquivalenza("Sostituzioni grassi (al posto dell'olio) per singolo pasto", piano.grassiEquivalenza)}
     `;
   }
@@ -8772,7 +8805,7 @@
       pgNumPagina++;
       return `<div class="pg-pagina-footer"><span>${cpEsc(nomeProf)}${titoli[0] ? ' — ' + cpEsc(titoli[0]) : ''}</span><span class="pg-footer-pagina">${pgNumPagina}/${totalePagine}</span><span class="pg-footer-right">Piano alimentare per <b>${cpEsc(nomePaziente)}</b></span></div>`;
     };
-    const paneCena = cenaAttivo.length ? cenaAttivo[0].base.valore : (piano.cena[0] ? piano.cena[0].base.valore : 0);
+    const paneCena = piano.carboRifValore != null ? piano.carboRifValore : (cenaAttivo.length ? cenaAttivo[0].base.valore : (piano.cena[0] ? piano.cena[0].base.valore : 0));
 
     return `<div class="pg-doc">
       <div class="pg-cover pg-break-after">
