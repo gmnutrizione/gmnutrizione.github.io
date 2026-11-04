@@ -2726,7 +2726,6 @@
               <button class="btn small ghost" type="button" onclick="cpOpenDuplicateModal('day')">Duplica giorno</button>
               <button class="btn small ghost" type="button" onclick="cpOpenModal('save')">Salva come modello</button>
               <button class="btn small ghost" type="button" onclick="cpApriListaSpesa()">Lista della spesa</button>
-              <button class="btn small ghost" type="button" onclick="cpEsportaPianoCorrente()">Esporta PDF</button>
               <button class="btn small warm" type="button" onclick="cpSalvaBozza()" id="cp-btn-bozza" title="Tiene in memoria lo stato attuale del piano per questo paziente, senza renderlo ancora definitivo">Salva bozza</button>
               <button class="btn small primary" type="button" onclick="cpSalvaPiano()" id="cp-btn-salva">Salva piano</button>
             </div>
@@ -2797,6 +2796,7 @@
         <div class="ps-wrap">
           <div class="ps-band">
             <div class="ps-band-title">Piano Settimanale</div>
+            <button class="btn small" type="button" id="btn-ps-esporta" onclick="psEsportaPdf()" style="display:none;">Esporta PDF</button>
           </div>
           <div class="ps-body">
             <div class="login-error" id="ps-error"></div>
@@ -5481,12 +5481,6 @@
     cpTempSalva_();
     cpRenderAll();
     showToast("Copiato il piano ufficiale — ora puoi modificarlo senza toccare l'originale");
-  }
-  // Esporta in PDF il piano che si sta guardando nell'editor: l'ufficiale (anche con modifiche non
-  // ancora salvate) oppure il temporaneo, con la stessa grafica del Piano Settimanale.
-  function cpEsportaPianoCorrente(){
-    if(CP_MODO === 'temporaneo') return cpTempEsporta();
-    return cpPtApriAnteprima_({ plan: CP_PLAN, titolo: '', nota: '' });
   }
   function cpTempEsporta(){
     return cpPtApriAnteprima_({ plan: CP_PLAN, titolo: CP_TEMP.nome, nota: CP_TEMP.nota, perGiorno: true });
@@ -9322,7 +9316,17 @@
     }
   }
 
+  let PS_PIANO_CORRENTE = null;
+  function psEsportaPdf(){
+    if(!PS_PIANO_CORRENTE) return;
+    const tit = document.getElementById('ps-nota-titolo'), tes = document.getElementById('ps-nota-testo');
+    return cpPtApriAnteprima_({ plan: PS_PIANO_CORRENTE, titolo: tit ? tit.value.trim() : '', nota: tes ? tes.value : '' });
+  }
+
   async function renderPianoSettimanaleTab(){
+    PS_PIANO_CORRENTE = null;
+    const btnEsp = document.getElementById('btn-ps-esporta');
+    if(btnEsp) btnEsp.style.display = 'none';
     const contEl = document.getElementById('ps-contenuto');
     const errEl = document.getElementById('ps-error');
     if(!contEl || !errEl) return;
@@ -9348,6 +9352,8 @@
       const verdure = Number(presetVerdureOlio.verdure) || 200;
       contEl.innerHTML = psHtmlGriglia_(plan, CP_GIORNI, CP_FOODS_BY_ID, verdure) + psHtmlNote_();
       psInitNote_();
+      PS_PIANO_CORRENTE = plan;
+      if(btnEsp) btnEsp.style.display = '';
     } catch(err){
       errEl.textContent = 'Errore di connessione: ' + err.message;
       contEl.innerHTML = '';
