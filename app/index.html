@@ -1723,6 +1723,7 @@
   .an-save-indicator .dot{ width:7px; height:7px; border-radius:50%; background:currentColor; flex:none; }
   .an-save-indicator.saving{ background:var(--accent-soft); color:var(--accent-ink); }
   .an-save-indicator.saving .dot{ animation:anPulseDot 1s ease-in-out infinite; }
+  .an-save-indicator.error{ background:#FBE4E1; color:#9B2C1F; font-weight:600; }
   .an-save-indicator.pending{ background:var(--warning-soft); color:#7A5E13; }
   @keyframes anPulseDot{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
 
@@ -2817,14 +2818,23 @@
       <!-- ---- MISURAZIONI ---- -->
       <div class="tab-panel" id="tab-misurazioni">
         <div class="card" id="card-nuova-rilevazione">
-          <div class="card-head">
+          <div class="card-head" style="align-items:flex-start;">
             <div>
-              <h3>Nuova rilevazione</h3>
-              <p>Inserisci i dati raccolti nel controllo di oggi.</p>
+              <h3>Rilevazione</h3>
+              <p>Si salva da sola mentre scrivi, con la data del controllo.</p>
+              <div class="an-save-indicator" id="mis-save-indicator" style="margin-top:8px;"><span class="dot"></span><span id="mis-save-indicator-text">Salvato</span></div>
             </div>
-            <div class="field" style="width:150px;">
-              <label>Data controllo</label>
-              <input type="date" id="f-data">
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; justify-content:flex-end;">
+              <div class="field" style="width:230px;">
+                <label>Rilevazione</label>
+                <select id="mis-sel" onchange="misApriDaSelect_(this.value)"></select>
+              </div>
+              <div class="field" style="width:150px;">
+                <label>Data controllo</label>
+                <input type="date" id="f-data" disabled onchange="misCambiaData_(this.value)">
+              </div>
+              <button class="btn small ghost" type="button" id="mis-btn-data" onclick="misAbilitaData_()">Cambia data</button>
+              <button class="btn small ghost" type="button" id="mis-btn-elimina" onclick="misElimina_()" style="display:none;">Elimina</button>
             </div>
           </div>
 
@@ -2876,10 +2886,6 @@
             </div>
           </fieldset>
 
-          <button class="btn primary" type="button" id="btn-save-misurazione" onclick="saveMisurazione()">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M5 13L9.5 17.5L19 7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Salva rilevazione
-          </button>
           <div class="login-error" id="misurazione-error"></div>
         </div>
 
@@ -3540,6 +3546,9 @@
     alimenti:          { fn:'alimenti',           args:() => ({}) },
     ricette:           { fn:'ricette',            args:() => ({}) },
     caricaPiano:       { fn:'registra_piano_pdf', args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_nome_file: b.filename, p_url: b.url }) },
+    misurazioneSalva:    { fn:'misurazione_salva',    args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_id: b.id || null, p_data: b.data, p_valori: b.valori }) },
+    misurazioneElimina:  { fn:'misurazione_elimina',  args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_id: b.id }) },
+    misurazioneSpecchia: { fn:'misurazione_specchia', args:b => ({ p_codice: b.codice, p_paziente: b.paziente, p_id: b.id }) },
     aggiungiMisurazione: { fn:'aggiungi_misurazione', args:b => {
       const { codice, paziente, data, ...valori } = b;
       return { p_codice: codice, p_paziente: paziente, p_data: data ? new Date(data).toISOString() : null, p_valori: valori };
@@ -6102,51 +6111,182 @@
     'Massa magra':'f-massaMagra', 'Massa grassa':'f-massaGrassa',
   };
 
-  async function saveMisurazione(){
-    const errEl = document.getElementById('misurazione-error');
-    errEl.textContent = '';
-    const dataVal = document.getElementById('f-data').value;
-    if(!dataVal){ errEl.textContent = 'Inserisci la data del controllo.'; return; }
-    const body = { codice: SESSION.codice, paziente: currentPatientCode, data: dataVal };
+  /* ---- Scheda Misurazioni: salvataggio automatico (come l'Anamnesi) ----
+     Una "rilevazione" è una riga su Supabase con la sua data. Nasce solo quando scrivi il primo
+     valore (così aprire la scheda non lascia righe vuote), poi ogni modifica viene salvata da sola
+     dopo 1,2 s di pausa e comunque ogni minuto; il salvataggio parte subito anche quando cambi
+     scheda o paziente. La data è quella di oggi finché non la cambi a mano con "Cambia data". */
+  let misId = null;               // id riga su Supabase della rilevazione aperta (null = non ancora creata)
+  let misData = '';               // aaaa-mm-gg della rilevazione aperta
+  let misDirty = false, misSaving = false, misRiSalva = false, misErrore = false;
+  let misSaveTimer = null, misRetryTimer = null, misSpecchioTimer = null;
+  let misPazienteAperto = null;   // codice paziente per cui il modulo è inizializzato
+  let misListenerOk = false;
+
+  function misOggiISO_(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function misSetIndicator_(stato, testo){
+    const el = document.getElementById('mis-save-indicator'), tx = document.getElementById('mis-save-indicator-text');
+    if(!el || !tx) return;
+    el.classList.remove('saving','pending','error');
+    if(stato) el.classList.add(stato);
+    tx.textContent = testo;
+  }
+  function misOra_(){ return new Date().toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' }); }
+  function misLeggiValori_(){
+    const v = {};
+    Object.keys(MISURAZIONE_FIELD_IDS).forEach(field => { v[field] = parseNum(document.getElementById(MISURAZIONE_FIELD_IDS[field]).value); });
+    return v;
+  }
+  function misFormVuoto_(){ return Object.values(misLeggiValori_()).every(x => x === null); }
+  function misCompilaForm_(riga){
     Object.keys(MISURAZIONE_FIELD_IDS).forEach(field => {
-      body[field] = parseNum(document.getElementById(MISURAZIONE_FIELD_IDS[field]).value);
+      const val = riga ? riga[field] : null;
+      document.getElementById(MISURAZIONE_FIELD_IDS[field]).value = (val === null || val === undefined) ? '' : String(val).replace('.', ',');
     });
-    const btn = document.getElementById('btn-save-misurazione');
-    cpBottoneCaricando_(btn);
+  }
+  function misRenderControlli_(){
+    const sel = document.getElementById('mis-sel');
+    if(!sel) return;
+    const righe = currentRows.slice().sort((a,b) => String(b.Data).localeCompare(String(a.Data)));
+    sel.innerHTML = `<option value="">Nuova rilevazione</option>` + righe.map(r => {
+      let etichetta = cpSoloDataISO_(r.Data);
+      try{ etichetta = fmtDateFull(new Date(r.Data)); }catch(e){ /* resta la data ISO */ }
+      return `<option value="${r._row}" ${String(r._row)===String(misId)?'selected':''}>${etichetta}</option>`;
+    }).join('');
+    if(misId === null) sel.value = '';
+    const dataEl = document.getElementById('f-data');
+    dataEl.value = misData; dataEl.disabled = true;
+    document.getElementById('mis-btn-elimina').style.display = misId ? '' : 'none';
+  }
+  function misApriRiga_(riga){
+    misId = riga ? riga._row : null;
+    misData = riga ? cpSoloDataISO_(riga.Data) : misOggiISO_();
+    misCompilaForm_(riga);
+    misDirty = false; misErrore = false;
+    document.getElementById('misurazione-error').textContent = '';
+    misSetIndicator_('', misId ? 'Salvato' : 'Nuova rilevazione');
+    misRenderControlli_();
+  }
+  // Apre la scheda: se esiste già una rilevazione con la data di oggi la riapre per continuare a
+  // compilarla, altrimenti mostra un modulo vuoto con la data di oggi (la riga nasce al primo valore).
+  function misInitSeNecessario_(){
+    if(!currentPatientCode) return;
+    if(!misListenerOk){
+      document.getElementById('card-nuova-rilevazione').addEventListener('input', e => {
+        if(e.target && e.target.id && e.target.id.startsWith('f-') && e.target.id !== 'f-data') misProgramma_();
+      });
+      misListenerOk = true;
+    }
+    if(misPazienteAperto === currentPatientCode){ misRenderControlli_(); return; }
+    misPazienteAperto = currentPatientCode;
+    const oggi = misOggiISO_();
+    const riga = currentRows.find(r => cpSoloDataISO_(r.Data) === oggi) || null;
+    misApriRiga_(riga);
+  }
+  async function misApriDaSelect_(valore){
+    await misFlushIfDirty_();
+    if(!valore){ misId = null; misData = misOggiISO_(); misApriRiga_(null); return; }
+    const riga = currentRows.find(r => String(r._row) === String(valore));
+    misApriRiga_(riga || null);
+  }
+  function misAbilitaData_(){
+    const el = document.getElementById('f-data');
+    el.disabled = false; el.focus();
+    try{ if(el.showPicker) el.showPicker(); }catch(e){ /* alcuni browser non lo permettono: basta il focus */ }
+  }
+  function misCambiaData_(v){
+    document.getElementById('f-data').disabled = true;
+    if(!v){ document.getElementById('f-data').value = misData; return; }
+    misData = v;
+    if(misId || !misFormVuoto_()) misProgramma_();
+  }
+  function misProgramma_(){
+    if(!misId && misFormVuoto_()){ misSetIndicator_('', 'Nuova rilevazione'); return; } // non crea righe vuote
+    misDirty = true;
+    misSetIndicator_('pending', 'Scrivendo…');
+    if(misSaveTimer) clearTimeout(misSaveTimer);
+    misSaveTimer = setTimeout(() => { misSaveTimer = null; misSalva_(); }, 1200);
+  }
+  async function misSalva_(){
+    if(misSaveTimer){ clearTimeout(misSaveTimer); misSaveTimer = null; }
+    if(misRetryTimer){ clearTimeout(misRetryTimer); misRetryTimer = null; }
+    if(misSaving){ misRiSalva = true; return; }
+    if(!currentPatientCode || !misData) return;
+    const valori = misLeggiValori_();
+    if(!misId && Object.values(valori).every(x => x === null)){ misDirty = false; return; }
+    const codice = currentPatientCode;
+    misSaving = true; misDirty = false;
+    misSetIndicator_('saving', 'Salvataggio…');
     try{
-      const res = await apiPost('aggiungiMisurazione', body);
-      if(res.ok){
-        await cpMisurazioneSalvataConSuccesso_();
+      const res = await apiPost('misurazioneSalva', { codice: SESSION.codice, paziente: codice, id: misId, data: misData, valori });
+      if(res && res.ok && res.riga){
+        misErrore = false;
+        if(codice === currentPatientCode){
+          misId = res.id;
+          const nuova = !currentRows.some(r => String(r._row) === String(res.id));
+          currentRows = currentRows.filter(r => String(r._row) !== String(res.id)).concat([res.riga]).sort((a,b) => String(a.Data).localeCompare(String(b.Data)));
+          METRICS = buildMetricsFromRows(currentRows);
+          if(nuova) populateCompareSelects();
+          misRenderControlli_();
+          if(document.getElementById('tab-misurazioni').classList.contains('active')){ renderMisCategorie(); renderBigChart(); renderSparkGrid(); }
+          renderPanoramica();
+          if(misSpecchioTimer) clearTimeout(misSpecchioTimer);
+          misSpecchioTimer = setTimeout(misSpecchiaOra_, 120000);
+        }
+        if(!misDirty) misSetIndicator_('', 'Salvato alle ' + misOra_());
       } else {
-        errEl.textContent = res.error || 'Errore durante il salvataggio.';
+        misErrore = true; misDirty = true;
+        misSetIndicator_('error', 'NON salvato — ' + ((res && res.error) || 'errore del server') + ' · riprovo');
+        misRetryTimer = setTimeout(misSalva_, 8000);
       }
     } catch(err){
-      // Come per il salvataggio di un nuovo paziente: quando lo specchio verso Google Sheets
-      // impiega più del solito (Google a volte risponde con qualche secondo di ritardo), la
-      // richiesta sembra fallita dal punto di vista del browser anche se il salvataggio su
-      // Supabase è comunque già andato a buon fine. Prima di segnalare un errore, verifico se la
-      // rilevazione di questa data risulta già salvata — e in OGNI caso, alla fine, ricarico
-      // comunque l'elenco/i grafici: così la scheda mostra sempre lo stato vero, invece di
-      // restare ferma a prima del salvataggio se anche la verifica ha impiegato troppo tempo.
-      errEl.textContent = 'Verifica in corso, un attimo...';
-      const salvata = await cpVerificaMisurazioneSalvata_(currentPatientCode, dataVal);
-      if(salvata){
-        await cpMisurazioneSalvataConSuccesso_();
-      } else {
-        errEl.textContent = 'Errore di connessione: ' + err.message + ' — controlla tra qualche secondo, potrebbe essersi comunque salvata.';
-        await loadMisurazioni(currentPatientCode);
-        renderMisCategorie(); renderBigChart(); renderSparkGrid(); renderPanoramica();
-      }
+      misErrore = true; misDirty = true;
+      misSetIndicator_('error', 'NON salvato — manca la connessione · riprovo');
+      misRetryTimer = setTimeout(misSalva_, 8000);
+    } finally {
+      misSaving = false;
+      if(misRiSalva){ misRiSalva = false; misSalva_(); }
     }
-    cpBottoneFinito_(btn);
   }
-  async function cpMisurazioneSalvataConSuccesso_(){
-    document.getElementById('misurazione-error').textContent = '';
-    Object.values(MISURAZIONE_FIELD_IDS).forEach(id => document.getElementById(id).value = '');
-    await loadMisurazioni(currentPatientCode);
-    renderMisCategorie(); renderBigChart(); renderSparkGrid(); renderPanoramica();
-    showToast('Rilevazione salvata correttamente');
+  async function misFlushIfDirty_(){
+    if(misSaveTimer){ clearTimeout(misSaveTimer); misSaveTimer = null; }
+    if(misDirty || misErrore){ await misSalva_(); }
+    while(misSaving) await new Promise(r => setTimeout(r, 100));
+    misSpecchiaOra_();
   }
+  // Copia UNA volta la rilevazione completa sul foglio Google (quando smetti di modificarla).
+  async function misSpecchiaOra_(){
+    if(misSpecchioTimer){ clearTimeout(misSpecchioTimer); misSpecchioTimer = null; }
+    if(!misId || misDirty || !currentPatientCode) return;
+    try{ await apiPost('misurazioneSpecchia', { codice: SESSION.codice, paziente: currentPatientCode, id: misId }); }catch(e){ /* riproverà alla prossima uscita */ }
+  }
+  async function misElimina_(){
+    if(!misId) return;
+    if(!confirm('Eliminare definitivamente la rilevazione del ' + misData.split('-').reverse().join('/') + '? Non si può recuperare.')) return;
+    try{
+      const res = await apiPost('misurazioneElimina', { codice: SESSION.codice, paziente: currentPatientCode, id: misId });
+      if(!res.ok){ showToast(res.error || "Errore durante l'eliminazione."); return; }
+      currentRows = currentRows.filter(r => String(r._row) !== String(misId));
+      METRICS = buildMetricsFromRows(currentRows);
+      populateCompareSelects();
+      misId = null; misDirty = false; misErrore = false;
+      misApriRiga_(currentRows.find(r => cpSoloDataISO_(r.Data) === misOggiISO_()) || null);
+      renderMisCategorie(); renderBigChart(); renderSparkGrid(); renderPanoramica();
+      showToast('Rilevazione eliminata');
+    } catch(err){
+      showToast('Errore di connessione: ' + err.message);
+    }
+  }
+  window.addEventListener('beforeunload', function(e){
+    if(misDirty || misSaving || misErrore){ e.preventDefault(); e.returnValue = ''; }
+  });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden' && (misDirty || misErrore)) misSalva_(); });
+  window.addEventListener('pagehide', function(){ if(misDirty || misErrore) misSalva_(); });
+  setInterval(function(){ if(misDirty || misErrore){ misSalva_(); } }, 60000);
+
   // Estrae solo la parte "aaaa-mm-gg" da un valore Data, che il foglio Google può restituire come
   // testo semplice o come data/ora completa: serve per confrontarla con il valore del campo data
   // del modulo (sempre in formato aaaa-mm-gg) senza sbagliare per via dell'orario.
@@ -6446,6 +6586,8 @@
 
   async function selectPatientByCode(codice){
     await anFlushIfDirty_(); // salva subito eventuali modifiche non ancora scritte prima di cambiare paziente
+    await misFlushIfDirty_();
+    if(codiceStr_(codice) !== misPazienteAperto) misPazienteAperto = null; // il modulo Misurazioni si reinizializza per il nuovo paziente
     codice = codiceStr_(codice);
     pazientiRecentiSegna_(codice);
     currentPatientCode = codice;
@@ -10153,6 +10295,7 @@
 
   /* ================= TAB SWITCHING (nutrizionista) ================= */
   function setNutriTab(name){
+    if(name !== 'misurazioni' && (misDirty || misErrore)) misFlushIfDirty_(); // salva subito prima di lasciare la scheda
     // Un clic su una scheda normale riporta sempre alla vista singola: le schede restano
     // la navigazione "a tutta pagina", i due menu della vista divisa sono un controllo separato.
     if(nutriSplitOn) toggleNutriSplit();
@@ -10169,7 +10312,7 @@
     if(name==='creapiano') renderCreaPianoTab();
     if(name==='pianogenerico') renderPianoGenericoTab();
     if(name==='pianosettimanale') renderPianoSettimanaleTab();
-    if(name==='misurazioni'){ renderMisCategorie(); renderBigChart(); renderSparkGrid(); }
+    if(name==='misurazioni'){ misInitSeNecessario_(); renderMisCategorie(); renderBigChart(); renderSparkGrid(); }
     if(name==='confronto') renderCompareTable();
     if(name==='anamnesi') renderAnamnesiTab();
   }
