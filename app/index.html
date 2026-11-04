@@ -2726,6 +2726,7 @@
               <button class="btn small ghost" type="button" onclick="cpOpenDuplicateModal('day')">Duplica giorno</button>
               <button class="btn small ghost" type="button" onclick="cpOpenModal('save')">Salva come modello</button>
               <button class="btn small ghost" type="button" onclick="cpApriListaSpesa()">Lista della spesa</button>
+              <button class="btn small ghost" type="button" onclick="cpEsportaPianoCorrente()">Esporta PDF</button>
               <button class="btn small warm" type="button" onclick="cpSalvaBozza()" id="cp-btn-bozza" title="Tiene in memoria lo stato attuale del piano per questo paziente, senza renderlo ancora definitivo">Salva bozza</button>
               <button class="btn small primary" type="button" onclick="cpSalvaPiano()" id="cp-btn-salva">Salva piano</button>
             </div>
@@ -5480,6 +5481,12 @@
     cpTempSalva_();
     cpRenderAll();
     showToast("Copiato il piano ufficiale — ora puoi modificarlo senza toccare l'originale");
+  }
+  // Esporta in PDF il piano che si sta guardando nell'editor: l'ufficiale (anche con modifiche non
+  // ancora salvate) oppure il temporaneo, con la stessa grafica del Piano Settimanale.
+  function cpEsportaPianoCorrente(){
+    if(CP_MODO === 'temporaneo') return cpTempEsporta();
+    return cpPtApriAnteprima_({ plan: CP_PLAN, titolo: '', nota: '' });
   }
   function cpTempEsporta(){
     return cpPtApriAnteprima_({ plan: CP_PLAN, titolo: CP_TEMP.nome, nota: CP_TEMP.nota, perGiorno: true });
