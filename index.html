@@ -117,6 +117,39 @@
     padding:7px 13px; border-radius:999px; background:var(--accent-soft); color:var(--accent-ink);
     border:1px solid var(--border);
   }
+
+  /* ---------- Percorsi nutrizionali (3 / 6 / 12 mesi) ---------- */
+  .pq-grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; align-items:stretch; }
+  .pq-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-m);
+    padding:28px 24px; box-shadow:var(--shadow-1); position:relative;
+    display:grid; grid-row:span 4; grid-template-rows:subgrid; row-gap:18px;
+  }
+  .pq-card.featured{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), var(--shadow-2); background:var(--surface-raised); }
+  .pq-badge{
+    position:absolute; top:-11px; left:20px; background:var(--accent); color:#fff; font-size:11px; font-weight:700;
+    padding:4px 12px; border-radius:999px; letter-spacing:.03em;
+  }
+  .pq-badge.warm{ background:var(--accent-warm); }
+  .pq-name{ font-size:13px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--accent); }
+  .pq-dur{ font-family:var(--font-display); font-weight:800; font-size:34px; line-height:1.1; margin-top:4px; }
+  .pq-label{ font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:6px; }
+  .pq-who{ font-size:14px; color:var(--ink-soft); line-height:1.6; }
+  .pq-list{ list-style:none; margin:0; padding:16px 0 0; border-top:1px solid var(--border-soft); display:flex; flex-direction:column; gap:9px; font-size:14px; font-weight:600; }
+  .pq-list li{ display:flex; gap:10px; align-items:flex-start; }
+  .pq-list svg{ width:16px; height:16px; flex:none; margin-top:3px; color:var(--accent); }
+  .pq-card .btn{ justify-content:center; align-self:end; }
+  .pq-inc-title{ margin:40px 0 14px; }
+  .pq-inc{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .pq-inc div{ display:flex; gap:12px; align-items:center; background:var(--accent-soft); border-radius:var(--radius-m); padding:16px 18px; font-size:14px; font-weight:600; color:var(--accent-ink); }
+  .pq-inc svg{ width:18px; height:18px; flex:none; color:var(--accent); }
+  @media (max-width:860px){
+    .pq-grid{ grid-template-columns:1fr; gap:26px; }
+    .pq-card{ display:flex; flex-direction:column; grid-row:auto; gap:18px; }
+    .pq-card .btn{ align-self:stretch; }
+    .pq-inc{ grid-template-columns:1fr; }
+  }
+
   /* ---------- Servizi ---------- */
   .services-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
   @media (max-width:860px){ .services-grid{ grid-template-columns:1fr 1fr; } }
@@ -301,6 +334,41 @@
           <svg viewBox="0 0 24 24" fill="none"><path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
       </div>
+    </div>
+  </section>
+
+  <section id="percorsi">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">Percorsi nutrizionali</div>
+        <h2>Scegli la durata del tuo percorso</h2>
+        <p>Più tempo hai davanti, più controlli e più margine per consolidare le nuove abitudini. Scrivimi per un preventivo su misura per te.</p>
+      </div>
+      <div class="pq-grid">
+        <div class="pq-card">
+          
+          <div><div class="pq-name">Percorso nutrizionale</div><div class="pq-dur">3 mesi</div></div>
+          <div><div class="pq-label">Per chi è</div><p class="pq-who">Per chi inizia un percorso alimentare per la prima volta e vuole capire il metodo di lavoro.</p></div>
+          <ul class="pq-list"><li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Prima visita completa</li><li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>2 visite di controllo</li><li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Piano aggiornato quando serve</li></ul>
+          <a class="btn primary" href="#contatti">Chiedi un preventivo</a>
+        </div>
+        <div class="pq-card featured">
+          <div class="pq-badge">Consigliato</div>
+          <div><div class="pq-name">Percorso nutrizionale</div><div class="pq-dur">6 mesi</div></div>
+          <div><div class="pq-label">Per chi è</div><p class="pq-who">Per chi vuole un cambiamento consistente e il tempo di consolidare le nuove abitudini.</p></div>
+          <ul class="pq-list"><li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Prima visita completa</li><li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>4 visite di controllo</li><li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Piano aggiornato quando serve</li></ul>
+          <a class="btn primary" href="#contatti">Chiedi un preventivo</a>
+        </div>
+        <div class="pq-card">
+          <div class="pq-badge warm">Più conveniente</div>
+          <div><div class="pq-name">Percorso nutrizionale</div><div class="pq-dur">12 mesi</div></div>
+          <div><div class="pq-label">Per chi è</div><p class="pq-who">Per chi vuole farsi seguire a lungo, mantenere i risultati e fare dell'alimentazione un'abitudine.</p></div>
+          <ul class="pq-list"><li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Prima visita completa</li><li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>8 visite di controllo</li><li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Piano aggiornato quando serve</li></ul>
+          <a class="btn primary" href="#contatti">Chiedi un preventivo</a>
+        </div>
+      </div>
+      <div class="eyebrow pq-inc-title">In tutti i percorsi</div>
+      <div class="pq-inc"><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Anamnesi completa e valutazione della composizione corporea</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Piano alimentare personalizzato, inviato entro 7 giorni</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Valutazione della composizione corporea a ogni controllo</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Accesso all'app con il piano sempre aggiornato sul telefono</div></div>
     </div>
   </section>
 
