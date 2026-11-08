@@ -140,9 +140,11 @@
   .pq-list svg{ width:16px; height:16px; flex:none; margin-top:3px; color:var(--accent); }
   .pq-card .btn{ justify-content:center; align-self:end; }
   .pq-inc-title{ margin:40px 0 14px; }
-  .pq-inc{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-  .pq-inc div{ display:flex; gap:12px; align-items:center; background:var(--accent-soft); border-radius:var(--radius-m); padding:16px 18px; font-size:14px; font-weight:600; color:var(--accent-ink); }
-  .pq-inc svg{ width:18px; height:18px; flex:none; color:var(--accent); }
+  .pq-inc{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 40px; }
+  .pq-inc div{ display:flex; gap:12px; align-items:flex-start; font-size:15px; font-weight:600; color:var(--ink); line-height:1.5; }
+  .pq-inc svg{ width:18px; height:18px; flex:none; margin-top:3px; color:var(--accent); }
+  .pq-soon{ margin-top:26px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; font-size:14px; color:var(--ink-soft); }
+  .pq-soon span{ background:var(--accent-warm-soft); color:var(--accent-warm); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:4px 11px; border-radius:999px; }
   @media (max-width:860px){
     .pq-grid{ grid-template-columns:1fr; gap:26px; }
     .pq-card{ display:flex; flex-direction:column; grid-row:auto; gap:18px; }
@@ -368,7 +370,8 @@
         </div>
       </div>
       <div class="eyebrow pq-inc-title">In tutti i percorsi</div>
-      <div class="pq-inc"><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Anamnesi completa e valutazione della composizione corporea</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Piano alimentare personalizzato, inviato entro 7 giorni</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Valutazione della composizione corporea a ogni controllo</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Accesso all'app con il piano sempre aggiornato sul telefono</div></div>
+      <div class="pq-inc"><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Anamnesi e valutazione della composizione corporea</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Piano alimentare personalizzato entro 7 giorni</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Rivalutazione della composizione corporea ad ogni check</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Accesso all'app con il piano sempre aggiornato</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Possibilità di rateizzare l'importo</div></div>
+      <p class="pq-soon"><span>Prossimamente</span>A breve nell'app saranno disponibili anche il ricettario e la lista della spesa, integrati con il tuo piano.</p>
     </div>
   </section>
 
