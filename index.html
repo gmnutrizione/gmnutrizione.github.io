@@ -140,16 +140,25 @@
   .pq-list svg{ width:16px; height:16px; flex:none; margin-top:3px; color:var(--accent); }
   .pq-card .btn{ justify-content:center; align-self:end; }
   .pq-inc-title{ margin:40px 0 14px; }
-  .pq-inc{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 40px; }
+  .pq-inc-wrap{ display:grid; grid-template-columns:1.25fr 1fr; gap:40px; align-items:center; }
+  .pq-inc{ display:flex; flex-direction:column; gap:16px; }
   .pq-inc div{ display:flex; gap:12px; align-items:flex-start; font-size:15px; font-weight:600; color:var(--ink); line-height:1.5; }
   .pq-inc svg{ width:18px; height:18px; flex:none; margin-top:3px; color:var(--accent); }
-  .pq-soon{ margin-top:26px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; font-size:14px; color:var(--ink-soft); }
-  .pq-soon span{ background:var(--accent-warm-soft); color:var(--accent-warm); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:4px 11px; border-radius:999px; }
+  .pq-soon-box{ display:flex; flex-direction:column; align-items:center; padding:8px 0; }
+  .pq-pop{ width:min(100%,250px); background:var(--surface-raised); border:1px solid var(--border); border-radius:var(--radius-m); box-shadow:var(--shadow-2); padding:16px 20px; display:flex; flex-direction:column; gap:8px; }
+  .pq-pop.a{ transform:rotate(-4deg) translateX(-26px); }
+  .pq-pop.b{ transform:rotate(3deg) translateX(26px); margin-top:14px; }
+  .pq-tag{ align-self:flex-start; background:var(--accent-warm-soft); color:var(--accent-warm); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 10px; border-radius:999px; }
+  .pq-pop-t{ display:flex; gap:10px; align-items:center; font-family:var(--font-display); font-weight:700; font-size:18px; color:var(--ink); }
+  .pq-pop-t svg{ width:22px; height:22px; flex:none; color:var(--accent); }
+  .pq-soon-note{ margin-top:26px; font-size:14.5px; font-weight:600; color:var(--ink-soft); text-align:center; }
   @media (max-width:860px){
     .pq-grid{ grid-template-columns:1fr; gap:26px; }
     .pq-card{ display:flex; flex-direction:column; grid-row:auto; gap:18px; }
     .pq-card .btn{ align-self:stretch; }
-    .pq-inc{ grid-template-columns:1fr; }
+    .pq-inc-wrap{ grid-template-columns:1fr; gap:30px; }
+    .pq-pop.a{ transform:rotate(-3deg) translateX(-12px); }
+    .pq-pop.b{ transform:rotate(2.5deg) translateX(12px); }
   }
 
   /* ---------- Servizi ---------- */
@@ -370,8 +379,14 @@
         </div>
       </div>
       <div class="eyebrow pq-inc-title">In tutti i percorsi</div>
-      <div class="pq-inc"><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Anamnesi e valutazione della composizione corporea</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Piano alimentare personalizzato entro 7 giorni</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Accesso all'app con il piano sempre aggiornato</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Possibilità di rateizzare l'importo</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Rivalutazione della composizione corporea ad ogni controllo ed eventuali modifiche al piano in base all'obiettivo</div></div>
-      <p class="pq-soon"><span>Prossimamente</span>A breve nell'app saranno disponibili anche il ricettario e la lista della spesa, integrati con il tuo piano.</p>
+      <div class="pq-inc-wrap">
+        <div class="pq-inc"><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Anamnesi e valutazione della composizione corporea</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Piano alimentare personalizzato entro 7 giorni</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Accesso all'app con il piano sempre aggiornato</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Possibilità di rateizzare l'importo</div><div><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Rivalutazione della composizione corporea ad ogni controllo ed eventuali modifiche al piano in base all'obiettivo</div></div>
+        <div class="pq-soon-box">
+          <div class="pq-pop a"><span class="pq-tag">Prossimamente</span><div class="pq-pop-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.2 10.5a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.8L19.5 8H6"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg>Lista della spesa</div></div>
+          <div class="pq-pop b"><span class="pq-tag">Prossimamente</span><div class="pq-pop-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15H5.5A1.5 1.5 0 0 0 4 20.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v15h5.5a1.5 1.5 0 0 1 1.5 1.5z"/></svg>Ricettario</div></div>
+          <p class="pq-soon-note">Direttamente integrati nell'app</p>
+        </div>
+      </div>
     </div>
   </section>
 
