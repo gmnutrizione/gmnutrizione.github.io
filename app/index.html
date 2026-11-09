@@ -9182,22 +9182,45 @@
 
   function psLabelPasto_(pasto){ return pasto; }
 
+  // La verdura (categoria "Verdura", es. "Verdura MIX") è già riportata a parte dalla riga fissa
+  // "Verdure Xg" qui sotto: va quindi esclusa dall'elenco degli alimenti del pasto, altrimenti
+  // compare due volte — una come alimento del piano, una come riga fissa (Giovanni, 9/11).
+  function psEVerdura_(f){
+    return String((f && f.categoria) || '').trim().toLowerCase() === 'verdura';
+  }
   // Testo ordinato per Pranzo/Cena di un singolo giorno: cereale, poi fonte proteica, poi eventuali
   // altri alimenti del pasto, infine Verdure (valore preimpostato per sesso di questo paziente) se il
-  // pasto contiene almeno un cereale o una fonte proteica. L'olio (fonteGrassi) non viene mai scritto
-  // qui — Giovanni lo scrive altrove. Restituisce null se il giorno è vuoto o contiene solo olio.
-  function psOrdinaTestoPasto_(righe, foodsById, verdure){
+  // pasto contiene almeno un cereale o una fonte proteica. L'olio (fonteGrassi) e la verdura (già
+  // riportata a parte) non vengono mai scritti nell'elenco — Giovanni scrive l'olio altrove.
+  // Restituisce null se il giorno è vuoto o contiene solo olio/verdura.
+  // Formaggi e uova hanno una resa speciale (Giovanni, 9/11): i formaggi (qualsiasi tipo) diventano
+  // "Formaggio a scelta" senza grammatura; le uova diventano un numero di pezzi invece dei grammi,
+  // usando il peso medio di un uovo impostato in "Impostazioni -> Piano Generico".
+  function psRigaAlimento_(f, g, pesoMedioUovo){
+    if(f.categoriaProteica === 'formaggi') return `<b>Formaggio a scelta</b>`;
+    if(f.categoriaProteica === 'uova'){
+      const n = Math.max(1, Math.round(g / (pesoMedioUovo || 60)));
+      return `<b>${n}</b> ${n === 1 ? 'uovo' : 'uova'}`;
+    }
+    return `<b>${cpFmt(g)}g</b> ${cpEsc(cpNomeSenzaMix_(cpNomeSenzaMarca(f.nome)))}`;
+  }
+  function psOrdinaTestoPasto_(righe, foodsById, verdure, pesoMedioUovo){
     const valide = (righe || []).filter(r => foodsById[r.id]);
     if(!valide.length) return null;
-    const senzaOlio = valide.filter(r => !foodsById[r.id].fonteGrassi);
-    if(!senzaOlio.length) return null;
-    const cereale = senzaOlio.filter(r => foodsById[r.id].fonteCarboidrati);
-    const proteina = senzaOlio.filter(r => !foodsById[r.id].fonteCarboidrati && foodsById[r.id].categoriaProteica);
+    const senzaOlioEVerdura = valide.filter(r => !foodsById[r.id].fonteGrassi && !psEVerdura_(foodsById[r.id]));
+    if(!senzaOlioEVerdura.length) return null;
+    const cereale = senzaOlioEVerdura.filter(r => foodsById[r.id].fonteCarboidrati);
+    const proteina = senzaOlioEVerdura.filter(r => !foodsById[r.id].fonteCarboidrati && foodsById[r.id].categoriaProteica);
     const strutturato = cereale.length > 0 || proteina.length > 0;
     const idsNoti = new Set(cereale.concat(proteina).map(r => r.id + ':' + r.g));
-    const altro = senzaOlio.filter(r => !idsNoti.has(r.id + ':' + r.g));
-    const rigaConGrammi = r => `<b>${cpFmt(r.g)}g</b> ${cpEsc(cpNomeSenzaMix_(cpNomeSenzaMarca(foodsById[r.id].nome)))}`;
-    const pezzi = cereale.concat(proteina).map(rigaConGrammi).concat(altro.map(rigaConGrammi));
+    const altro = senzaOlioEVerdura.filter(r => !idsNoti.has(r.id + ':' + r.g));
+    const rigaConGrammi = r => psRigaAlimento_(foodsById[r.id], r.g, pesoMedioUovo);
+    const vistiTesto = new Set();
+    const pezzi = cereale.concat(proteina, altro).map(rigaConGrammi).filter(testo => {
+      // Un solo "Formaggio a scelta" anche se nello stesso pasto compare più di un formaggio.
+      if(testo === '<b>Formaggio a scelta</b>'){ if(vistiTesto.has(testo)) return false; vistiTesto.add(testo); }
+      return true;
+    });
     if(strutturato) pezzi.push(`Verdure <b>${cpFmt(verdure)}g</b>`);
     return pezzi.join(', ');
   }
@@ -9217,7 +9240,7 @@
   }
 
   // Costruisce la griglia (etichetta pasto + 7 giorni) e l'eventuale postilla sulle opzioni libere.
-  function psHtmlGriglia_(plan, giorni, foodsById, verdure, opts){
+  function psHtmlGriglia_(plan, giorni, foodsById, verdure, opts, pesoMedioUovo){
     opts = opts || {};
     const VUOTO = opts.vuotoBianco ? '' : '—';
     const opzioniPerPasto = {};
@@ -9251,7 +9274,7 @@
             ? `<div class="ps-entry-text">${psTestoOpzione_({ righe: val.map(r => ({ g:r.g, nome:foodsById[r.id].nome })) })}</div>`
             : `<div class="ps-entry-text ps-vuoto">${VUOTO}</div>`;
         } else if(fisso){
-          const testo = psOrdinaTestoPasto_(righeGiorno, foodsById, verdure);
+          const testo = psOrdinaTestoPasto_(righeGiorno, foodsById, verdure, pesoMedioUovo);
           contenuto = testo ? `<div class="ps-entry-text">${testo}</div>` : `<div class="ps-entry-text ps-vuoto">${VUOTO}</div>`;
         } else if(!opzioni || !opzioni.length){
           contenuto = `<div class="ps-entry-text ps-vuoto">${VUOTO}</div>`;
@@ -9336,9 +9359,10 @@
     try{
       await cpLoadFoods();
       if(!CP_FOODS_BY_ID || CP_FOODS_ERROR){ errEl.textContent = 'Errore nel caricamento del database alimenti.'; contEl.innerHTML = ''; return; }
-      const [resPiano, resPreset] = await Promise.all([
+      const [resPiano, resPreset, resImp] = await Promise.all([
         apiGet('pianoStrutturato', { codice: SESSION.codice, paziente: currentPatientCode, soloAttivo: '1' }),
         apiGet('pgPresetLeggi', { codice: SESSION.codice }),
+        apiGet('pgImpostazioniLeggi', { codice: SESSION.codice }),
       ]);
       if(!resPiano.ok || !resPiano.attivo || !resPiano.attivo.Plan){
         contEl.innerHTML = '<div class="ps-empty">Questo paziente non ha ancora un piano settimanale composto in "Crea piano".</div>';
@@ -9350,7 +9374,8 @@
       const presetRighe = (resPreset.ok && resPreset.preset) || [];
       const presetVerdureOlio = presetRighe.find(r => r.sesso === sesso) || { verdure:200, olio:10 };
       const verdure = Number(presetVerdureOlio.verdure) || 200;
-      contEl.innerHTML = psHtmlGriglia_(plan, CP_GIORNI, CP_FOODS_BY_ID, verdure) + psHtmlNote_();
+      const pesoMedioUovo = resImp.ok ? (Number(resImp.impostazioni.pg_peso_medio_uovo_g) || 60) : 60;
+      contEl.innerHTML = psHtmlGriglia_(plan, CP_GIORNI, CP_FOODS_BY_ID, verdure, {}, pesoMedioUovo) + psHtmlNote_();
       psInitNote_();
       PS_PIANO_CORRENTE = plan;
       if(btnEsp) btnEsp.style.display = '';
