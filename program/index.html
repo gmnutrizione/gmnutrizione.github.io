@@ -1950,7 +1950,6 @@
         <div class="field-grid" style="grid-template-columns:1fr 1fr;">
           <div class="field"><label>Nome e cognome</label><input type="text" id="np-nome" placeholder="Es. Anna Rossi"></div>
           <div class="field"><label>Codice di accesso paziente</label><input type="text" id="np-codice" placeholder="Es. AR04"></div>
-          <div class="field"><label>Età</label><input type="text" id="np-eta" placeholder="Es. 29"></div>
           <div class="field">
             <label>Sesso</label>
             <select id="np-sesso">
@@ -1959,7 +1958,6 @@
               <option value="F">Femmina</option>
             </select>
           </div>
-          <div class="field"><label>Altezza (cm)</label><input type="text" id="np-altezza" placeholder="Es. 172"></div>
           <div class="field"><label>Obiettivo</label><input type="text" id="np-obiettivo" placeholder="Es. Definizione muscolare"></div>
           <div class="field"><label>Prossimo controllo — data</label><input type="date" id="np-data-controllo"></div>
           <div class="field"><label>Prossimo controllo — ora (facoltativa)</label><input type="time" id="np-ora-controllo"></div>
@@ -1990,7 +1988,6 @@
         <div class="field-grid" style="grid-template-columns:1fr 1fr;">
           <div class="field"><label>Nome e cognome</label><input type="text" id="ep-nome" placeholder="Es. Anna Rossi"></div>
           <div class="field"><label>Codice di accesso paziente</label><input type="text" id="ep-codice" placeholder="Es. AR04"></div>
-          <div class="field"><label>Età</label><input type="text" id="ep-eta" placeholder="Es. 29"></div>
           <div class="field">
             <label>Sesso</label>
             <select id="ep-sesso">
@@ -1999,7 +1996,6 @@
               <option value="F">Femmina</option>
             </select>
           </div>
-          <div class="field"><label>Altezza (cm)</label><input type="text" id="ep-altezza" placeholder="Es. 172"></div>
           <div class="field"><label>Obiettivo</label><input type="text" id="ep-obiettivo" placeholder="Es. Definizione muscolare"></div>
           <div class="field"><label>Prossimo controllo — data</label><input type="date" id="ep-data-controllo"></div>
           <div class="field"><label>Prossimo controllo — ora (facoltativa)</label><input type="time" id="ep-ora-controllo"></div>
@@ -4706,13 +4702,49 @@
     const kcalMacro = prot*4 + grassi*9 + carb*4; // energia effettiva dei 3 macro (può differire da kcal se carb è fisso)
     return { formula, laf, deficitOn, deficitKcal, surplusOn, surplusKcal, bmr, tdee, kcal, kcalMacro, ratioProt, ratioGrassi, ratioCarb, prot, carb, zuccheri, grassi, grassiSaturi, fibra, sale };
   }
+  // ---- Età e altezza del paziente: non più nella scheda paziente, ma nell'Anamnesi ----
+  // L'età si calcola dalla data di nascita (Anamnesi → Generalità → "Nato il"), l'altezza si legge
+  // dall'Anamnesi personale ("Peso attuale / Altezza", in metri). Solo per i pazienti già esistenti,
+  // se nell'Anamnesi il dato manca, si usa il vecchio valore salvato nella scheda paziente.
+  function pazAnamnesiCaricata_(){
+    return (typeof anLoadedKey !== 'undefined' && anLoadedKey === (SESSION.codice + '|' + currentPatientCode)) ? anState : null;
+  }
+  function pazEtaDaNascita_(natoIl){
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(natoIl || '').trim());
+    if(!m) return null;
+    const oggi = new Date();
+    let eta = oggi.getFullYear() - (+m[1]);
+    if((oggi.getMonth() + 1) < (+m[2]) || ((oggi.getMonth() + 1) === (+m[2]) && oggi.getDate() < (+m[3]))) eta--;
+    return (eta >= 0 && eta < 130) ? eta : null;
+  }
+  function pazEtaCalcolata_(meta){
+    const an = pazAnamnesiCaricata_();
+    const daNascita = an && an.generale ? pazEtaDaNascita_(an.generale.natoIl) : null;
+    if(daNascita != null) return daNascita;
+    return meta ? parseNum(meta.Eta) : null;
+  }
+  function pazAltezzaCmCalcolata_(meta){
+    const an = pazAnamnesiCaricata_();
+    if(an && an.personale && an.personale.altezza){
+      const n = parseFloat(String(an.personale.altezza).replace(',', '.'));
+      if(n > 0 && n <= 3) return Math.round(n * 1000) / 10;      // scritta in metri (es. 1,72)
+      if(n >= 100 && n <= 250) return n;                          // scritta già in cm (es. 172)
+    }
+    return meta ? parseNum(meta.Altezza) : null;
+  }
+  function pazAggiornaEtaIntestazione_(){
+    const el = document.getElementById('patient-age');
+    if(!el || !currentPatientMeta) return;
+    const eta = pazEtaCalcolata_(currentPatientMeta);
+    el.textContent = eta != null ? (eta + ' anni') : '—';
+  }
   // Restituisce { eta, sesso, altezzaCm, pesoKg } se il paziente ha tutti i dati necessari per il
-  // calcolo automatico, altrimenti null (mancano Sesso/Altezza in scheda paziente o un peso in Misurazioni).
+  // calcolo automatico, altrimenti null (manca la data di nascita o l'altezza in Anamnesi, il sesso in scheda paziente o un peso in Misurazioni).
   function cpDatiObiettivoDisponibili_(){
     if(!currentPatientMeta) return null;
-    const eta = parseNum(currentPatientMeta.Eta);
+    const eta = pazEtaCalcolata_(currentPatientMeta);
     const sesso = String(currentPatientMeta.Sesso||'').trim().toUpperCase();
-    const altezzaCm = parseNum(currentPatientMeta.Altezza);
+    const altezzaCm = pazAltezzaCmCalcolata_(currentPatientMeta);
     const pesoValues = (METRICS.peso && METRICS.peso.values) || [];
     const pesoKg = pesoValues.length ? pesoValues[pesoValues.length-1] : null;
     if(eta==null || (sesso!=='M' && sesso!=='F') || altezzaCm==null || pesoKg==null) return null;
@@ -5715,7 +5747,7 @@
         calcEl.style.display = '';
         cpTgtCalcInit_();
       } else {
-        infoEl.innerHTML = `Per calcolare l'obiettivo servono <b>età, sesso e altezza</b> nella scheda di questo paziente, più almeno <b>un peso registrato in Misurazioni</b>. Finché mancano questi dati, imposta i valori a mano qui sotto.`;
+        infoEl.innerHTML = `Per calcolare l'obiettivo servono la <b>data di nascita</b> (Anamnesi → Generalità), l'<b>altezza</b> (Anamnesi personale) e il <b>sesso</b> (scheda paziente), più almeno <b>un peso registrato in Misurazioni</b>. Finché mancano questi dati, imposta i valori a mano qui sotto.`;
         calcEl.style.display = 'none';
       }
     }
@@ -6398,7 +6430,7 @@
     return `${d} ${MESI_IT[m-1]} ${y}`;
   }
   function openAddPatientModal(){
-    ['np-nome','np-codice','np-eta','np-sesso','np-altezza','np-obiettivo','np-data-controllo','np-ora-controllo'].forEach(id => document.getElementById(id).value = '');
+    ['np-nome','np-codice','np-sesso','np-obiettivo','np-data-controllo','np-ora-controllo'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('np-statoTipo').value = 'good';
     document.getElementById('add-patient-error').textContent = '';
     document.getElementById('add-patient-overlay').style.display = 'flex';
@@ -6415,9 +6447,7 @@
     if(!nome){ errEl.textContent = 'Inserisci il nome del paziente.'; return; }
     if(!codice){ errEl.textContent = 'Inserisci un codice di accesso per il paziente.'; return; }
 
-    const eta = document.getElementById('np-eta').value.trim();
     const sesso = document.getElementById('np-sesso').value;
-    const altezza = document.getElementById('np-altezza').value.trim();
     const obiettivo = document.getElementById('np-obiettivo').value.trim();
     const dataControllo = document.getElementById('np-data-controllo').value;
     const oraControllo = document.getElementById('np-ora-controllo').value;
@@ -6432,8 +6462,10 @@
 
     const paziente = {
       Codice: codice, Nome: nome,
-      Eta: eta ? (parseNum(eta) ?? eta) : '',
-      Sesso: sesso, Altezza: altezza ? (parseNum(altezza) ?? altezza) : '',
+      // Età e altezza non si chiedono più qui: l'età si calcola dalla data di nascita (Anamnesi → Generalità)
+      // e l'altezza si legge dall'Anamnesi personale.
+      Eta: '',
+      Sesso: sesso, Altezza: '',
       Obiettivo: obiettivo, ProssimoControllo: prossimoControllo,
       StatoTesto: statoTesto, StatoTipo: statoTipo,
     };
@@ -6505,9 +6537,7 @@
     const p = currentPatientMeta;
     document.getElementById('ep-nome').value = p.Nome || '';
     document.getElementById('ep-codice').value = p.Codice || '';
-    document.getElementById('ep-eta').value = p.Eta || '';
     document.getElementById('ep-sesso').value = (p.Sesso === 'M' || p.Sesso === 'F') ? p.Sesso : '';
-    document.getElementById('ep-altezza').value = p.Altezza || '';
     document.getElementById('ep-obiettivo').value = p.Obiettivo || '';
     const pc = parseProssimoControlloAInput_(p.ProssimoControllo || '');
     document.getElementById('ep-data-controllo').value = pc.data;
@@ -6530,9 +6560,7 @@
     if(!nome){ errEl.textContent = 'Inserisci il nome del paziente.'; return; }
     if(!codice){ errEl.textContent = 'Inserisci un codice di accesso per il paziente.'; return; }
 
-    const eta = document.getElementById('ep-eta').value.trim();
     const sesso = document.getElementById('ep-sesso').value;
-    const altezza = document.getElementById('ep-altezza').value.trim();
     const obiettivo = document.getElementById('ep-obiettivo').value.trim();
     const dataControllo = document.getElementById('ep-data-controllo').value;
     const oraControllo = document.getElementById('ep-ora-controllo').value;
@@ -6549,8 +6577,10 @@
 
     const paziente = {
       Codice: codice, Nome: nome,
-      Eta: eta ? (parseNum(eta) ?? eta) : '',
-      Sesso: sesso, Altezza: altezza ? (parseNum(altezza) ?? altezza) : '',
+      // Età e altezza non si modificano più da qui (vedi Anamnesi): per i pazienti già esistenti
+      // si conservano i valori già salvati, usati solo se nell'Anamnesi manca il dato.
+      Eta: (currentPatientMeta && currentPatientMeta.Eta != null) ? currentPatientMeta.Eta : '',
+      Sesso: sesso, Altezza: (currentPatientMeta && currentPatientMeta.Altezza != null) ? currentPatientMeta.Altezza : '',
       Obiettivo: obiettivo, ProssimoControllo: prossimoControllo,
       StatoTesto: statoTesto, StatoTipo: statoTipo,
       NotaExtraPiano: notaExtraPiano,
@@ -6586,7 +6616,7 @@
     if(currentPatientMeta){
       document.getElementById('patient-name').textContent = currentPatientMeta.Nome || '—';
       document.getElementById('patient-avatar').textContent = (currentPatientMeta.Nome||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      document.getElementById('patient-age').textContent = currentPatientMeta.Eta ? (currentPatientMeta.Eta+' anni') : '—';
+      pazAggiornaEtaIntestazione_();
       document.getElementById('patient-goal').textContent = currentPatientMeta.Obiettivo || '—';
       document.getElementById('patient-next-visit').textContent = conOra_(currentPatientMeta.ProssimoControllo);
       const stato = currentPatientMeta.StatoTipo || 'good';
@@ -6594,7 +6624,8 @@
       document.getElementById('patient-status-select').value = stato;
     }
     currentMetric = 'peso'; misCategoriaAttiva = 'peso';
-    await Promise.all([loadMisurazioni(codice), loadPiano(codice), loadPianoStrutturato(codice)]);
+    await Promise.all([loadMisurazioni(codice), loadPiano(codice), loadPianoStrutturato(codice), anEnsureLoaded_().catch(function(){})]);
+    pazAggiornaEtaIntestazione_(); // l'età si calcola dalla data di nascita scritta nell'Anamnesi
     const activeTab = document.querySelector('#view-nutri .tab-btn.active');
     setNutriTab(activeTab ? activeTab.dataset.tab : 'panoramica');
   }
@@ -9964,7 +9995,7 @@
     } else if(def.type === 'date'){
       var inpD = anEl('input', 'an-xl-input'); inpD.type = 'date';
       inpD.value = groupState[def.key] || '';
-      inpD.addEventListener('input', function(){ groupState[def.key] = inpD.value; anDirtyAnamnesi = true; anScheduleSave(); });
+      inpD.addEventListener('input', function(){ groupState[def.key] = inpD.value; if(def.key === 'natoIl') pazAggiornaEtaIntestazione_(); anDirtyAnamnesi = true; anScheduleSave(); });
       val.appendChild(inpD);
     } else if(def.type === 'pesoAltezza'){
       val.classList.add('split');
