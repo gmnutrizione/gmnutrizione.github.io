@@ -223,7 +223,6 @@ function fzApriDettaglio(liv, nome) {
   const haPesi = fzBase.some(e => e.kg);
   fzEl("fz-det-meta").innerHTML =
     '<span class="fz-tag ' + FZ_CLASSE[liv] + '">' + liv + '</span><span class="fz-pill">' + fzBase.length + ' esercizi</span>' +
-    (fzRounds > 1 ? '<span class="fz-pill">' + fzRounds + ' round</span>' : '') +
     (haPesi ? '<span class="fz-pill">Pesi per ' + (sesso === "F" ? "donna" : "uomo") + '</span>' : '');
   fzEl("fz-det-tempi").innerHTML = fzListaTempi(fzMigliori(fzTempi()));
   if (fzSyncP) fzSyncP.then(() => {
@@ -232,6 +231,8 @@ function fzApriDettaglio(liv, nome) {
   fzEl("fz-det-ex").innerHTML = fzBase.map((e, i) =>
     '<div class="fz-row"><span class="i">' + (i + 1) + '</span><div class="nm">' + fzEsc(e.nome) + '<div class="dt">' + fzEsc(e.rep) + '</div></div><span class="kg">' + fzEsc(fzDestra(e)) + '</span></div>'
   ).join("");
+  fzEl("fz-det-round").innerHTML = fzRounds > 1
+    ? '<div class="fz-rounds"><span class="n">' + fzRounds + ' ROUND</span><span class="t">Ripeti tutti gli esercizi qui sopra</span></div>' : "";
   showScreen("screen-fz-det");
 }
 

@@ -122,3 +122,7 @@
 .fg-pal-row{padding:12px 0;border-bottom:1px solid #E5E5E5}
 .fg-pal-nm{font:600 14px 'Inter',sans-serif;margin-bottom:8px}
 #fg-pal-lista .fg-slot{height:84px}
+
+.fz-rounds{margin-top:14px;background:#111;color:#fff;border-radius:14px;padding:16px;text-align:center;border-bottom:4px solid #E31E24}
+.fz-rounds .n{display:block;font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:.06em;line-height:1;color:#E31E24}
+.fz-rounds .t{display:block;font-size:13px;font-weight:600;margin-top:6px;opacity:.85}
