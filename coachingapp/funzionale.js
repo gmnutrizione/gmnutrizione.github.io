@@ -9,7 +9,9 @@ let fzDati = [];
 let fzCaricato = false;
 let fzArchivio = {};   // nome esercizio (normalizzato) -> {nome, img1, img2}
 let fzSel = { tipo: "", livello: "", nome: "" };
-let fzEx = [];
+let fzEx = [];        // tutti i passi dell'allenamento (tutti i round, uno dopo l'altro)
+let fzBase = [];      // gli esercizi di un solo round
+let fzRounds = 1;
 let fzCur = 0, fzT0 = 0, fzIv = null, fzWake = null;
 
 function fzNorm(s) { return (s || "").toString().trim().toLowerCase().replace(/\s+/g, " "); }
@@ -187,7 +189,8 @@ function fzCostruisciEx() {
   const righe = fzDati.filter(r =>
     fzNorm(r.Tipo) === fzNorm(fzSel.tipo) && fzNorm(r.Livello) === fzNorm(fzSel.livello) && (r.Allenamento || "").trim() === fzSel.nome);
   righe.sort((a, b) => (parseFloat(a.Ordine) || 0) - (parseFloat(b.Ordine) || 0));
-  fzEx = righe.map(r => {
+  fzRounds = Math.min(20, Math.max(1, Math.max.apply(null, [1].concat(righe.map(r => parseInt(r.Round, 10) || 1)))));
+  fzBase = righe.map(r => {
     const kg = fzKg(sesso === "F" ? r["Kg donna"] : r["Kg uomo"]);
     const nome = (r.Esercizio || "").trim();
     const arc = fzArchivio[fzNorm(nome)] || {};
@@ -200,6 +203,8 @@ function fzCostruisciEx() {
       img2: fzImg(r["Immagine 2"] || arc.img2)
     };
   });
+  fzEx = [];
+  for (let k = 0; k < fzRounds; k++) fzEx = fzEx.concat(fzBase);
 }
 function fzEtichetta(cat, nome) {
   const c = fzNorm(cat);
@@ -215,15 +220,16 @@ function fzApriDettaglio(liv, nome) {
   fzCostruisciEx();
   fzEl("fz-det-title").textContent = nome;
   const sesso = fzSesso();
-  const haPesi = fzEx.some(e => e.kg);
+  const haPesi = fzBase.some(e => e.kg);
   fzEl("fz-det-meta").innerHTML =
-    '<span class="fz-tag ' + FZ_CLASSE[liv] + '">' + liv + '</span><span class="fz-pill">' + fzEx.length + ' esercizi</span>' +
+    '<span class="fz-tag ' + FZ_CLASSE[liv] + '">' + liv + '</span><span class="fz-pill">' + fzBase.length + ' esercizi</span>' +
+    (fzRounds > 1 ? '<span class="fz-pill">' + fzRounds + ' round</span>' : '') +
     (haPesi ? '<span class="fz-pill">Pesi per ' + (sesso === "F" ? "donna" : "uomo") + '</span>' : '');
   fzEl("fz-det-tempi").innerHTML = fzListaTempi(fzMigliori(fzTempi()));
   if (fzSyncP) fzSyncP.then(() => {
     if (fzEl("screen-fz-det").classList.contains("active")) fzEl("fz-det-tempi").innerHTML = fzListaTempi(fzMigliori(fzTempi()));
   });
-  fzEl("fz-det-ex").innerHTML = fzEx.map((e, i) =>
+  fzEl("fz-det-ex").innerHTML = fzBase.map((e, i) =>
     '<div class="fz-row"><span class="i">' + (i + 1) + '</span><div class="nm">' + fzEsc(e.nome) + '<div class="dt">' + fzEsc(e.rep) + '</div></div><span class="kg">' + fzEsc(fzDestra(e)) + '</span></div>'
   ).join("");
   showScreen("screen-fz-det");
@@ -253,7 +259,9 @@ function fzMedia(e) {
 function fzRender() {
   const ultimo = fzCur >= fzEx.length;
   fzEl("fz-count").className = "fz-lbl";
-  fzEl("fz-count").textContent = ultimo ? "Ultimo passo" : "Esercizio " + (fzCur + 1) + " di " + fzEx.length;
+  const nb = fzBase.length || 1;
+  fzEl("fz-count").textContent = ultimo ? "Ultimo passo" :
+    (fzRounds > 1 ? "Round " + (Math.floor(fzCur / nb) + 1) + " di " + fzRounds + " · " : "") + "Esercizio " + (fzCur % nb + 1) + " di " + nb;
   fzEl("fz-prev").disabled = (fzCur === 0);
   fzEl("fz-prog").innerHTML = fzEx.map((e, i) => '<i class="' + (i < fzCur ? 'd' : (i === fzCur ? 'c' : '')) + '"></i>').join("");
   const b = fzEl("fz-body");

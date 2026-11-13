@@ -97,18 +97,21 @@ function fgDaRighe(tipo, liv, nome) {
 }
 function fgApriWo(liv, nome) {
   const tipo = fgTab;
-  fgWo = { orig: { tipo, livello: liv, nome }, nome, tipo, liv, ex: fgDaRighe(tipo, liv, nome) };
+  const rr = fzDati.filter(r => fzNorm(r.Tipo) === fzNorm(tipo) && fzNorm(r.Livello) === fzNorm(liv) && (r.Allenamento || "").trim() === nome);
+  const rounds = Math.max(1, Math.max.apply(null, [1].concat(rr.map(r => parseInt(r.Round, 10) || 1))));
+  fgWo = { orig: { tipo, livello: liv, nome }, nome, tipo, liv, rounds, ex: fgDaRighe(tipo, liv, nome) };
   fgRenderEdit();
   showScreen("screen-fg-edit");
 }
 function fgNuovo() {
-  fgWo = { orig: null, nome: "", tipo: fgTab, liv: "Facile", ex: [] };
+  fgWo = { orig: null, nome: "", tipo: fgTab, liv: "Facile", rounds: 1, ex: [] };
   fgRenderEdit();
   showScreen("screen-fg-edit");
 }
 function fgRenderEdit() {
   fzEl("fg-edit-ttl").textContent = fgWo.orig ? "Modifica allenamento" : "Nuovo allenamento";
   fzEl("fg-nome").value = fgWo.nome;
+  fzEl("fg-round").value = fgWo.rounds || 1;
   fzEl("fg-tipo").innerHTML = FZ_TIPI.map(t => '<option' + (t === fgWo.tipo ? " selected" : "") + '>' + fzEsc(t) + '</option>').join("");
   fzEl("fg-liv").innerHTML = FZ_LIVELLI.map(l => '<button type="button" data-fg-liv="' + l + '" class="' + (fgWo.liv === l ? "on" : "") + '">' + l + '</button>').join("");
   fzEl("fg-elimina").style.display = fgWo.orig ? "block" : "none";
@@ -344,6 +347,7 @@ async function fgSalva() {
   const err = fzEl("fg-edit-err");
   fgWo.nome = fzEl("fg-nome").value.trim();
   fgWo.tipo = fzEl("fg-tipo").value;
+  fgWo.rounds = Math.min(20, Math.max(1, parseInt(fzEl("fg-round").value, 10) || 1));
   if (!fgWo.nome) { err.textContent = "Scrivi il nome dell'allenamento."; return; }
   if (!fgWo.ex.length) { err.textContent = "Aggiungi almeno un esercizio."; return; }
   const o = fgWo.orig;
@@ -355,7 +359,7 @@ async function fgSalva() {
   try {
     const r = await fgPost({
       azione: "salvaFunzionale", orig: fgWo.orig ? { tipo: o.tipo, livello: o.livello, nome: o.nome } : null,
-      tipo: fgWo.tipo, livello: fgWo.liv, nome: fgWo.nome,
+      tipo: fgWo.tipo, livello: fgWo.liv, nome: fgWo.nome, round: fgWo.rounds,
       esercizi: fgWo.ex.map(e => ({ nome: e.n, rep: e.q, categoria: FG_CAT[e.k] || "Corpo libero", kgUomo: e.k === "peso" ? e.m : "", kgDonna: e.k === "peso" ? e.f : "" }))
     });
     if (!r || !r.ok) throw new Error((r && r.errore) || "errore");
@@ -382,7 +386,7 @@ function fgAggiornaLocale(o, w) {
   }
   w.ex.forEach((e, i) => {
     const im = immagini[fzNorm(e.n)] || ["", ""];
-    fzDati.push({ Tipo: w.tipo, Livello: w.liv, Allenamento: w.nome, Ordine: String(i + 1), Esercizio: e.n, Rep: e.q, Categoria: FG_CAT[e.k] || "Corpo libero", "Kg uomo": e.k === "peso" ? e.m : "", "Kg donna": e.k === "peso" ? e.f : "", "Immagine 1": im[0], "Immagine 2": im[1] });
+    fzDati.push({ Tipo: w.tipo, Livello: w.liv, Allenamento: w.nome, Ordine: String(i + 1), Esercizio: e.n, Rep: e.q, Categoria: FG_CAT[e.k] || "Corpo libero", "Kg uomo": e.k === "peso" ? e.m : "", "Kg donna": e.k === "peso" ? e.f : "", "Immagine 1": im[0], "Immagine 2": im[1], Round: String(w.rounds || 1) });
   });
 }
 let fgSicuro = false;
