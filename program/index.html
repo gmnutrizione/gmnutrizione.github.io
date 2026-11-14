@@ -4214,11 +4214,32 @@
     dateEl.textContent = dates.length ? dates.map(d => fmtDateFull(d)).join(' → ') : '—';
   }
 
+  // Nome di una rilevazione: la prima è la "Prima visita", poi "1° controllo", "2° controllo"...
+  // Il numero segue i Controlli scritti in Anamnesi (se un controllo è stato fatto senza misure, il
+  // numero salta e quello successivo resta con il suo numero). Senza Controlli in Anamnesi si conta
+  // semplicemente in ordine di data.
+  function cfNomeRilevazione_(i){
+    const r = currentRows[i];
+    if(!r) return null;
+    const an = pazAnamnesiCaricata_ ? pazAnamnesiCaricata_() : null;
+    const cs = (an && typeof anControlli !== 'undefined' && Array.isArray(anControlli))
+      ? anControlli.filter(c => c && c.data).map(c => new Date(String(c.data).slice(0,10) + 'T00:00:00Z').getTime()).sort((a,b) => a-b)
+      : [];
+    if(cs.length){
+      const t = new Date(r.Data).getTime();
+      let best = -1, bestDiff = Infinity;
+      cs.forEach((ct, j) => { const d = Math.abs(ct - t); if(d < bestDiff){ bestDiff = d; best = j; } });
+      if(best >= 0 && bestDiff <= 4*86400000) return (best+1) + '° controllo';
+      return i === 0 ? 'Prima visita' : null;
+    }
+    return i === 0 ? 'Prima visita' : (i + '° controllo');
+  }
+
   function cfRenderSelects_(){
     const el = document.getElementById('cf-selects');
     const n = currentRows.length;
     if(!n){ el.innerHTML = ''; return; }
-    const dateOpts = (selIdx) => currentRows.map((r,i) => `<option value="${i}" ${i===selIdx?'selected':''}>${fmtDateFull(new Date(r.Data))}</option>`).join('');
+    const dateOpts = (selIdx) => currentRows.map((r,i) => { const nm = cfNomeRilevazione_(i); return `<option value="${i}" ${i===selIdx?'selected':''}>${nm ? nm + ' · ' : ''}${fmtDateFull(new Date(r.Data))}</option>`; }).join('');
 
     if(cfMode === 'singola'){
       el.innerHTML = `<div class="cf-field"><label>Rilevazione</label>
@@ -4226,7 +4247,7 @@
       return;
     }
     const idxArr = cfArr_();
-    const labels = idxArr.map((_,i) => 'Controllo ' + (i+1));
+    const labels = idxArr.map((idx,i) => 'Confronto ' + (i+1));
     el.innerHTML = idxArr.map((idx,i) => `<div class="cf-field"><label>${labels[i]}</label>
         <select onchange="cfSetConfrontoIdx(${i},this.value)">${dateOpts(idx)}</select></div>`).join('');
   }
@@ -6626,6 +6647,7 @@
     currentMetric = 'peso'; misCategoriaAttiva = 'peso';
     await Promise.all([loadMisurazioni(codice), loadPiano(codice), loadPianoStrutturato(codice), anEnsureLoaded_().catch(function(){})]);
     pazAggiornaEtaIntestazione_(); // l'età si calcola dalla data di nascita scritta nell'Anamnesi
+    try{ cfRenderSelects_(); }catch(e){} // i nomi "Prima visita / 1° controllo…" usano i Controlli dell'Anamnesi
     const activeTab = document.querySelector('#view-nutri .tab-btn.active');
     setNutriTab(activeTab ? activeTab.dataset.tab : 'panoramica');
   }
