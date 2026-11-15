@@ -33,10 +33,10 @@ button.r{background:var(--rosso)} button.l{background:#fff;color:var(--nero);bor
 .badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:12px;font-weight:700}
 .b-ok{background:#e3f4e8;color:var(--ok)} .b-in{background:#FFEBEC;color:var(--rosso)} .b-fo{background:#fff3cd;color:#8a6d00}
 .scroll{overflow:auto;max-height:70vh;border:1px solid var(--bordo);border-radius:10px;background:#fff}
-table{border-collapse:collapse;font-size:13px;min-width:100%}
-th{position:sticky;top:0;background:var(--nero);color:#fff;padding:8px;text-align:left;white-space:nowrap;z-index:1}
-td{border-bottom:1px solid var(--bordo);padding:2px}
-td input{border:1px solid transparent;border-radius:4px;padding:6px;width:100%;min-width:60px;background:transparent}
+table{border-collapse:collapse;font-size:12px;table-layout:fixed}
+th{position:sticky;top:0;background:var(--nero);color:#fff;padding:6px 4px;text-align:left;white-space:normal;line-height:1.15;vertical-align:bottom;font-size:11px;z-index:1}
+td{border-bottom:1px solid var(--bordo);padding:0 1px}
+td input{border:1px solid transparent;border-radius:4px;padding:4px 4px;width:100%;min-width:0;background:transparent;font-size:12px}
 td input:focus{border-color:var(--rosso);background:#fff}
 td input[readonly]{color:#555}
 .ro td{background:#fafafa}
@@ -268,24 +268,28 @@ function statistiche(){
 
 function nSett(){let n=3;DATI.righe.forEach(r=>{Object.keys(r.carichi||{}).concat(Object.keys(r.note||{})).forEach(k=>{if(+k>n)n=+k})});return n}
 function disegnaTab(){
-  const ed=editabile(), N=nSett();
-  const camp=[["giorno","Giorno","w120"],["ordine","Ordine","w60"],["gruppo","Gruppo muscolare","w120"],["esercizio","Esercizio","w200"],["variante","Variante","w120"],["serie","Serie","w60"],["rep","Rep","w60"],["tipo","Tipo","w120"],["passo","Passo","w60"],["recupero","Recupero","w60"],["video","Video","w200"]];
-  let h="<tr>"+camp.map(x=>`<th>${x[1]}</th>`).join("")+"<th>Bloccato</th>";
+  const ed=editabile(), N=Math.max(nSett(),DATI.cliente.n_sedute||0);
+  const camp=[["giorno","Giorno",74],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",160],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",58],["passo","Passo",42],["recupero","Recupero",58],["video","Video",84]];
+  const WB=52,WC=50,WN=48,WD=34;
+  const tot=camp.reduce((a,x)=>a+x[2],0)+WB+N*WC+N*WN+(ed?WD:0);
+  let h=`<colgroup>${camp.map(x=>`<col style="width:${x[2]}px">`).join("")}<col style="width:${WB}px">`+Array.from({length:N},()=>`<col style="width:${WC}px">`).join("")+Array.from({length:N},()=>`<col style="width:${WN}px">`).join("")+(ed?`<col style="width:${WD}px">`:"")+"</colgroup>";
+  h+="<tr>"+camp.map(x=>`<th>${x[1]}</th>`).join("")+"<th>Bloccato</th>";
   for(let i=1;i<=N;i++)h+=`<th>Carico ${i}</th>`;
   for(let i=1;i<=N;i++)h+=`<th>Note ${i}</th>`;
   h+=(ed?"<th></th>":"")+"</tr>";
+  $("tab").style.width=tot+"px";
   const righe=DATI.righe.filter(r=>r.blocco===BLOCCO);
   righe.forEach(r=>{
     h+=`<tr data-id="${r.id}" class="${ed?"":"ro"}">`;
-    camp.forEach(x=>h+=`<td><input data-k="${x[0]}" class="${x[2]}" value="${esc(r[x[0]])}" ${ed?"":"readonly"}></td>`);
-    h+=`<td style="text-align:center"><input type="checkbox" data-k="bloccato" ${r.bloccato?"checked":""} ${ed?"":"disabled"} style="min-width:0;width:auto"></td>`;
+    camp.forEach(x=>h+=`<td><input data-k="${x[0]}" value="${esc(r[x[0]])}" ${ed?"":"readonly"}></td>`);
+    h+=`<td style="text-align:center"><input type="checkbox" data-k="bloccato" ${r.bloccato?"checked":""} ${ed?"":"disabled"} style="width:auto;padding:0"></td>`;
     for(let i=1;i<=N;i++)h+=`<td><input data-c="${i}" value="${esc((r.carichi||{})[i])}" ${ed?"":"readonly"}></td>`;
     for(let i=1;i<=N;i++)h+=`<td><input data-n="${i}" value="${esc((r.note||{})[i])}" ${ed?"":"readonly"}></td>`;
-    if(ed)h+=`<td><button class="l" data-del="1">✕</button></td>`;
+    if(ed)h+=`<td><button class="l" data-del="1" style="padding:3px 7px">✕</button></td>`;
     h+="</tr>";
   });
   $("tab").innerHTML=h||"";
-  if(!righe.length)$("tab").innerHTML+=`<tr><td colspan="30" style="padding:16px">Nessun esercizio in questo blocco.</td></tr>`;
+  if(!righe.length)$("tab").innerHTML+=`<tr><td colspan="40" style="padding:16px">Nessun esercizio in questo blocco.</td></tr>`;
   if(!ed)return;
   document.querySelectorAll("#tab tr[data-id]").forEach(tr=>{
     tr.querySelectorAll("input").forEach(i=>i.onchange=()=>salvaRiga(tr));
