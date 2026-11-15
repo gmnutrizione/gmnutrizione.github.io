@@ -126,3 +126,15 @@
 .fz-rounds{margin-top:14px;background:#111;color:#fff;border-radius:14px;padding:16px;text-align:center;border-bottom:4px solid #E31E24}
 .fz-rounds .n{display:block;font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:.06em;line-height:1;color:#E31E24}
 .fz-rounds .t{display:block;font-size:13px;font-weight:600;margin-top:6px;opacity:.85}
+
+.fz-tbar{flex:1;height:6px;border-radius:3px;background:#E4E4E4;overflow:hidden}
+.fz-tbar div{height:100%;width:0;background:#E31E24;transition:width .25s linear}
+.fz-am{flex:none;text-align:center;padding:14px 24px 0}
+.fz-am .k{font:600 11px 'Inter',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6B6B6B}
+.fz-am-n{font-family:'Bebas Neue',sans-serif;font-size:120px;line-height:1;color:#111}
+.fz-am-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.fz-am-r{display:flex;align-items:baseline;justify-content:center;gap:12px;font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:.03em;text-transform:uppercase;line-height:1.05}
+.fz-am-r b{font-weight:400;color:#E31E24;min-width:44px;text-align:right}
+#screen-fz-run .fz-finish{margin-top:16px}
+.fz-am-undo{flex:none;border:0;background:#F5F5F5;color:#6B6B6B;font:600 13px 'Inter',sans-serif;padding:14px;cursor:pointer;width:100%}
+.fz-am-undo:disabled{opacity:.4}

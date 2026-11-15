@@ -110,7 +110,7 @@
         <p class="page-title-inline" id="fz-det-title"></p>
       </div>
       <div class="fz-meta" id="fz-det-meta"></div>
-      <div class="fz-best"><div class="fz-lbl">I tuoi 3 migliori tempi</div><div id="fz-det-tempi"></div></div>
+      <div class="fz-best"><div class="fz-lbl" id="fz-det-best-lbl">I tuoi 3 migliori tempi</div><div id="fz-det-tempi"></div></div>
       <div id="fz-det-ex"></div>
       <div id="fz-det-round"></div>
       <button class="fz-btn" type="button" id="fz-start">AVVIA</button>
@@ -131,7 +131,7 @@
       <p class="sm">Allenamento concluso</p>
       <p class="big" id="fz-end-time">00:00</p>
       <p class="cmp" id="fz-end-cmp"></p>
-      <div class="fz-best"><div class="fz-lbl">I tuoi 3 migliori tempi</div><div id="fz-end-list"></div></div>
+      <div class="fz-best"><div class="fz-lbl" id="fz-end-best-lbl">I tuoi 3 migliori tempi</div><div id="fz-end-list"></div></div>
       <button class="fz-btn dark" type="button" id="fz-end-back">TORNA AGLI ALLENAMENTI</button>
     </div>
   </div>
@@ -176,6 +176,7 @@
       <div class="fg-field"><span class="fz-lbl">Tipo</span><select id="fg-tipo" class="fg-input"></select></div>
       <div class="fg-field"><span class="fz-lbl">Livello</span><div class="fg-chips" id="fg-liv"></div></div>
       <div class="fg-field"><span class="fz-lbl">Round (quante volte si ripetono gli esercizi)</span><input type="number" id="fg-round" class="fg-input" min="1" max="20" inputmode="numeric" value="1"></div>
+      <div class="fg-field"><span class="fz-lbl">Durata AMRAP in minuti (vuoto = allenamento normale)</span><input type="number" id="fg-durata" class="fg-input" min="1" max="180" inputmode="numeric" placeholder="Es. 20"></div>
       <div class="fz-lbl" style="margin-top:12px">Esercizi, nell'ordine in cui compaiono</div>
       <div id="fg-ex"></div>
       <button class="fz-btn fg-ghost" type="button" id="fg-add">+ AGGIUNGI ESERCIZIO</button>

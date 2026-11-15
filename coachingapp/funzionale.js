@@ -12,6 +12,8 @@ let fzSel = { tipo: "", livello: "", nome: "" };
 let fzEx = [];        // tutti i passi dell'allenamento (tutti i round, uno dopo l'altro)
 let fzBase = [];      // gli esercizi di un solo round
 let fzRounds = 1;
+let fzDurata = 0;     // minuti, solo per gli allenamenti AMRAP (0 = allenamento normale)
+let fzAmrap = false, fzRoundsFatti = 0, fzDurMs = 0;
 let fzCur = 0, fzT0 = 0, fzIv = null, fzWake = null;
 
 function fzNorm(s) { return (s || "").toString().trim().toLowerCase().replace(/\s+/g, " "); }
@@ -128,7 +130,7 @@ function fzTempiLocali() {
 }
 function fzTempi() {
   const k = [fzNorm(fzSel.tipo), fzNorm(fzSel.livello), fzNorm(fzSel.nome)];
-  const rem = fzRemote.filter(x => x.tipo === k[0] && x.liv === k[1] && x.nome === k[2]).map(x => ({ ms: x.ms, d: x.d }));
+  const rem = fzRemote.filter(x => x.tipo === k[0] && x.liv === k[1] && x.nome === k[2]).map(x => ({ ms: x.ms, d: x.d, rounds: x.rounds }));
   const visti = {}, tutti = [];
   fzTempiLocali().concat(rem).forEach(x => { if (!visti[x.d]) { visti[x.d] = 1; tutti.push(x); } });
   tutti.sort((a, b) => new Date(b.d) - new Date(a.d));
@@ -136,6 +138,7 @@ function fzTempi() {
 }
 // I 3 tempi migliori (i piu' bassi)
 function fzMigliori(arr) {
+  if (fzAmrap) return arr.slice().sort((a, b) => (b.rounds || 0) - (a.rounds || 0)).slice(0, 3);
   return arr.slice().sort((a, b) => a.ms - b.ms).slice(0, 3);
 }
 // Legge dal foglio i risultati del cliente (anche di un telefono precedente)
@@ -144,7 +147,8 @@ function fzSincronizza() {
   fzSyncP = fetchCsv(FUNZIONALE_RISULTATI_URL).then(rows => {
     fzRemote = rows.filter(r => fzNorm(r.Cliente) === fzNorm(clienteNome)).map(r => ({
       tipo: fzNorm(r.Tipo), liv: fzNorm(r.Livello), nome: fzNorm(r.Allenamento),
-      ms: (parseFloat(String(r.Secondi).replace(",", ".")) || 0) * 1000, d: (r.ISO || "").trim()
+      ms: (parseFloat(String(r.Secondi).replace(",", ".")) || 0) * 1000, d: (r.ISO || "").trim(),
+      rounds: /round/i.test(r.Tempo || "") ? (parseInt(r.Tempo, 10) || 0) : undefined
     })).filter(x => x.ms > 0 && x.d);
     fzReinvia();
   }).catch(e => console.error(e));
@@ -168,7 +172,7 @@ function fzReinvia() {
   }
 }
 function fzInvia(x) {
-  inviaEvento({ tipo: "Funzionale", tipoAllenamento: x.t, livello: x.l, allenamento: x.n, tempo: fzFmt(x.ms), secondi: Math.round(x.ms / 1000), iso: x.d });
+  inviaEvento({ tipo: "Funzionale", tipoAllenamento: x.t, livello: x.l, allenamento: x.n, tempo: x.rounds !== undefined ? x.rounds + " round" : fzFmt(x.ms), secondi: Math.round(x.ms / 1000), iso: x.d });
 }
 function fzFmt(ms) {
   const s = Math.floor(ms / 1000), m = Math.floor(s / 60), r = s % 60;
@@ -179,8 +183,8 @@ function fzData(iso) {
   return ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + "/" + d.getFullYear();
 }
 function fzListaTempi(arr) {
-  if (!arr.length) return '<div class="fz-r"><span>Nessun tempo ancora</span></div>';
-  return arr.map((x, i) => '<div class="fz-r' + (i === 0 ? ' top' : '') + '"><span>' + fzData(x.d) + '</span><div class="fz-tm"><i>' + ["🥇","🥈","🥉"][i] + '</i><b>' + fzFmt(x.ms) + '</b></div></div>').join("");
+  if (!arr.length) return '<div class="fz-r"><span>' + (fzAmrap ? "Nessun risultato ancora" : "Nessun tempo ancora") + '</span></div>';
+  return arr.map((x, i) => '<div class="fz-r' + (i === 0 ? ' top' : '') + '"><span>' + fzData(x.d) + '</span><div class="fz-tm"><i>' + ["🥇","🥈","🥉"][i] + '</i><b>' + (fzAmrap ? (x.rounds || 0) + ' round' : fzFmt(x.ms)) + '</b></div></div>').join("");
 }
 
 // ---- dettaglio allenamento ----
@@ -190,6 +194,9 @@ function fzCostruisciEx() {
     fzNorm(r.Tipo) === fzNorm(fzSel.tipo) && fzNorm(r.Livello) === fzNorm(fzSel.livello) && (r.Allenamento || "").trim() === fzSel.nome);
   righe.sort((a, b) => (parseFloat(a.Ordine) || 0) - (parseFloat(b.Ordine) || 0));
   fzRounds = Math.min(20, Math.max(1, Math.max.apply(null, [1].concat(righe.map(r => parseInt(r.Round, 10) || 1)))));
+  fzDurata = Math.min(180, Math.max(0, Math.max.apply(null, [0].concat(righe.map(r => parseFloat(String(r.Durata || "").replace(",", ".")) || 0)))));
+  fzAmrap = fzDurata > 0;
+  if (fzAmrap) fzRounds = 1;
   fzBase = righe.map(r => {
     const kg = fzKg(sesso === "F" ? r["Kg donna"] : r["Kg uomo"]);
     const nome = (r.Esercizio || "").trim();
@@ -231,7 +238,11 @@ function fzApriDettaglio(liv, nome) {
   fzEl("fz-det-ex").innerHTML = fzBase.map((e, i) =>
     '<div class="fz-row"><span class="i">' + (i + 1) + '</span><div class="nm">' + fzEsc(e.nome) + '<div class="dt">' + fzEsc(e.rep) + '</div></div><span class="kg">' + fzEsc(fzDestra(e)) + '</span></div>'
   ).join("");
-  fzEl("fz-det-round").innerHTML = fzRounds > 1
+  fzEl("fz-det-best-lbl").textContent = fzAmrap ? "I tuoi 3 migliori risultati" : "I tuoi 3 migliori tempi";
+  fzEl("fz-det-tempi").innerHTML = fzListaTempi(fzMigliori(fzTempi()));
+  fzEl("fz-det-round").innerHTML = fzAmrap
+    ? '<div class="fz-rounds"><span class="n">AMRAP ' + fzDurata + ' MIN</span><span class="t">Ripeti gli esercizi qui sopra pi&ugrave; volte che puoi. Ogni giro completo &egrave; un round: toccalo a fine round.</span></div>'
+    : fzRounds > 1
     ? '<div class="fz-rounds"><span class="n">' + fzRounds + ' ROUND</span><span class="t">Ripeti tutti gli esercizi qui sopra</span></div>' : "";
   showScreen("screen-fz-det");
 }
@@ -240,12 +251,19 @@ function fzApriDettaglio(liv, nome) {
 async function fzAvvia() {
   if (!fzEx.length) return;
   fzCur = 0; fzT0 = Date.now();
+  fzRoundsFatti = 0; fzDurMs = fzDurata * 60000;
   fzEx.forEach(e => [e.img1, e.img2].forEach(u => { if (u) { const im = new Image(); im.src = u; } }));
   showScreen("screen-fz-run");
   fzRender();
-  fzEl("fz-clock").textContent = "00:00";
+  fzEl("fz-clock").textContent = fzAmrap ? fzFmt(fzDurMs) : "00:00";
   if (fzIv) clearInterval(fzIv);
-  fzIv = setInterval(() => { fzEl("fz-clock").textContent = fzFmt(Date.now() - fzT0); }, 500);
+  fzIv = setInterval(() => {
+    if (!fzAmrap) { fzEl("fz-clock").textContent = fzFmt(Date.now() - fzT0); return; }
+    const resto = fzDurMs - (Date.now() - fzT0);
+    if (resto <= 0) { fzConcludiAmrap(); return; }
+    fzEl("fz-clock").textContent = fzFmt(Math.ceil(resto / 1000) * 1000);
+    const f = document.getElementById("fz-tbar-f"); if (f) f.style.width = Math.min(100, (1 - resto / fzDurMs) * 100) + "%";
+  }, 250);
   try { if (navigator.wakeLock) fzWake = await navigator.wakeLock.request("screen"); } catch (e) {}
 }
 function fzStop() {
@@ -257,7 +275,41 @@ function fzMedia(e) {
   if (!imgs.length) return '<div class="fz-media"></div>';
   return '<div class="fz-media' + (imgs.length === 1 ? ' uno' : '') + '">' + imgs.map(u => '<div><img src="' + fzEsc(u) + '" alt=""></div>').join("") + '</div>';
 }
+function fzRenderAmrap() {
+  fzEl("fz-count").className = "fz-lbl";
+  fzEl("fz-count").textContent = "AMRAP · " + fzDurata + " min";
+  fzEl("fz-prev").style.visibility = "hidden";
+  fzEl("fz-prog").innerHTML = '<div class="fz-tbar"><div id="fz-tbar-f"></div></div>';
+  fzEl("fz-body").innerHTML =
+    '<div class="fz-am"><span class="k">Round completati</span><div class="fz-am-n">' + fzRoundsFatti + '</div>' +
+    '<div class="fz-am-list">' + fzBase.map(e => '<div class="fz-am-r"><b>' + fzEsc(e.rep.replace(/^Rep\.\s*/, "")) + '</b><span>' + fzEsc(e.nome) + '</span></div>').join("") + '</div></div>' +
+    '<button type="button" class="fz-finish" id="fz-round-btn"><span class="big">ROUND<br>COMPLETATO</span><span class="t">Tocca a fine di ogni giro</span></button>' +
+    '<button type="button" class="fz-am-undo" id="fz-round-undo"' + (fzRoundsFatti ? "" : " disabled") + '>Annulla ultimo round</button>';
+}
+function fzConcludiAmrap() {
+  fzStop();
+  try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) {}
+  const ms = fzDurMs;
+  const prima = fzTempi();
+  const nuovo = { ms, rounds: fzRoundsFatti, d: new Date().toISOString(), t: fzSel.tipo, l: fzSel.livello, n: fzSel.nome };
+  const nuovi = [nuovo].concat(prima).slice(0, 60);
+  fzInvia(nuovo);
+  try { localStorage.setItem(fzChiaveTempi(), JSON.stringify(nuovi)); } catch (e) {}
+  fzEl("fz-end-time").textContent = fzRoundsFatti + " ROUND";
+  fzEl("fz-end-best-lbl").textContent = "I tuoi 3 migliori risultati";
+  let cmp = "Primo risultato registrato per questo allenamento.";
+  if (prima.length) {
+    const record = Math.max.apply(null, prima.map(x => x.rounds || 0));
+    cmp = fzRoundsFatti > record ? "Nuovo record! Hai migliorato il tuo miglior risultato di " + (fzRoundsFatti - record) + (fzRoundsFatti - record === 1 ? " round." : " round.") :
+          fzRoundsFatti < record ? "A " + (record - fzRoundsFatti) + (record - fzRoundsFatti === 1 ? " round" : " round") + " dal tuo miglior risultato." : "Hai eguagliato il tuo miglior risultato.";
+  }
+  fzEl("fz-end-cmp").textContent = cmp;
+  fzEl("fz-end-list").innerHTML = fzListaTempi(fzMigliori(nuovi));
+  showScreen("screen-fz-end");
+}
 function fzRender() {
+  if (fzAmrap) { fzRenderAmrap(); return; }
+  fzEl("fz-prev").style.visibility = "";
   const ultimo = fzCur >= fzEx.length;
   fzEl("fz-count").className = "fz-lbl";
   const nb = fzBase.length || 1;
@@ -287,6 +339,7 @@ function fzConcludi() {
   fzInvia(nuovo);
   try { localStorage.setItem(fzChiaveTempi(), JSON.stringify(nuovi)); } catch (e) {}
   fzEl("fz-end-time").textContent = fzFmt(ms);
+  fzEl("fz-end-best-lbl").textContent = "I tuoi 3 migliori tempi";
   let cmp = "Primo tempo registrato per questo allenamento.";
   if (prima.length) {
     const record = Math.min.apply(null, prima.map(x => x.ms));
@@ -310,12 +363,17 @@ document.addEventListener("DOMContentLoaded", () => {
   fzEl("fz-start").addEventListener("click", fzAvvia);
   fzEl("fz-end-back").addEventListener("click", () => fzApriTipo(fzSel.tipo));
   fzEl("fz-prev").addEventListener("click", ev => { ev.stopPropagation(); if (fzCur > 0) { fzCur--; fzRender(); } });
+  fzEl("screen-fz-run").addEventListener("click", ev => {
+    if (!fzAmrap) return;
+    if (ev.target.closest("#fz-round-btn")) { fzRoundsFatti++; fzRenderAmrap(); try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {} }
+    else if (ev.target.closest("#fz-round-undo") && fzRoundsFatti > 0) { fzRoundsFatti--; fzRenderAmrap(); }
+  });
   fzEl("fz-exit").addEventListener("click", ev => {
     ev.stopPropagation();
-    if (confirm("Vuoi uscire dall'allenamento? Il tempo non verrà salvato.")) { fzStop(); fzApriDettaglio(fzSel.livello, fzSel.nome); }
+    if (confirm(fzAmrap ? "Vuoi uscire dall'allenamento? Il risultato non verrà salvato." : "Vuoi uscire dall'allenamento? Il tempo non verrà salvato.")) { fzStop(); fzApriDettaglio(fzSel.livello, fzSel.nome); }
   });
   fzEl("screen-fz-run").addEventListener("click", ev => {
-    if (ev.target.closest("#fz-prev, #fz-exit")) return;
+    if (fzAmrap || ev.target.closest("#fz-prev, #fz-exit")) return;
     if (fzCur < fzEx.length) { fzCur++; fzRender(); }
     else fzConcludi();
   });
