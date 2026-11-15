@@ -269,8 +269,8 @@ function statistiche(){
 function nSett(){let n=3;DATI.righe.forEach(r=>{Object.keys(r.carichi||{}).concat(Object.keys(r.note||{})).forEach(k=>{if(+k>n)n=+k})});return n}
 function disegnaTab(){
   const ed=editabile(), N=Math.max(nSett(),DATI.cliente.n_sedute||0);
-  const camp=[["giorno","Giorno",74],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",160],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",58],["passo","Passo",42],["recupero","Recupero",58],["video","Video",84]];
-  const WB=52,WC=50,WN=48,WD=34;
+  const camp=[["giorno","Giorno",74],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",160],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",58],["passo","Passo",42],["recupero","Recupero",58],["video","Video",54]];
+  const WB=52,WC=62,WN=48,WD=34;
   const tot=camp.reduce((a,x)=>a+x[2],0)+WB+N*WC+N*WN+(ed?WD:0);
   let h=`<colgroup>${camp.map(x=>`<col style="width:${x[2]}px">`).join("")}<col style="width:${WB}px">`+Array.from({length:N},()=>`<col style="width:${WC}px">`).join("")+Array.from({length:N},()=>`<col style="width:${WN}px">`).join("")+(ed?`<col style="width:${WD}px">`:"")+"</colgroup>";
   h+="<tr>"+camp.map(x=>`<th>${x[1]}</th>`).join("")+"<th>Bloccato</th>";
