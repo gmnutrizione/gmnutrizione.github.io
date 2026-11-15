@@ -53,7 +53,7 @@ td input[readonly]{color:#555}
 </div>
 
 <div id="app" style="display:none">
-<header><h1>DASHBOARD <span>TRAINER</span></h1><button class="l" id="esci" style="margin-left:auto">Esci</button></header>
+<header><h1>DASHBOARD <span>TRAINER</span></h1><button class="l" id="cambia" style="margin-left:auto">Cambia codice</button><button class="l" id="esci">Esci</button></header>
 <main>
   <div class="box">
     <input id="cerca" placeholder="Cerca cliente per nome o codice…" autocomplete="off">
@@ -66,6 +66,16 @@ td input[readonly]{color:#555}
     <div class="scroll"><table id="tab"></table></div>
   </div>
 </main>
+</div>
+<div id="cc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:5">
+  <div class="box" style="width:min(360px,92vw);margin:0">
+    <b style="font-size:17px">Cambia codice trainer</b>
+    <input id="cc-v" type="password" placeholder="Codice attuale" autocomplete="off" style="width:100%;margin-top:12px">
+    <input id="cc-n" type="password" placeholder="Nuovo codice (almeno 8 caratteri)" autocomplete="off" style="width:100%;margin-top:8px">
+    <input id="cc-n2" type="password" placeholder="Ripeti il nuovo codice" autocomplete="off" style="width:100%;margin-top:8px">
+    <div id="cc-e" style="color:var(--rosso);margin-top:8px;min-height:18px"></div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="r" id="cc-ok" style="flex:1">Salva</button><button class="l" id="cc-no">Annulla</button></div>
+  </div>
 </div>
 <div id="msg"></div>
 
@@ -93,6 +103,18 @@ $("entra").onclick=entra; $("cod").onkeydown=e=>{if(e.key==="Enter")entra()};
 $("esci").onclick=()=>{try{sessionStorage.removeItem("gt_c")}catch(e){};location.reload()};
 try{const s=sessionStorage.getItem("gt_c");if(s){$("cod").value=s;entra()}}catch(e){}
 
+$("cambia").onclick=()=>{["cc-v","cc-n","cc-n2"].forEach(i=>$(i).value="");$("cc-e").textContent="";$("cc").style.display="flex"};
+$("cc-no").onclick=()=>$("cc").style.display="none";
+$("cc-ok").onclick=async()=>{
+  const v=$("cc-v").value,n=$("cc-n").value,n2=$("cc-n2").value;
+  if(n!==n2){$("cc-e").textContent="I due codici nuovi non coincidono";return}
+  try{
+    const j=await rpc("gc_t_cambia_codice",{p_vecchio:v,p_nuovo:n});
+    if(!j.ok){$("cc-e").textContent=j.errore;return}
+    CODE=n;try{sessionStorage.setItem("gt_c",n)}catch(e){}
+    $("cc").style.display="none";toast("Codice cambiato ✔");
+  }catch(e){$("cc-e").textContent="Errore di connessione"}
+};
 function disegnaElenco(){
   const q=$("cerca").value.toLowerCase().trim();
   const l=CLIENTI.filter(c=>!q||c.nome.toLowerCase().includes(q)||c.codice.toLowerCase().includes(q));
