@@ -21,9 +21,11 @@ button.r{background:var(--rosso)} button.l{background:#fff;color:var(--nero);bor
 #login{max-width:340px;margin:80px auto;text-align:center}
 #login input{width:100%;margin:12px 0}
 #cerca{width:100%;max-width:420px}
-#elenco{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.cl{padding:8px 12px;border-radius:20px;background:#fff;border:1px solid #ccc;cursor:pointer;font-weight:600}
-.cl.on{background:var(--nero);color:#fff;border-color:var(--nero)}
+#cercabox{position:relative;max-width:420px}
+#elenco{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #ccc;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:4;overflow:hidden;display:none}
+.cl{padding:10px 14px;cursor:pointer;font-weight:600;border-bottom:1px solid var(--bordo)}
+.cl small{color:var(--testo2);font-weight:500;margin-left:8px}
+.cl:hover,.cl.sel{background:#FFEBEC}
 #tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
 .tab{padding:9px 14px;border-radius:8px;background:#fff;border:1px solid #ccc;cursor:pointer;font-weight:600}
 .tab.on{background:var(--rosso);border-color:var(--rosso);color:#fff}
@@ -56,8 +58,8 @@ td input[readonly]{color:#555}
 <header><h1>DASHBOARD <span>TRAINER</span></h1><button class="l" id="cambia" style="margin-left:auto">Cambia codice</button><button class="l" id="esci">Esci</button></header>
 <main>
   <div class="box">
-    <input id="cerca" placeholder="Cerca cliente per nome o codice…" autocomplete="off">
-    <div id="elenco"></div>
+    <div id="cercabox"><input id="cerca" placeholder="Cerca un cliente per nome o codice…" autocomplete="off">
+    <div id="elenco"></div></div>
   </div>
   <div id="scheda" style="display:none">
     <div class="box" id="testa" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"></div>
@@ -115,17 +117,32 @@ $("cc-ok").onclick=async()=>{
     $("cc").style.display="none";toast("Codice cambiato ✔");
   }catch(e){$("cc-e").textContent="Errore di connessione"}
 };
+let SEL=0;
 function disegnaElenco(){
-  const q=$("cerca").value.toLowerCase().trim();
-  const l=CLIENTI.filter(c=>!q||c.nome.toLowerCase().includes(q)||c.codice.toLowerCase().includes(q));
-  $("elenco").innerHTML=l.map(c=>`<div class="cl ${CUR===c.codice?"on":""}" data-c="${esc(c.codice)}">${esc(c.nome)}</div>`).join("")||"<i>Nessun cliente</i>";
-  document.querySelectorAll(".cl").forEach(e=>e.onclick=()=>apri(e.dataset.c));
+  const q=$("cerca").value.toLowerCase().trim(), box=$("elenco");
+  if(!q||(CUR&&q===(CLIENTI.find(c=>c.codice===CUR)||{nome:""}).nome.toLowerCase())){box.style.display="none";box.innerHTML="";return}
+  const l=CLIENTI.filter(c=>c.nome.toLowerCase().includes(q)||c.codice.toLowerCase().includes(q)).slice(0,8);
+  SEL=0;
+  box.innerHTML=l.map((c,i)=>`<div class="cl ${i===0?"sel":""}" data-c="${esc(c.codice)}">${esc(c.nome)}<small>${esc(c.codice)}</small></div>`).join("")||'<div class="cl" style="cursor:default">Nessun cliente trovato</div>';
+  box.style.display="block";
+  box.querySelectorAll(".cl[data-c]").forEach(e=>e.onclick=()=>scegli(e.dataset.c));
+}
+function scegli(cod){
+  const c=CLIENTI.find(x=>x.codice===cod); if(!c)return;
+  $("cerca").value=c.nome; $("elenco").style.display="none"; $("elenco").innerHTML=""; apri(cod);
 }
 $("cerca").oninput=disegnaElenco;
-$("cerca").onkeydown=e=>{if(e.key==="Enter"){const x=document.querySelector(".cl");if(x)x.click()}};
+$("cerca").onfocus=()=>{if(CUR)$("cerca").select()};
+$("cerca").onkeydown=e=>{
+  const it=[...document.querySelectorAll("#elenco .cl[data-c]")];
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(!it.length)return;SEL=(SEL+(e.key==="ArrowDown"?1:-1)+it.length)%it.length;it.forEach((x,i)=>x.classList.toggle("sel",i===SEL))}
+  else if(e.key==="Enter"&&it.length){scegli(it[SEL].dataset.c)}
+  else if(e.key==="Escape"){$("elenco").style.display="none"}
+};
+document.addEventListener("click",e=>{if(!e.target.closest("#cercabox"))$("elenco").style.display="none"});
 
 async function apri(cod,blocco){
-  CUR=cod; disegnaElenco();
+  CUR=cod;
   const j=await rpc("gc_t_scheda",{p_cod:CODE,p_cl:cod});
   if(!j.ok){toast(j.errore);return}
   DATI=j; $("scheda").style.display="block";
