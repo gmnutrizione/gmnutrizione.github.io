@@ -43,6 +43,25 @@ td input[readonly]{color:#555}
 .sal{background:#fff7d6!important}
 .w60{min-width:60px}.w120{min-width:130px}.w200{min-width:200px}
 #msg{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--nero);color:#fff;padding:10px 16px;border-radius:8px;display:none}
+
+#stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-bottom:14px}
+.card{background:#fff;border:1px solid var(--bordo);border-radius:12px;padding:14px}
+.card h3{margin:0 0 10px;font:400 20px 'Bebas Neue',sans-serif;letter-spacing:.8px}
+.card h3 small{font:500 11px Inter,sans-serif;color:var(--testo2);letter-spacing:0;margin-left:6px}
+.rb{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}
+.rb .n{width:130px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb .b{flex:1;background:#eee;border-radius:5px;height:14px;overflow:hidden}
+.rb .b i{display:block;height:100%;background:var(--rosso);border-radius:5px}
+.rb .v{width:62px;text-align:right;font-weight:700;flex:none}
+.mini{width:100%;font-size:13px;border-collapse:collapse}
+.mini td,.mini th{padding:5px 4px;border-bottom:1px solid var(--bordo);text-align:left;position:static;background:none;color:inherit;font-weight:600}
+.mini td+td,.mini th+th{text-align:right}
+.tag{display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;background:#fff3cd;color:#8a6d00;margin-left:4px}
+.big{font:400 34px 'Bebas Neue',sans-serif;line-height:1}
+.kpi{display:flex;gap:16px;flex-wrap:wrap}
+.kpi div{min-width:70px;font-size:12px;color:var(--testo2)}
+.kpi b{display:block;font:400 30px 'Bebas Neue',sans-serif;color:var(--nero)}
+.nota{color:var(--testo2);font-size:12px;margin-top:8px}
 .riga-g td{background:#eee;font-weight:700;padding:6px 8px}
 </style>
 </head>
@@ -64,6 +83,7 @@ td input[readonly]{color:#555}
   <div id="scheda" style="display:none">
     <div class="box" id="testa" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"></div>
     <div id="tabs"></div>
+    <div id="stat"></div>
     <div class="box" id="barra" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
     <div class="scroll"><table id="tab"></table></div>
   </div>
@@ -165,12 +185,87 @@ function disegna(){
   const bl=[...new Set(DATI.righe.map(r=>r.blocco))].sort((a,b)=>a-b);
   $("tabs").innerHTML=bl.map(b=>`<div class="tab ${b===BLOCCO?"on":""}" data-b="${b}">Blocco ${b}<small>${done(b)?"✔ Completato":"In corso"}</small></div>`).join("");
   document.querySelectorAll(".tab").forEach(e=>e.onclick=()=>{BLOCCO=+e.dataset.b;disegna()});
+  statistiche();
   const ed=editabile();
   $("barra").innerHTML=`<span class="badge ${done(BLOCCO)?"b-ok":"b-in"}">${done(BLOCCO)?"Blocco completato · sola lettura":"Blocco in corso"}</span>`+
     (ed?`<button id="nuova" class="r">+ Aggiungi esercizio</button><span style="color:var(--testo2);font-size:13px">Le modifiche si salvano da sole quando esci dalla cella.</span>`:"");
   if(ed)$("nuova").onclick=nuovaRiga;
   disegnaTab();
 }
+
+// ---------- statistiche del blocco ----------
+const num=v=>{const m=String(v==null?"":v).replace(",",".").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):NaN};
+const repMedia=v=>{const t=String(v||"").replace(",",".").match(/\d+(\.\d+)?/g);if(!t)return NaN;const a=t.map(parseFloat);return a.length>1?(a[0]+a[1])/2:a[0]};
+function secRec(v){
+  const t=String(v||"").trim(); if(!t)return 60;
+  let m=t.match(/^(\d+)\s*'(?!')\s*(\d+)?/); if(m)return parseInt(m[1])*60+(m[2]?parseInt(m[2]):0);
+  m=t.match(/^(\d+)\s*(''|"|s)/); if(m)return parseInt(m[1]);
+  const n=num(t); if(isNaN(n))return 60; return n>=15?n:n*60;
+}
+function catGruppo(g){
+  g=String(g||"").toLowerCase();
+  if(/petto|spall|tricip|deltoid/.test(g))return /posterior/.test(g)?"trazione":"spinta";
+  if(/dors|bicip|trapez|lombar|avambr/.test(g))return "trazione";
+  if(/gamb|glute|quadric|femor|polpac|adduttor|abduttor|cosc/.test(g))return "gambe";
+  return "altro";
+}
+function barre(obj,fmt){
+  const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]); const mx=Math.max(1,...e.map(x=>x[1]));
+  return e.map(([k,v])=>`<div class="rb"><span class="n" title="${esc(k)}">${esc(k)}</span><span class="b"><i style="width:${v/mx*100}%"></i></span><span class="v">${fmt?fmt(v):v}</span></div>`).join("")||'<i style="color:var(--testo2)">Nessun dato</i>';
+}
+function caricoRiga(r){ // lista dei carichi numerici in ordine di seduta
+  return Object.keys(r.carichi||{}).map(Number).sort((a,b)=>a-b).map(k=>num(r.carichi[k])).filter(x=>!isNaN(x));
+}
+function statistiche(){
+  const R=DATI.righe.filter(r=>r.blocco===BLOCCO), N=DATI.cliente.n_sedute||6;
+  const ser=r=>{const n=num(r.serie);return isNaN(n)?0:n};
+  // 1) serie per gruppo, 2) frequenza
+  const sg={},fr={};
+  R.forEach(r=>{const g=(r.gruppo||"—").trim()||"—";sg[g]=(sg[g]||0)+ser(r);(fr[g]=fr[g]||new Set()).add(r.giorno)});
+  const frO={};Object.keys(fr).forEach(g=>frO[g]=fr[g].size);
+  // 3) per giorno
+  const gg={};
+  R.forEach(r=>{const d=gg[r.giorno]=gg[r.giorno]||{es:0,se:0,sec:0};d.es++;d.se+=ser(r);
+    const rp=repMedia(r.rep);d.sec+=ser(r)*((isNaN(rp)?10:rp)*4+secRec(r.recupero))});
+  const durate=Object.values(gg).map(d=>d.sec), media=durate.length?durate.reduce((a,b)=>a+b,0)/durate.length:0;
+  const righeGG=Object.entries(gg).sort().map(([g,d])=>{const m=Math.round(d.sec/60);const t=media&&d.sec>media*1.25?'<span class="tag">lungo</span>':media&&d.sec<media*.75?'<span class="tag">corto</span>':"";return `<tr><td>${esc(g)}${t}</td><td>${d.es} es.</td><td>${d.se} serie</td><td>~${m} min</td></tr>`}).join("");
+  // 4) fasce rep (serie)
+  const fa={"Forza (1-6)":0,"Ipertrofia (7-12)":0,"Resistenza (13+)":0};
+  R.forEach(r=>{const x=repMedia(r.rep);if(isNaN(x))return;fa[x<=6?"Forza (1-6)":x<=12?"Ipertrofia (7-12)":"Resistenza (13+)"]+=ser(r)});
+  // 5) spinta/trazione
+  const ca={spinta:0,trazione:0,gambe:0,altro:0};R.forEach(r=>ca[catGruppo(r.gruppo)]+=ser(r));
+  const rap=ca.trazione?(ca.spinta/ca.trazione).toFixed(2).replace(".",","):"—";
+  const alto=ca.spinta+ca.trazione, rap2=ca.gambe?(alto/ca.gambe).toFixed(2).replace(".",","):"—";
+  // 6) sedute completate
+  const giorni=[...new Set(R.map(r=>r.giorno))].sort();
+  const sed=giorni.map(g=>{const n=new Set((DATI.sedute||[]).filter(x=>x.blocco===BLOCCO&&x.giorno===g).map(x=>x.sessione)).size;return [g,n]});
+  const totS=sed.reduce((a,x)=>a+x[1],0), totMax=giorni.length*N;
+  // 7) progressione carichi
+  let su=0,fe=0,bl=0,att=0,gi=0;
+  R.forEach(r=>{const c=caricoRiga(r); if(r.bloccato)bl++; if(c.length<2){att++;return} const d=c[c.length-1]-c[0]; if(d>0)su++;else if(d<0)gi++;else fe++});
+  // 8) confronto con blocco precedente
+  const bls=[...new Set(DATI.righe.map(r=>r.blocco))].sort((a,b)=>a-b), prev=bls[bls.indexOf(BLOCCO)-1];
+  let conf='<i style="color:var(--testo2)">Disponibile dal secondo blocco.</i>';
+  if(prev!==undefined){
+    const P=DATI.righe.filter(r=>r.blocco===prev), sP=P.reduce((a,r)=>a+ser(r),0), sC=R.reduce((a,r)=>a+ser(r),0);
+    const mk=new Map(); P.forEach(r=>{const c=caricoRiga(r);if(c.length)mk.set(r.giorno+"|"+(r.esercizio||"").toLowerCase(),c.reduce((a,b)=>a+b,0)/c.length)});
+    const v=[];R.forEach(r=>{const c=caricoRiga(r);const k=r.giorno+"|"+(r.esercizio||"").toLowerCase();if(c.length&&mk.has(k)&&mk.get(k)>0)v.push((c.reduce((a,b)=>a+b,0)/c.length)/mk.get(k)-1)});
+    const pc=v.length?(v.reduce((a,b)=>a+b,0)/v.length*100):null, sg_=(x)=>(x>0?"+":"")+x.toFixed(1).replace(".",",");
+    conf=`<div class="kpi"><div><b>${sC-sP>0?"+":""}${sC-sP}</b>serie totali (blocco ${prev}: ${sP})</div><div><b>${pc===null?"—":sg_(pc)+"%"}</b>carico medio, su ${v.length} esercizi in comune</div></div>`;
+  }
+  const html=`
+   <div class="card"><h3>Serie per gruppo muscolare<small>blocco ${BLOCCO}</small></h3>${barre(sg,v=>v+" serie")}</div>
+   <div class="card"><h3>Frequenza per gruppo<small>giorni a settimana</small></h3>${barre(frO,v=>v+(v===1?" giorno":" giorni"))}</div>
+   <div class="card"><h3>Riepilogo per giorno<small>durata stimata</small></h3><table class="mini">${righeGG||"<tr><td>Nessun dato</td></tr>"}</table><div class="nota">Stima da serie, ripetizioni e recuperi.</div></div>
+   <div class="card"><h3>Fasce di ripetizioni<small>in serie</small></h3>${barre(fa,v=>v+" serie")}</div>
+   <div class="card"><h3>Spinta e trazione<small>in serie</small></h3>${barre({Spinta:ca.spinta,Trazione:ca.trazione,Gambe:ca.gambe,...(ca.altro?{Altro:ca.altro}:{})})}
+     <div class="kpi" style="margin-top:8px"><div><b>${rap}</b>spinta / trazione</div><div><b>${rap2}</b>parte alta / gambe</div></div></div>
+   <div class="card"><h3>Sedute completate<small>${totS} su ${totMax}</small></h3>${sed.map(([g,n])=>`<div class="rb"><span class="n">${esc(g)}</span><span class="b"><i style="width:${n/N*100}%"></i></span><span class="v">${n}/${N}</span></div>`).join("")||'<i style="color:var(--testo2)">Nessun giorno</i>'}</div>
+   <div class="card"><h3>Progressione dei carichi<small>dalla 1ª seduta</small></h3><div class="kpi"><div><b>${su}</b>saliti</div><div><b>${fe}</b>fermi</div><div><b>${gi}</b>scesi</div><div><b>${bl}</b>bloccati</div><div><b>${att}</b>in attesa</div></div><div class="nota">“In attesa” = esercizi con meno di 2 carichi registrati.</div></div>
+   <div class="card"><h3>Rispetto al blocco precedente</h3>${conf}</div>`;
+  $("stat").innerHTML=html;
+}
+
 function nSett(){let n=3;DATI.righe.forEach(r=>{Object.keys(r.carichi||{}).concat(Object.keys(r.note||{})).forEach(k=>{if(+k>n)n=+k})});return n}
 function disegnaTab(){
   const ed=editabile(), N=nSett();
