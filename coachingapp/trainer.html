@@ -77,7 +77,7 @@ td input[readonly]{color:#555}
 </div>
 
 <div id="app" style="display:none">
-<header><h1>DASHBOARD <span>GM COACHING</span></h1><button class="l" id="cambia" style="margin-left:auto">Cambia codice</button><button class="l" id="esci">Esci</button></header>
+<header><h1>DASHBOARD <span>GM COACHING</span></h1><button class="l" id="esci" style="margin-left:auto">Esci</button></header>
 <main>
   <div class="box">
     <div id="cercabox"><input id="cerca" placeholder="Cerca un cliente per nome o codice…" autocomplete="off">
@@ -91,16 +91,6 @@ td input[readonly]{color:#555}
     <div class="scroll"><table id="tab"></table></div>
   </div>
 </main>
-</div>
-<div id="cc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:5">
-  <div class="box" style="width:min(360px,92vw);margin:0">
-    <b style="font-size:17px">Cambia codice trainer</b>
-    <input id="cc-v" type="password" placeholder="Codice attuale" autocomplete="off" style="width:100%;margin-top:12px">
-    <input id="cc-n" type="password" placeholder="Nuovo codice (almeno 8 caratteri)" autocomplete="off" style="width:100%;margin-top:8px">
-    <input id="cc-n2" type="password" placeholder="Ripeti il nuovo codice" autocomplete="off" style="width:100%;margin-top:8px">
-    <div id="cc-e" style="color:var(--rosso);margin-top:8px;min-height:18px"></div>
-    <div style="display:flex;gap:8px;margin-top:8px"><button class="r" id="cc-ok" style="flex:1">Salva</button><button class="l" id="cc-no">Annulla</button></div>
-  </div>
 </div>
 <div id="inc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:5">
   <div class="box" style="width:min(760px,94vw);margin:0">
@@ -132,14 +122,11 @@ async function caricaCatalogo(){
     $("dl-es").innerHTML=CAT.map(e=>`<option value="${esc(e.esercizio)}" label="${e.video?"▶ con video":"video non ancora collegato"}"></option>`).join("");
     const gr=[...new Set(CAT.map(e=>e.gruppo).filter(Boolean))].sort();$("dl-gr").innerHTML=gr.map(g=>`<option value="${esc(g)}"></option>`).join("")}catch(e){}
 }
-// Regola del recupero (modificabile a mano nella cella). Per i pesi dipende dalle ripetizioni.
-const REGOLA_REC=[[5,"180''"],[8,"120''"],[12,"90''"],[999,"60''"]]; // fino a N rep -> recupero
+// Regola del recupero (sempre modificabile a mano): fondamentali e complementari 90'', isolamento 60''.
 function recAuto(tipo,rep,ese){
   const c=CATMAP[String(ese||"").split("+")[0].trim().toLowerCase()];
   if(c&&c.recupero)return c.recupero;
-  if(String(tipo).toLowerCase().startsWith("corpo"))return "60''";
-  const x=repMedia(rep); if(isNaN(x))return "90''";
-  return REGOLA_REC.find(r=>x<=r[0])[1];
+  return (c&&c.categoria==="isolamento")?"60''":"90''";
 }
 async function entra(){
   const c=$("cod").value.trim(); $("errL").textContent="";
@@ -154,18 +141,6 @@ $("entra").onclick=entra; $("cod").onkeydown=e=>{if(e.key==="Enter")entra()};
 $("esci").onclick=()=>{try{sessionStorage.removeItem("gt_c")}catch(e){};location.reload()};
 try{const s=sessionStorage.getItem("gt_c");if(s){$("cod").value=s;entra()}}catch(e){}
 
-$("cambia").onclick=()=>{["cc-v","cc-n","cc-n2"].forEach(i=>$(i).value="");$("cc-e").textContent="";$("cc").style.display="flex"};
-$("cc-no").onclick=()=>$("cc").style.display="none";
-$("cc-ok").onclick=async()=>{
-  const v=$("cc-v").value,n=$("cc-n").value,n2=$("cc-n2").value;
-  if(n!==n2){$("cc-e").textContent="I due codici nuovi non coincidono";return}
-  try{
-    const j=await rpc("gc_t_cambia_codice",{p_vecchio:v,p_nuovo:n});
-    if(!j.ok){$("cc-e").textContent=j.errore;return}
-    CODE=n;try{sessionStorage.setItem("gt_c",n)}catch(e){}
-    $("cc").style.display="none";toast("Codice cambiato ✔");
-  }catch(e){$("cc-e").textContent="Errore di connessione"}
-};
 let SEL=0;
 function disegnaElenco(){
   const q=$("cerca").value.toLowerCase().trim(), box=$("elenco");
@@ -218,9 +193,9 @@ function disegna(){
   const ed=editabile();
   const fo2=DATI.cliente.fonte==="supabase";
   $("barra").innerHTML=`<span class="badge ${done(BLOCCO)?"b-ok":"b-in"}">${done(BLOCCO)?"Blocco completato · sola lettura":"Blocco in corso"}</span>`+
-    (ed?`<label style="font-weight:600">Allenamenti nella scheda <select id="ngg">${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${n===nGiorni()?"selected":""}>${n}</option>`).join("")}</select></label><button id="nuova" class="r">+ Aggiungi esercizio</button><button id="incolla" class="l">Incolla da Excel</button><span style="color:var(--testo2);font-size:13px">Le modifiche si salvano da sole quando esci dalla cella.</span>`:"")+
+    (ed?`<label style="font-weight:600">Allenamenti nella scheda <select id="ngg">${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${n===nGiorni()?"selected":""}>${n}</option>`).join("")}</select></label><span style="display:inline-flex;gap:6px;align-items:center"><input id="nr" type="number" min="1" max="30" value="3" style="width:64px" title="Quante righe aggiungere"><button id="nuova" class="r">+ Aggiungi righe</button></span><button id="incolla" class="l">Incolla da Excel</button><span style="color:var(--testo2);font-size:13px">Le modifiche si salvano da sole quando esci dalla cella.</span>`:"")+
     (fo2?`<button id="nblocco" class="l" style="margin-left:auto">+ Nuovo blocco</button>`:"");
-  if(ed){$("nuova").onclick=nuovaRiga;$("incolla").onclick=apriIncolla;$("ngg").onchange=cambiaGiorni}
+  if(ed){$("nuova").onclick=()=>aggiungiRighe(Math.max(1,Math.min(30,parseInt($("nr").value)||1)));$("incolla").onclick=apriIncolla;$("ngg").onchange=cambiaGiorni}
   if(fo2)$("nblocco").onclick=nuovoBlocco;
   disegnaTab();
 }
@@ -314,10 +289,58 @@ async function cambiaGiorni(){
   if(!j.ok){toast(j.errore);return}
   DATI.giorni=DATI.giorni||{};DATI.giorni[BLOCCO]=n;disegnaTab();toast("Allenamenti: "+n+" ✔");
 }
+let CTX={};
+function rigaHtml(r,isNew){
+  const {camp,N,NG,ed}=CTX, ro=!ed;
+  let h=`<tr data-id="${isNew?"new":r.id}" class="${ed?"":"ro"}">`;
+  camp.forEach(x=>{
+    const k=x[0],v=r[k];
+    if(ed&&k==="giorno"){
+      const opz=Array.from({length:NG},(_,n)=>"Giorno "+LET[n]); if(v&&!opz.includes(v))opz.push(v);
+      h+=`<td><select data-k="giorno">${opz.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select></td>`;
+    }else if(ed&&k==="tipo"){
+      const t=String(v||"pesi").toLowerCase().startsWith("corpo")?"corpo libero":"pesi";
+      h+=`<td><select data-k="tipo"><option value="pesi" ${t==="pesi"?"selected":""}>pesi</option><option value="corpo libero" ${t!=="pesi"?"selected":""}>c. libero</option></select></td>`;
+    }else if(ed&&k==="esercizio"){
+      h+=`<td><input data-k="esercizio" list="dl-es" autocomplete="off" placeholder="Scrivi per cercare…" value="${esc(v)}"></td>`;
+    }else if(ed&&k==="gruppo"){
+      h+=`<td><input data-k="gruppo" list="dl-gr" autocomplete="off" value="${esc(v)}"></td>`;
+    }else if(k==="video"){
+      const c=CATMAP[String(r.esercizio||"").split("+")[0].trim().toLowerCase()];
+      h+=`<td><input data-k="video" value="${esc(v)}" placeholder="${c&&c.video?"▶ archivio":""}" ${ed?"":"readonly"}></td>`;
+    }else h+=`<td><input data-k="${k}" value="${esc(v)}" ${ed?"":"readonly"}></td>`;
+  });
+  h+=`<td style="text-align:center"><input type="checkbox" data-k="bloccato" ${r.bloccato?"checked":""} ${ed?"":"disabled"} style="width:auto;padding:0"></td>`;
+  for(let i=1;i<=N;i++)h+=`<td><input data-c="${i}" value="${esc((r.carichi||{})[i])}" ${ed?"":"readonly"}></td>`;
+  for(let i=1;i<=N;i++)h+=`<td><input data-n="${i}" value="${esc((r.note||{})[i])}" ${ed?"":"readonly"}></td>`;
+  if(ed)h+=`<td class="az">${isNew?"":AZIONI}</td>`;
+  return h+"</tr>";
+}
+const AZIONI=`<button class="l" data-dup="1" title="Duplica" style="padding:3px 6px">⧉</button><button class="l" data-del="1" title="Elimina" style="padding:3px 6px">✕</button>`;
+function collega(tr){
+  tr.querySelectorAll("input,select").forEach(i=>i.onchange=()=>cella(tr,i));
+  const d=tr.querySelector("[data-del]"); if(d)d.onclick=()=>elimina(tr);
+  const dp=tr.querySelector("[data-dup]"); if(dp)dp.onclick=()=>duplica(tr);
+}
+function ordineDom(g){
+  let mx=0;document.querySelectorAll("#tab tr[data-id]").forEach(t=>{const gg=cv(t,"giorno");if(gg&&gg.value===g)mx=Math.max(mx,num(cv(t,"ordine").value)||0)});
+  return mx+1;
+}
+function righeVuote(n){ // aggiunge n righe vuote da compilare in fondo alla tabella (si salvano quando le compili)
+  const R=righeBlocco(), g=((document.querySelector("#tab tr[data-id]:last-of-type [data-k=giorno]")||{}).value)||(R[R.length-1]||{}).giorno||"Giorno A";
+  let primo=null;
+  for(let i=0;i<n;i++){
+    const tmp=document.createElement("tbody");
+    tmp.innerHTML=rigaHtml({giorno:g,ordine:ordineDom(g),tipo:"pesi",carichi:{},note:{}},true);
+    const tr=tmp.firstChild; $("tab").appendChild(tr); collega(tr); if(!primo)primo=tr;
+  }
+  return primo;
+}
 function disegnaTab(){
   const ed=editabile(), N=Math.max(nSett(),DATI.cliente.n_sedute||0), NG=nGiorni();
   const camp=[["giorno","Giorno",70],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",200],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",64],["passo","Passo",42],["recupero","Recupero",58],["video","Video",54]];
   const WB=52,WC=62,WN=48,WD=62;
+  CTX={camp,N,NG,ed};
   const tot=camp.reduce((a,x)=>a+x[2],0)+WB+N*WC+N*WN+(ed?WD:0);
   let h=`<colgroup>${camp.map(x=>`<col style="width:${x[2]}px">`).join("")}<col style="width:${WB}px">`+Array.from({length:N},()=>`<col style="width:${WC}px">`).join("")+Array.from({length:N},()=>`<col style="width:${WN}px">`).join("")+(ed?`<col style="width:${WD}px">`:"")+"</colgroup>";
   h+="<tr>"+camp.map(x=>`<th>${x[1]}</th>`).join("")+"<th>Bloccato</th>";
@@ -326,36 +349,12 @@ function disegnaTab(){
   h+=(ed?"<th></th>":"")+"</tr>";
   $("tab").style.width=tot+"px";
   const righe=righeBlocco();
-  righe.forEach(r=>{
-    h+=`<tr data-id="${r.id}" class="${ed?"":"ro"}">`;
-    camp.forEach(x=>{
-      const k=x[0],v=r[k];
-      if(ed&&k==="giorno"){
-        const opz=Array.from({length:NG},(_,n)=>"Giorno "+LET[n]); if(v&&!opz.includes(v))opz.push(v);
-        h+=`<td><select data-k="giorno">${opz.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select></td>`;
-      }else if(ed&&k==="tipo"){
-        const t=String(v||"pesi").toLowerCase().startsWith("corpo")?"corpo libero":"pesi";
-        h+=`<td><select data-k="tipo"><option value="pesi" ${t==="pesi"?"selected":""}>pesi</option><option value="corpo libero" ${t!=="pesi"?"selected":""}>c. libero</option></select></td>`;
-      }else if(ed&&k==="esercizio"){
-        h+=`<td><input data-k="esercizio" list="dl-es" autocomplete="off" placeholder="Scrivi per cercare…" value="${esc(v)}"></td>`;
-      }else if(ed&&k==="gruppo"){
-        h+=`<td><input data-k="gruppo" list="dl-gr" autocomplete="off" value="${esc(v)}"></td>`;
-      }else h+=`<td><input data-k="${k}" value="${esc(v)}" ${ed?"":"readonly"}></td>`;
-    });
-    h+=`<td style="text-align:center"><input type="checkbox" data-k="bloccato" ${r.bloccato?"checked":""} ${ed?"":"disabled"} style="width:auto;padding:0"></td>`;
-    for(let i=1;i<=N;i++)h+=`<td><input data-c="${i}" value="${esc((r.carichi||{})[i])}" ${ed?"":"readonly"}></td>`;
-    for(let i=1;i<=N;i++)h+=`<td><input data-n="${i}" value="${esc((r.note||{})[i])}" ${ed?"":"readonly"}></td>`;
-    if(ed)h+=`<td style="white-space:nowrap"><button class="l" data-dup="1" title="Duplica" style="padding:3px 6px">⧉</button><button class="l" data-del="1" title="Elimina" style="padding:3px 6px">✕</button></td>`;
-    h+="</tr>";
-  });
-  $("tab").innerHTML=h||"";
-  if(!righe.length)$("tab").innerHTML+=`<tr><td colspan="40" style="padding:16px">Nessun esercizio in questo blocco.</td></tr>`;
+  righe.forEach(r=>h+=rigaHtml(r,false));
+  $("tab").innerHTML=h;
+  if(!righe.length&&!ed)$("tab").innerHTML+=`<tr><td colspan="40" style="padding:16px">Nessun esercizio in questo blocco.</td></tr>`;
   if(!ed)return;
-  document.querySelectorAll("#tab tr[data-id]").forEach(tr=>{
-    tr.querySelectorAll("input,select").forEach(i=>i.onchange=()=>cella(tr,i));
-    const d=tr.querySelector("[data-del]"); if(d)d.onclick=()=>elimina(tr);
-    const dp=tr.querySelector("[data-dup]"); if(dp)dp.onclick=()=>duplica(tr);
-  });
+  document.querySelectorAll("#tab tr[data-id]").forEach(collega);
+  righeVuote(1); // sempre una riga vuota in fondo
 }
 const cv=(tr,k)=>tr.querySelector(`[data-k="${k}"]`);
 function prossimoOrdine(giorno,escludiId){
@@ -363,37 +362,57 @@ function prossimoOrdine(giorno,escludiId){
   return (o.length?Math.max(...o):0)+1;
 }
 async function cella(tr,el){
-  const k=el.dataset.k, id=tr.dataset.id;
-  const rigaOld=DATI.righe.find(r=>String(r.id)===String(id))||{};
-  if(k==="giorno"){ cv(tr,"ordine").value=prossimoOrdine(el.value,id); }
+  const k=el.dataset.k, id=tr.dataset.id, nuova=(id==="new");
+  const rigaOld=nuova?{}:(DATI.righe.find(r=>String(r.id)===String(id))||{});
+  if(k==="giorno"){ cv(tr,"ordine").value=nuova?ordineDom(el.value):prossimoOrdine(el.value,id); }
   if(k==="esercizio"){
     const v=el.value.trim();
     if(v){
       const parti=v.split("+").map(x=>x.trim()).filter(Boolean), ok=parti.every(p=>CATMAP[p.toLowerCase()]);
       if(ok){
         el.value=parti.map(p=>CATMAP[p.toLowerCase()].esercizio).join(" + ");
-        const c=CATMAP[parti[0].toLowerCase()];
-        if(c.gruppo)cv(tr,"gruppo").value=c.gruppo;
-        cv(tr,"tipo").value=c.tipo==="corpo libero"?"corpo libero":"pesi";
-        cv(tr,"recupero").value=recAuto(cv(tr,"tipo").value,cv(tr,"rep").value,el.value);
       }else{
         const mancanti=parti.filter(p=>!CATMAP[p.toLowerCase()]);
         if(confirm("«"+mancanti.join("», «")+"» non è nell'archivio esercizi.\n\nVuoi aggiungerlo (così potrai collegargli il video)?")){
           for(const m of mancanti){
-            const j=await rpc("gc_t_catalogo_salva",{p_cod:CODE,p_esercizio:m,p_gruppo:cv(tr,"gruppo").value||"",p_tipo:cv(tr,"tipo").value||"pesi",p_recupero:""});
+            const r=(prompt("Categoria di «"+m+"»:\n1 = fondamentale\n2 = complementare\n3 = isolamento","2")||"2").trim();
+            const cat=r==="1"?"fondamentale":r==="3"?"isolamento":"complementare";
+            const j=await rpc("gc_t_catalogo_salva",{p_cod:CODE,p_esercizio:m,p_gruppo:cv(tr,"gruppo").value||"",p_tipo:cv(tr,"tipo").value||"pesi",p_categoria:cat});
             if(!j.ok){toast(j.errore);el.value=rigaOld.esercizio||"";return}
           }
           await caricaCatalogo(); el.value=parti.join(" + ");
-          cv(tr,"recupero").value=recAuto(cv(tr,"tipo").value,cv(tr,"rep").value,el.value);
         }else{el.value=rigaOld.esercizio||"";return}
       }
+      const c=CATMAP[el.value.split("+")[0].trim().toLowerCase()];
+      if(c){
+        if(c.gruppo)cv(tr,"gruppo").value=c.gruppo;
+        cv(tr,"tipo").value=c.tipo==="corpo libero"?"corpo libero":"pesi";
+        cv(tr,"video").placeholder=c.video?"▶ archivio":"";
+      }
+      cv(tr,"recupero").value=recAuto(cv(tr,"tipo").value,cv(tr,"rep").value,el.value);
     }
   }
   if(k==="rep"||k==="tipo"){
     const prevAuto=recAuto(rigaOld.tipo,rigaOld.rep,rigaOld.esercizio), rc=cv(tr,"recupero");
     if(!rc.value.trim()||rc.value===prevAuto)rc.value=recAuto(cv(tr,"tipo").value,cv(tr,"rep").value,cv(tr,"esercizio").value);
   }
-  await salvaRiga(tr);
+  if(nuova){
+    if(k==="giorno"||k==="tipo"||k==="ordine")return; // la riga si crea quando inizi a compilarla
+    await creaDaVuota(tr);
+  }else await salvaRiga(tr);
+}
+async function creaDaVuota(tr){
+  const o=leggi(tr);
+  const pieno=["esercizio","variante","serie","rep","passo","gruppo","video"].some(k=>String(o[k]||"").trim()!=="")||Object.keys(o.carichi).length||Object.keys(o.note).length;
+  if(!pieno)return;
+  try{
+    const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:{...o,id:null}});
+    if(!j.ok){toast(j.errore);return}
+    tr.dataset.id=j.id; DATI.righe.push({...o,id:j.id});
+    const az=tr.querySelector(".az"); if(az){az.innerHTML=AZIONI;collega(tr)}
+    if(!document.querySelector('#tab tr[data-id="new"]'))righeVuote(1);
+    toast("Salvato ✔"); statistiche();
+  }catch(e){toast("Errore di salvataggio")}
 }
 function leggi(tr){
   const o={blocco:BLOCCO,id:tr.dataset.id==="new"?null:tr.dataset.id,carichi:{},note:{}};
@@ -416,15 +435,9 @@ async function salvaRiga(tr){
     tr.classList.remove("sal"); toast("Salvato ✔"); statistiche();
   }catch(e){toast("Errore di salvataggio")}
 }
-async function nuovaRiga(){
-  const R=righeBlocco(), ul=R[R.length-1]||{};
-  const g=ul.giorno||"Giorno A", ord=prossimoOrdine(g,null);
-  const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:{blocco:BLOCCO,giorno:g,ordine:ord,esercizio:"",serie:ul.serie||"",rep:ul.rep||"",tipo:ul.tipo||"pesi",recupero:ul.recupero||""}});
-  if(!j.ok){toast(j.errore);return}
-  await apri(CUR,BLOCCO);
-  const trs=document.querySelectorAll("#tab tr[data-id]"); let last=null,mx=-1;
-  trs.forEach(t=>{if(+t.dataset.id>mx){mx=+t.dataset.id;last=t}});
-  if(last){last.scrollIntoView({block:"center"});const e=last.querySelector('[data-k="esercizio"]');if(e)e.focus()}
+function aggiungiRighe(n){
+  const tr=righeVuote(n);
+  if(tr){tr.scrollIntoView({block:"center"});const e=cv(tr,"esercizio");if(e)e.focus()}
 }
 async function duplica(tr){
   const o=leggi(tr); o.id=null; o.ordine=prossimoOrdine(o.giorno,null);
