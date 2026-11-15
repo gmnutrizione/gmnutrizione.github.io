@@ -37,6 +37,9 @@ table{border-collapse:collapse;font-size:12px;table-layout:fixed}
 th{position:sticky;top:0;background:var(--nero);color:#fff;padding:6px 4px;text-align:left;white-space:normal;line-height:1.15;vertical-align:bottom;font-size:11px;z-index:1}
 td{border-bottom:1px solid var(--bordo);padding:0 1px}
 td input{border:1px solid transparent;border-radius:4px;padding:4px 4px;width:100%;min-width:0;background:transparent;font-size:12px}
+td select{width:100%;min-width:0;padding:4px 2px;font-size:12px;border:1px solid transparent;border-radius:4px;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;color:inherit}
+td select:hover{background:#f3f3f3}
+td select:focus{border-color:var(--rosso);background:#fff;outline:none}
 td input:focus{border-color:var(--rosso);background:#fff}
 td input[readonly]{color:#555}
 .ro td{background:#fafafa}
@@ -313,7 +316,7 @@ async function cambiaGiorni(){
 }
 function disegnaTab(){
   const ed=editabile(), N=Math.max(nSett(),DATI.cliente.n_sedute||0), NG=nGiorni();
-  const camp=[["giorno","Giorno",78],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",200],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",86],["passo","Passo",42],["recupero","Recupero",58],["video","Video",54]];
+  const camp=[["giorno","Giorno",70],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",200],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",64],["passo","Passo",42],["recupero","Recupero",58],["video","Video",54]];
   const WB=52,WC=62,WN=48,WD=62;
   const tot=camp.reduce((a,x)=>a+x[2],0)+WB+N*WC+N*WN+(ed?WD:0);
   let h=`<colgroup>${camp.map(x=>`<col style="width:${x[2]}px">`).join("")}<col style="width:${WB}px">`+Array.from({length:N},()=>`<col style="width:${WC}px">`).join("")+Array.from({length:N},()=>`<col style="width:${WN}px">`).join("")+(ed?`<col style="width:${WD}px">`:"")+"</colgroup>";
@@ -332,7 +335,7 @@ function disegnaTab(){
         h+=`<td><select data-k="giorno">${opz.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select></td>`;
       }else if(ed&&k==="tipo"){
         const t=String(v||"pesi").toLowerCase().startsWith("corpo")?"corpo libero":"pesi";
-        h+=`<td><select data-k="tipo"><option value="pesi" ${t==="pesi"?"selected":""}>pesi</option><option value="corpo libero" ${t!=="pesi"?"selected":""}>corpo libero</option></select></td>`;
+        h+=`<td><select data-k="tipo"><option value="pesi" ${t==="pesi"?"selected":""}>pesi</option><option value="corpo libero" ${t!=="pesi"?"selected":""}>c. libero</option></select></td>`;
       }else if(ed&&k==="esercizio"){
         h+=`<td><input data-k="esercizio" list="dl-es" autocomplete="off" placeholder="Scrivi per cercare…" value="${esc(v)}"></td>`;
       }else if(ed&&k==="gruppo"){
