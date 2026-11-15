@@ -109,6 +109,7 @@ td input[readonly]{color:#555}
     <div style="display:flex;gap:8px;margin-top:6px"><button class="r" id="inc-ok">Importa</button><button class="l" id="inc-no">Annulla</button></div>
   </div>
 </div>
+<datalist id="dl-es"></datalist><datalist id="dl-gr"></datalist>
 <div id="msg"></div>
 
 <script src="config.js"></script>
@@ -122,13 +123,28 @@ async function rpc(fn,args){
   if(!r.ok) throw new Error(await r.text());
   return r.json();
 }
+let CAT=[],CATMAP={};
+async function caricaCatalogo(){
+  try{const j=await rpc("gc_t_catalogo",{p_cod:CODE});if(!j.ok)return;CAT=j.esercizi;CATMAP={};CAT.forEach(e=>CATMAP[e.esercizio.toLowerCase()]=e);
+    $("dl-es").innerHTML=CAT.map(e=>`<option value="${esc(e.esercizio)}" label="${e.video?"▶ con video":"video non ancora collegato"}"></option>`).join("");
+    const gr=[...new Set(CAT.map(e=>e.gruppo).filter(Boolean))].sort();$("dl-gr").innerHTML=gr.map(g=>`<option value="${esc(g)}"></option>`).join("")}catch(e){}
+}
+// Regola del recupero (modificabile a mano nella cella). Per i pesi dipende dalle ripetizioni.
+const REGOLA_REC=[[5,"180''"],[8,"120''"],[12,"90''"],[999,"60''"]]; // fino a N rep -> recupero
+function recAuto(tipo,rep,ese){
+  const c=CATMAP[String(ese||"").split("+")[0].trim().toLowerCase()];
+  if(c&&c.recupero)return c.recupero;
+  if(String(tipo).toLowerCase().startsWith("corpo"))return "60''";
+  const x=repMedia(rep); if(isNaN(x))return "90''";
+  return REGOLA_REC.find(r=>x<=r[0])[1];
+}
 async function entra(){
   const c=$("cod").value.trim(); $("errL").textContent="";
   try{
     const j=await rpc("gc_t_clienti",{p_cod:c});
     if(!j.ok){$("errL").textContent="Codice non valido";return}
     CODE=c; CLIENTI=j.clienti; try{sessionStorage.setItem("gt_c",c)}catch(e){}
-    $("login").style.display="none";$("app").style.display="block";disegnaElenco();
+    $("login").style.display="none";$("app").style.display="block";disegnaElenco();caricaCatalogo();
   }catch(e){$("errL").textContent="Errore di connessione"}
 }
 $("entra").onclick=entra; $("cod").onkeydown=e=>{if(e.key==="Enter")entra()};
@@ -199,9 +215,9 @@ function disegna(){
   const ed=editabile();
   const fo2=DATI.cliente.fonte==="supabase";
   $("barra").innerHTML=`<span class="badge ${done(BLOCCO)?"b-ok":"b-in"}">${done(BLOCCO)?"Blocco completato · sola lettura":"Blocco in corso"}</span>`+
-    (ed?`<button id="nuova" class="r">+ Aggiungi esercizio</button><button id="incolla" class="l">Incolla da Excel</button><span style="color:var(--testo2);font-size:13px">Le modifiche si salvano da sole quando esci dalla cella.</span>`:"")+
+    (ed?`<label style="font-weight:600">Allenamenti nella scheda <select id="ngg">${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${n===nGiorni()?"selected":""}>${n}</option>`).join("")}</select></label><button id="nuova" class="r">+ Aggiungi esercizio</button><button id="incolla" class="l">Incolla da Excel</button><span style="color:var(--testo2);font-size:13px">Le modifiche si salvano da sole quando esci dalla cella.</span>`:"")+
     (fo2?`<button id="nblocco" class="l" style="margin-left:auto">+ Nuovo blocco</button>`:"");
-  if(ed){$("nuova").onclick=nuovaRiga;$("incolla").onclick=apriIncolla}
+  if(ed){$("nuova").onclick=nuovaRiga;$("incolla").onclick=apriIncolla;$("ngg").onchange=cambiaGiorni}
   if(fo2)$("nblocco").onclick=nuovoBlocco;
   disegnaTab();
 }
@@ -280,9 +296,24 @@ function statistiche(){
 }
 
 function nSett(){let n=3;DATI.righe.forEach(r=>{Object.keys(r.carichi||{}).concat(Object.keys(r.note||{})).forEach(k=>{if(+k>n)n=+k})});return n}
+const LET="ABCDEFG";
+function nGiorni(){
+  const usati=[...new Set(DATI.righe.filter(r=>r.blocco===BLOCCO).map(r=>r.giorno))].length;
+  return (DATI.giorni&&DATI.giorni[BLOCCO])||usati||3;
+}
+function giornoIdx(g){const m=String(g||"").match(/([A-G])\s*$/i);return m?LET.indexOf(m[1].toUpperCase()):99}
+function righeBlocco(){return DATI.righe.filter(r=>r.blocco===BLOCCO).sort((a,b)=>giornoIdx(a.giorno)-giornoIdx(b.giorno)||(num(a.ordine)||0)-(num(b.ordine)||0))}
+async function cambiaGiorni(){
+  const n=+$("ngg").value;
+  const oltre=DATI.righe.filter(r=>r.blocco===BLOCCO&&giornoIdx(r.giorno)>=n);
+  if(oltre.length){toast("Ci sono "+oltre.length+" esercizi nei giorni oltre il "+LET[n-1]+": spostali prima");$("ngg").value=nGiorni();return}
+  const j=await rpc("gc_t_giorni_salva",{p_cod:CODE,p_cl:CUR,p_blocco:BLOCCO,p_n:n});
+  if(!j.ok){toast(j.errore);return}
+  DATI.giorni=DATI.giorni||{};DATI.giorni[BLOCCO]=n;disegnaTab();toast("Allenamenti: "+n+" ✔");
+}
 function disegnaTab(){
-  const ed=editabile(), N=Math.max(nSett(),DATI.cliente.n_sedute||0);
-  const camp=[["giorno","Giorno",74],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",160],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",58],["passo","Passo",42],["recupero","Recupero",58],["video","Video",54]];
+  const ed=editabile(), N=Math.max(nSett(),DATI.cliente.n_sedute||0), NG=nGiorni();
+  const camp=[["giorno","Giorno",78],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",200],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",86],["passo","Passo",42],["recupero","Recupero",58],["video","Video",54]];
   const WB=52,WC=62,WN=48,WD=62;
   const tot=camp.reduce((a,x)=>a+x[2],0)+WB+N*WC+N*WN+(ed?WD:0);
   let h=`<colgroup>${camp.map(x=>`<col style="width:${x[2]}px">`).join("")}<col style="width:${WB}px">`+Array.from({length:N},()=>`<col style="width:${WC}px">`).join("")+Array.from({length:N},()=>`<col style="width:${WN}px">`).join("")+(ed?`<col style="width:${WD}px">`:"")+"</colgroup>";
@@ -291,10 +322,23 @@ function disegnaTab(){
   for(let i=1;i<=N;i++)h+=`<th>Note ${i}</th>`;
   h+=(ed?"<th></th>":"")+"</tr>";
   $("tab").style.width=tot+"px";
-  const righe=DATI.righe.filter(r=>r.blocco===BLOCCO);
+  const righe=righeBlocco();
   righe.forEach(r=>{
     h+=`<tr data-id="${r.id}" class="${ed?"":"ro"}">`;
-    camp.forEach(x=>h+=`<td><input data-k="${x[0]}" value="${esc(r[x[0]])}" ${ed?"":"readonly"}></td>`);
+    camp.forEach(x=>{
+      const k=x[0],v=r[k];
+      if(ed&&k==="giorno"){
+        const opz=Array.from({length:NG},(_,n)=>"Giorno "+LET[n]); if(v&&!opz.includes(v))opz.push(v);
+        h+=`<td><select data-k="giorno">${opz.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select></td>`;
+      }else if(ed&&k==="tipo"){
+        const t=String(v||"pesi").toLowerCase().startsWith("corpo")?"corpo libero":"pesi";
+        h+=`<td><select data-k="tipo"><option value="pesi" ${t==="pesi"?"selected":""}>pesi</option><option value="corpo libero" ${t!=="pesi"?"selected":""}>corpo libero</option></select></td>`;
+      }else if(ed&&k==="esercizio"){
+        h+=`<td><input data-k="esercizio" list="dl-es" autocomplete="off" placeholder="Scrivi per cercare…" value="${esc(v)}"></td>`;
+      }else if(ed&&k==="gruppo"){
+        h+=`<td><input data-k="gruppo" list="dl-gr" autocomplete="off" value="${esc(v)}"></td>`;
+      }else h+=`<td><input data-k="${k}" value="${esc(v)}" ${ed?"":"readonly"}></td>`;
+    });
     h+=`<td style="text-align:center"><input type="checkbox" data-k="bloccato" ${r.bloccato?"checked":""} ${ed?"":"disabled"} style="width:auto;padding:0"></td>`;
     for(let i=1;i<=N;i++)h+=`<td><input data-c="${i}" value="${esc((r.carichi||{})[i])}" ${ed?"":"readonly"}></td>`;
     for(let i=1;i<=N;i++)h+=`<td><input data-n="${i}" value="${esc((r.note||{})[i])}" ${ed?"":"readonly"}></td>`;
@@ -305,14 +349,52 @@ function disegnaTab(){
   if(!righe.length)$("tab").innerHTML+=`<tr><td colspan="40" style="padding:16px">Nessun esercizio in questo blocco.</td></tr>`;
   if(!ed)return;
   document.querySelectorAll("#tab tr[data-id]").forEach(tr=>{
-    tr.querySelectorAll("input").forEach(i=>i.onchange=()=>salvaRiga(tr));
+    tr.querySelectorAll("input,select").forEach(i=>i.onchange=()=>cella(tr,i));
     const d=tr.querySelector("[data-del]"); if(d)d.onclick=()=>elimina(tr);
     const dp=tr.querySelector("[data-dup]"); if(dp)dp.onclick=()=>duplica(tr);
   });
 }
+const cv=(tr,k)=>tr.querySelector(`[data-k="${k}"]`);
+function prossimoOrdine(giorno,escludiId){
+  const o=DATI.righe.filter(r=>r.blocco===BLOCCO&&r.giorno===giorno&&String(r.id)!==String(escludiId)).map(r=>num(r.ordine)||0);
+  return (o.length?Math.max(...o):0)+1;
+}
+async function cella(tr,el){
+  const k=el.dataset.k, id=tr.dataset.id;
+  const rigaOld=DATI.righe.find(r=>String(r.id)===String(id))||{};
+  if(k==="giorno"){ cv(tr,"ordine").value=prossimoOrdine(el.value,id); }
+  if(k==="esercizio"){
+    const v=el.value.trim();
+    if(v){
+      const parti=v.split("+").map(x=>x.trim()).filter(Boolean), ok=parti.every(p=>CATMAP[p.toLowerCase()]);
+      if(ok){
+        el.value=parti.map(p=>CATMAP[p.toLowerCase()].esercizio).join(" + ");
+        const c=CATMAP[parti[0].toLowerCase()];
+        if(c.gruppo)cv(tr,"gruppo").value=c.gruppo;
+        cv(tr,"tipo").value=c.tipo==="corpo libero"?"corpo libero":"pesi";
+        cv(tr,"recupero").value=recAuto(cv(tr,"tipo").value,cv(tr,"rep").value,el.value);
+      }else{
+        const mancanti=parti.filter(p=>!CATMAP[p.toLowerCase()]);
+        if(confirm("«"+mancanti.join("», «")+"» non è nell'archivio esercizi.\n\nVuoi aggiungerlo (così potrai collegargli il video)?")){
+          for(const m of mancanti){
+            const j=await rpc("gc_t_catalogo_salva",{p_cod:CODE,p_esercizio:m,p_gruppo:cv(tr,"gruppo").value||"",p_tipo:cv(tr,"tipo").value||"pesi",p_recupero:""});
+            if(!j.ok){toast(j.errore);el.value=rigaOld.esercizio||"";return}
+          }
+          await caricaCatalogo(); el.value=parti.join(" + ");
+          cv(tr,"recupero").value=recAuto(cv(tr,"tipo").value,cv(tr,"rep").value,el.value);
+        }else{el.value=rigaOld.esercizio||"";return}
+      }
+    }
+  }
+  if(k==="rep"||k==="tipo"){
+    const prevAuto=recAuto(rigaOld.tipo,rigaOld.rep,rigaOld.esercizio), rc=cv(tr,"recupero");
+    if(!rc.value.trim()||rc.value===prevAuto)rc.value=recAuto(cv(tr,"tipo").value,cv(tr,"rep").value,cv(tr,"esercizio").value);
+  }
+  await salvaRiga(tr);
+}
 function leggi(tr){
   const o={blocco:BLOCCO,id:tr.dataset.id==="new"?null:tr.dataset.id,carichi:{},note:{}};
-  tr.querySelectorAll("input").forEach(i=>{
+  tr.querySelectorAll("input,select").forEach(i=>{
     if(i.dataset.k==="bloccato")o.bloccato=i.checked;
     else if(i.dataset.k)o[i.dataset.k]=i.value;
     else if(i.dataset.c){if(i.value!=="")o.carichi[i.dataset.c]=i.value}
@@ -323,23 +405,26 @@ function leggi(tr){
 async function salvaRiga(tr){
   tr.classList.add("sal");
   try{
-    const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:leggi(tr)});
+    const o=leggi(tr);
+    const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:o});
     if(!j.ok){toast(j.errore);return}
-    toast("Salvato ✔");
-    if(tr.dataset.id==="new"||true){await apri(CUR,BLOCCO)}
+    const r=DATI.righe.find(x=>String(x.id)===String(tr.dataset.id));
+    if(r)Object.assign(r,o,{id:r.id});
+    tr.classList.remove("sal"); toast("Salvato ✔"); statistiche();
   }catch(e){toast("Errore di salvataggio")}
 }
 async function nuovaRiga(){
-  const R=DATI.righe.filter(r=>r.blocco===BLOCCO), ul=R[R.length-1]||{};
-  const g=ul.giorno||"Giorno A", ord=R.filter(r=>r.giorno===g).length+1;
-  const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:{blocco:BLOCCO,giorno:g,ordine:ord,esercizio:"",serie:ul.serie||"",rep:ul.rep||"",tipo:ul.tipo||"",recupero:ul.recupero||""}});
+  const R=righeBlocco(), ul=R[R.length-1]||{};
+  const g=ul.giorno||"Giorno A", ord=prossimoOrdine(g,null);
+  const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:{blocco:BLOCCO,giorno:g,ordine:ord,esercizio:"",serie:ul.serie||"",rep:ul.rep||"",tipo:ul.tipo||"pesi",recupero:ul.recupero||""}});
   if(!j.ok){toast(j.errore);return}
   await apri(CUR,BLOCCO);
-  const trs=document.querySelectorAll("#tab tr[data-id]"); const last=trs[trs.length-1];
+  const trs=document.querySelectorAll("#tab tr[data-id]"); let last=null,mx=-1;
+  trs.forEach(t=>{if(+t.dataset.id>mx){mx=+t.dataset.id;last=t}});
   if(last){last.scrollIntoView({block:"center"});const e=last.querySelector('[data-k="esercizio"]');if(e)e.focus()}
 }
 async function duplica(tr){
-  const o=leggi(tr); o.id=null; o.ordine=(parseInt(o.ordine)||0)+1;
+  const o=leggi(tr); o.id=null; o.ordine=prossimoOrdine(o.giorno,null);
   const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:o});
   if(!j.ok){toast(j.errore);return} toast("Riga duplicata ✔"); apri(CUR,BLOCCO);
 }
@@ -389,8 +474,13 @@ $("inc-ok").onclick=async()=>{
 };
 async function elimina(tr){
   if(!confirm("Eliminare questo esercizio?"))return;
+  const rg=DATI.righe.find(r=>String(r.id)===tr.dataset.id)||{};
   const j=await rpc("gc_t_riga_elimina",{p_cod:CODE,p_cl:CUR,p_id:+tr.dataset.id});
   if(!j.ok){toast(j.errore);return}
+  DATI.righe=DATI.righe.filter(r=>String(r.id)!==tr.dataset.id);
+  // rinumera i rimasti dello stesso giorno: 1,2,3...
+  const resto=DATI.righe.filter(r=>r.blocco===BLOCCO&&r.giorno===rg.giorno).sort((a,b)=>(num(a.ordine)||0)-(num(b.ordine)||0));
+  for(let i=0;i<resto.length;i++){ if(String(num(resto[i].ordine))!==String(i+1)){ resto[i].ordine=String(i+1); await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:{...resto[i],blocco:BLOCCO}}); } }
   apri(CUR,BLOCCO);
 }
 </script>
