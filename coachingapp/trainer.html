@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Dashboard trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--nero:#111;--rosso:#E31E24;--grigio:#F5F5F5;--bordo:#E5E5E5;--testo2:#6B6B6B;--ok:#1b7a3a}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--grigio);color:var(--nero)}
+header{background:var(--nero);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{font:400 28px 'Bebas Neue',sans-serif;letter-spacing:1px;margin:0}
+header h1 span{color:var(--rosso)}
+main{padding:16px 20px;max-width:100%}
+.box{background:#fff;border:1px solid var(--bordo);border-radius:12px;padding:14px;margin-bottom:14px}
+input,select{font:inherit;padding:9px 11px;border:1px solid #ccc;border-radius:8px;background:#fff}
+button{font:inherit;font-weight:600;padding:9px 14px;border:0;border-radius:8px;background:var(--nero);color:#fff;cursor:pointer}
+button.r{background:var(--rosso)} button.l{background:#fff;color:var(--nero);border:1px solid #ccc}
+#login{max-width:340px;margin:80px auto;text-align:center}
+#login input{width:100%;margin:12px 0}
+#cerca{width:100%;max-width:420px}
+#elenco{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.cl{padding:8px 12px;border-radius:20px;background:#fff;border:1px solid #ccc;cursor:pointer;font-weight:600}
+.cl.on{background:var(--nero);color:#fff;border-color:var(--nero)}
+#tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
+.tab{padding:9px 14px;border-radius:8px;background:#fff;border:1px solid #ccc;cursor:pointer;font-weight:600}
+.tab.on{background:var(--rosso);border-color:var(--rosso);color:#fff}
+.tab small{font-weight:500;margin-left:6px}
+.badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:12px;font-weight:700}
+.b-ok{background:#e3f4e8;color:var(--ok)} .b-in{background:#FFEBEC;color:var(--rosso)} .b-fo{background:#fff3cd;color:#8a6d00}
+.scroll{overflow:auto;max-height:70vh;border:1px solid var(--bordo);border-radius:10px;background:#fff}
+table{border-collapse:collapse;font-size:13px;min-width:100%}
+th{position:sticky;top:0;background:var(--nero);color:#fff;padding:8px;text-align:left;white-space:nowrap;z-index:1}
+td{border-bottom:1px solid var(--bordo);padding:2px}
+td input{border:1px solid transparent;border-radius:4px;padding:6px;width:100%;min-width:60px;background:transparent}
+td input:focus{border-color:var(--rosso);background:#fff}
+td input[readonly]{color:#555}
+.ro td{background:#fafafa}
+.sal{background:#fff7d6!important}
+.w60{min-width:60px}.w120{min-width:130px}.w200{min-width:200px}
+#msg{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--nero);color:#fff;padding:10px 16px;border-radius:8px;display:none}
+.riga-g td{background:#eee;font-weight:700;padding:6px 8px}
+</style>
+</head>
+<body>
+<div id="login" class="box">
+  <h1 style="font:400 34px 'Bebas Neue';margin:0">DASHBOARD <span style="color:var(--rosso)">TRAINER</span></h1>
+  <input id="cod" type="password" placeholder="Codice trainer" autocomplete="off">
+  <button class="r" id="entra" style="width:100%">Entra</button>
+  <div id="errL" style="color:var(--rosso);margin-top:8px"></div>
+</div>
+
+<div id="app" style="display:none">
+<header><h1>DASHBOARD <span>TRAINER</span></h1><button class="l" id="esci" style="margin-left:auto">Esci</button></header>
+<main>
+  <div class="box">
+    <input id="cerca" placeholder="Cerca cliente per nome o codice…" autocomplete="off">
+    <div id="elenco"></div>
+  </div>
+  <div id="scheda" style="display:none">
+    <div class="box" id="testa" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"></div>
+    <div id="tabs"></div>
+    <div class="box" id="barra" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
+    <div class="scroll"><table id="tab"></table></div>
+  </div>
+</main>
+</div>
+<div id="msg"></div>
+
+<script src="config.js"></script>
+<script>
+let CODE="", CLIENTI=[], CUR=null, DATI=null, BLOCCO=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+function toast(t){const m=$("msg");m.textContent=t;m.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>m.style.display="none",2500)}
+async function rpc(fn,args){
+  const r=await fetch(SUPABASE_URL+"/rest/v1/rpc/"+fn,{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY,"Content-Type":"application/json"},body:JSON.stringify(args)});
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function entra(){
+  const c=$("cod").value.trim(); $("errL").textContent="";
+  try{
+    const j=await rpc("gc_t_clienti",{p_cod:c});
+    if(!j.ok){$("errL").textContent="Codice non valido";return}
+    CODE=c; CLIENTI=j.clienti; try{sessionStorage.setItem("gt_c",c)}catch(e){}
+    $("login").style.display="none";$("app").style.display="block";disegnaElenco();
+  }catch(e){$("errL").textContent="Errore di connessione"}
+}
+$("entra").onclick=entra; $("cod").onkeydown=e=>{if(e.key==="Enter")entra()};
+$("esci").onclick=()=>{try{sessionStorage.removeItem("gt_c")}catch(e){};location.reload()};
+try{const s=sessionStorage.getItem("gt_c");if(s){$("cod").value=s;entra()}}catch(e){}
+
+function disegnaElenco(){
+  const q=$("cerca").value.toLowerCase().trim();
+  const l=CLIENTI.filter(c=>!q||c.nome.toLowerCase().includes(q)||c.codice.toLowerCase().includes(q));
+  $("elenco").innerHTML=l.map(c=>`<div class="cl ${CUR===c.codice?"on":""}" data-c="${esc(c.codice)}">${esc(c.nome)}</div>`).join("")||"<i>Nessun cliente</i>";
+  document.querySelectorAll(".cl").forEach(e=>e.onclick=()=>apri(e.dataset.c));
+}
+$("cerca").oninput=disegnaElenco;
+$("cerca").onkeydown=e=>{if(e.key==="Enter"){const x=document.querySelector(".cl");if(x)x.click()}};
+
+async function apri(cod,blocco){
+  CUR=cod; disegnaElenco();
+  const j=await rpc("gc_t_scheda",{p_cod:CODE,p_cl:cod});
+  if(!j.ok){toast(j.errore);return}
+  DATI=j; $("scheda").style.display="block";
+  const bl=[...new Set(j.righe.map(r=>r.blocco))].sort((a,b)=>a-b);
+  BLOCCO=blocco&&bl.includes(blocco)?blocco:(bl[bl.length-1]||1);
+  disegna();
+}
+const done=b=>!!(DATI.completati&&DATI.completati[b]);
+function editabile(){return DATI.cliente.fonte==="supabase"&&!done(BLOCCO)}
+function disegna(){
+  const c=DATI.cliente, fo=c.fonte==="supabase";
+  $("testa").innerHTML=`<b style="font-size:18px">${esc(c.nome)}</b><span>Codice ${esc(c.codice)}</span>
+   <span class="badge ${fo?"b-ok":"b-fo"}">${fo?"Modifica da dashboard attiva":"Scheda ancora gestita dal foglio (sola lettura)"}</span>
+   <button class="${fo?"l":"r"}" id="passa" style="margin-left:auto">${fo?"Torna al foglio":"Attiva modifica da dashboard"}</button>`;
+  $("passa").onclick=async()=>{
+    if(!confirm(fo?"Tornare a gestire questo cliente dal foglio Google?":"Da ora la scheda di questo cliente si modifica SOLO da qui. Procedere?"))return;
+    const j=await rpc("gc_t_passa",{p_cod:CODE,p_cl:c.codice,p_fonte:fo?"foglio":"supabase"});
+    if(j.ok){const x=CLIENTI.find(z=>z.codice===c.codice);x.fonte=fo?"foglio":"supabase";apri(c.codice,BLOCCO)}else toast(j.errore)
+  };
+  const bl=[...new Set(DATI.righe.map(r=>r.blocco))].sort((a,b)=>a-b);
+  $("tabs").innerHTML=bl.map(b=>`<div class="tab ${b===BLOCCO?"on":""}" data-b="${b}">Blocco ${b}<small>${done(b)?"✔ Completato":"In corso"}</small></div>`).join("");
+  document.querySelectorAll(".tab").forEach(e=>e.onclick=()=>{BLOCCO=+e.dataset.b;disegna()});
+  const ed=editabile();
+  $("barra").innerHTML=`<span class="badge ${done(BLOCCO)?"b-ok":"b-in"}">${done(BLOCCO)?"Blocco completato · sola lettura":"Blocco in corso"}</span>`+
+    (ed?`<button id="nuova" class="r">+ Aggiungi esercizio</button><span style="color:var(--testo2);font-size:13px">Le modifiche si salvano da sole quando esci dalla cella.</span>`:"");
+  if(ed)$("nuova").onclick=nuovaRiga;
+  disegnaTab();
+}
+function nSett(){let n=3;DATI.righe.forEach(r=>{Object.keys(r.carichi||{}).concat(Object.keys(r.note||{})).forEach(k=>{if(+k>n)n=+k})});return n}
+function disegnaTab(){
+  const ed=editabile(), N=nSett();
+  const camp=[["giorno","Giorno","w120"],["ordine","Ordine","w60"],["gruppo","Gruppo muscolare","w120"],["esercizio","Esercizio","w200"],["variante","Variante","w120"],["serie","Serie","w60"],["rep","Rep","w60"],["tipo","Tipo","w120"],["passo","Passo","w60"],["recupero","Recupero","w60"],["video","Video","w200"]];
+  let h="<tr>"+camp.map(x=>`<th>${x[1]}</th>`).join("")+"<th>Bloccato</th>";
+  for(let i=1;i<=N;i++)h+=`<th>Carico ${i}</th>`;
+  for(let i=1;i<=N;i++)h+=`<th>Note ${i}</th>`;
+  h+=(ed?"<th></th>":"")+"</tr>";
+  const righe=DATI.righe.filter(r=>r.blocco===BLOCCO);
+  righe.forEach(r=>{
+    h+=`<tr data-id="${r.id}" class="${ed?"":"ro"}">`;
+    camp.forEach(x=>h+=`<td><input data-k="${x[0]}" class="${x[2]}" value="${esc(r[x[0]])}" ${ed?"":"readonly"}></td>`);
+    h+=`<td style="text-align:center"><input type="checkbox" data-k="bloccato" ${r.bloccato?"checked":""} ${ed?"":"disabled"} style="min-width:0;width:auto"></td>`;
+    for(let i=1;i<=N;i++)h+=`<td><input data-c="${i}" value="${esc((r.carichi||{})[i])}" ${ed?"":"readonly"}></td>`;
+    for(let i=1;i<=N;i++)h+=`<td><input data-n="${i}" value="${esc((r.note||{})[i])}" ${ed?"":"readonly"}></td>`;
+    if(ed)h+=`<td><button class="l" data-del="1">✕</button></td>`;
+    h+="</tr>";
+  });
+  $("tab").innerHTML=h||"";
+  if(!righe.length)$("tab").innerHTML+=`<tr><td colspan="30" style="padding:16px">Nessun esercizio in questo blocco.</td></tr>`;
+  if(!ed)return;
+  document.querySelectorAll("#tab tr[data-id]").forEach(tr=>{
+    tr.querySelectorAll("input").forEach(i=>i.onchange=()=>salvaRiga(tr));
+    const d=tr.querySelector("[data-del]"); if(d)d.onclick=()=>elimina(tr);
+  });
+}
+function leggi(tr){
+  const o={blocco:BLOCCO,id:tr.dataset.id==="new"?null:tr.dataset.id,carichi:{},note:{}};
+  tr.querySelectorAll("input").forEach(i=>{
+    if(i.dataset.k==="bloccato")o.bloccato=i.checked;
+    else if(i.dataset.k)o[i.dataset.k]=i.value;
+    else if(i.dataset.c){if(i.value!=="")o.carichi[i.dataset.c]=i.value}
+    else if(i.dataset.n){if(i.value!=="")o.note[i.dataset.n]=i.value}
+  });
+  return o;
+}
+async function salvaRiga(tr){
+  tr.classList.add("sal");
+  try{
+    const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:leggi(tr)});
+    if(!j.ok){toast(j.errore);return}
+    toast("Salvato ✔");
+    if(tr.dataset.id==="new"||true){await apri(CUR,BLOCCO)}
+  }catch(e){toast("Errore di salvataggio")}
+}
+async function nuovaRiga(){
+  const g=prompt("Giorno (es. Giorno A):",(DATI.righe.filter(r=>r.blocco===BLOCCO).slice(-1)[0]||{}).giorno||"Giorno A");
+  if(!g)return;
+  const e=prompt("Nome esercizio:"); if(!e)return;
+  const ord=DATI.righe.filter(r=>r.blocco===BLOCCO&&r.giorno===g).length+1;
+  const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:{blocco:BLOCCO,giorno:g,ordine:ord,esercizio:e}});
+  if(!j.ok){toast(j.errore);return}
+  apri(CUR,BLOCCO);
+}
+async function elimina(tr){
+  if(!confirm("Eliminare questo esercizio?"))return;
+  const j=await rpc("gc_t_riga_elimina",{p_cod:CODE,p_cl:CUR,p_id:+tr.dataset.id});
+  if(!j.ok){toast(j.errore);return}
+  apri(CUR,BLOCCO);
+}
+</script>
+</body>
+</html>
