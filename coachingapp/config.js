@@ -15,7 +15,9 @@ const CLIENTI_CSV_URL = "https://docs.google.com/spreadsheets/d/1M-6QGcdYz61884Q
 
 // Link dell'App web (Google Apps Script) che riceve kg, rep, commenti
 // e le modifiche alla scheda, scrivendoli nel tab "Risultati"
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzuFR3xaRCGpcF_JNSCJ2afkp2DGSEw4jdL8fWUVC2HvCrP0RiEs1-fA27ig7K-aP3MaQ/exec";
+// Prima: https://script.google.com/macros/s/AKfycbzuFR3xaRCGpcF_JNSCJ2afkp2DGSEw4jdL8fWUVC2HvCrP0RiEs1-fA27ig7K-aP3MaQ/exec
+// Ora i dati passano da Supabase, che inoltra al foglio i clienti non ancora migrati.
+const APPS_SCRIPT_URL = "https://ipereqxfukghczjynpnu.supabase.co/functions/v1/ricevi";
 
 // Elenco allenamenti funzionali (tab "Funzionale" del foglio).
 // Tab "Funzionale" collegato.
