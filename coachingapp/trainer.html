@@ -21,6 +21,9 @@ button.r{background:var(--rosso)} button.l{background:#fff;color:var(--nero);bor
 #login{max-width:340px;margin:80px auto;text-align:center}
 #login input{width:100%;margin:12px 0}
 #cerca{width:100%;max-width:420px}
+#nav{display:flex;gap:6px;margin-left:24px}
+#nav button{background:transparent;color:#bbb;border:1px solid #444;padding:7px 14px}
+#nav button.on{background:var(--rosso);color:#fff;border-color:var(--rosso)}
 #cercabox{position:relative;max-width:420px}
 #elenco{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #ccc;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:4;overflow:hidden;display:none}
 .cl{padding:10px 14px;cursor:pointer;font-weight:600;border-bottom:1px solid var(--bordo)}
@@ -38,6 +41,7 @@ th{position:sticky;top:0;background:var(--nero);color:#fff;padding:6px 4px;text-
 td{border-bottom:1px solid var(--bordo);padding:0 1px}
 td input{border:1px solid transparent;border-radius:4px;padding:4px 4px;width:100%;min-width:0;background:transparent;font-size:12px}
 td select{width:100%;min-width:0;padding:4px 2px;font-size:12px;border:1px solid transparent;border-radius:4px;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;color:inherit}
+input.senza{background:#FFF8E1}
 td select:hover{background:#f3f3f3}
 td select:focus{border-color:var(--rosso);background:#fff;outline:none}
 td input:focus{border-color:var(--rosso);background:#fff}
@@ -77,8 +81,10 @@ td input[readonly]{color:#555}
 </div>
 
 <div id="app" style="display:none">
-<header><h1>DASHBOARD <span>GM COACHING</span></h1><button class="l" id="esci" style="margin-left:auto">Esci</button></header>
-<main>
+<header><h1>DASHBOARD <span>GM COACHING</span></h1>
+  <nav id="nav"><button data-v="clienti" class="on">Clienti</button><button data-v="archivio">Archivio esercizi</button></nav>
+  <button class="l" id="esci" style="margin-left:auto">Esci</button></header>
+<main id="vista-clienti">
   <div class="box">
     <div id="cercabox"><input id="cerca" placeholder="Cerca un cliente per nome o codice…" autocomplete="off">
     <div id="elenco"></div></div>
@@ -90,6 +96,15 @@ td input[readonly]{color:#555}
     <div class="box" id="barra" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
     <div class="scroll"><table id="tab"></table></div>
   </div>
+</main>
+<main id="vista-archivio" style="display:none">
+  <div class="box" id="a-testa" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"></div>
+  <div class="box" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <input id="a-cerca" placeholder="Cerca un esercizio…" autocomplete="off" style="width:280px">
+    <label><input type="checkbox" id="a-senza"> Solo senza video</label>
+    <span id="a-conta" style="color:var(--testo2);font-size:13px"></span>
+  </div>
+  <div class="scroll" style="max-height:74vh"><table id="a-tab"></table></div>
 </main>
 </div>
 <div id="inc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:5">
@@ -199,6 +214,74 @@ function disegna(){
   if(fo2)$("nblocco").onclick=nuovoBlocco;
   disegnaTab();
 }
+
+// ---------- ARCHIVIO ESERCIZI ----------
+let ARC=null;
+document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x===b));
+  $("vista-clienti").style.display=b.dataset.v==="clienti"?"block":"none";
+  $("vista-archivio").style.display=b.dataset.v==="archivio"?"block":"none";
+  if(b.dataset.v==="archivio")caricaArchivio();
+});
+async function caricaArchivio(){
+  const j=await rpc("gc_t_archivio",{p_cod:CODE});
+  if(!j.ok){toast(j.errore);return}
+  ARC=j; disegnaArchivio();
+}
+function arcEd(){return ARC&&ARC.fonte==="supabase"}
+function disegnaArchivio(){
+  const fo=arcEd();
+  $("a-testa").innerHTML=`<b style="font-size:18px">Archivio esercizi</b>
+   <span class="badge ${fo?"b-ok":"b-fo"}">${fo?"Modifica da dashboard attiva":"Archivio ancora gestito dal foglio (sola lettura)"}</span>
+   <button class="${fo?"l":"r"}" id="a-passa" style="margin-left:auto">${fo?"Torna al foglio":"Attiva modifica da dashboard"}</button>`;
+  $("a-passa").onclick=async()=>{
+    if(!confirm(fo?"Tornare a gestire l'archivio dal foglio Google?":"Da ora l'archivio esercizi si modifica SOLO da qui (il foglio si aggiorna da solo). Procedere?"))return;
+    const j=await rpc("gc_t_archivio_passa",{p_cod:CODE,p_fonte:fo?"foglio":"supabase"});
+    if(j.ok)caricaArchivio();else toast(j.errore);
+  };
+  disegnaTabArchivio();
+}
+function disegnaTabArchivio(){
+  const q=$("a-cerca").value.toLowerCase().trim(), sv=$("a-senza").checked, ed=arcEd();
+  const tutti=ARC.esercizi, lista=tutti.filter(e=>(!q||e.esercizio.toLowerCase().includes(q))&&(!sv||!e.video));
+  $("a-conta").textContent=tutti.filter(e=>e.video).length+" su "+tutti.length+" con video · "+lista.length+" mostrati";
+  const cols=[["esercizio","Esercizio",230],["gruppo","Gruppo",100],["tipo","Tipo",70],["categoria","Categoria",100],["video","Link video",260],["descrizione","Descrizione",260],["alternative","Alternative",160],["immagine1","Immagine 1",140],["immagine2","Immagine 2",140]];
+  let h=`<colgroup>${cols.map(c=>`<col style="width:${c[2]}px">`).join("")}</colgroup><tr>${cols.map(c=>`<th>${c[1]}</th>`).join("")}</tr>`;
+  const riga=(e,nuova)=>{
+    let r=`<tr data-n="${nuova?"":esc(e.esercizio)}" class="${ed?"":"ro"}">`;
+    cols.forEach(([k])=>{
+      const v=e[k]||"";
+      if(k==="esercizio")r+=`<td><input data-k="esercizio" value="${esc(v)}" ${ed&&nuova?'placeholder="Nuovo esercizio…"':"readonly"}></td>`;
+      else if(k==="tipo")r+=`<td><select data-k="tipo" ${ed?"":"disabled"}><option value="pesi" ${v!=="corpo libero"?"selected":""}>pesi</option><option value="corpo libero" ${v==="corpo libero"?"selected":""}>c. libero</option></select></td>`;
+      else if(k==="categoria")r+=`<td><select data-k="categoria" ${ed?"":"disabled"}>${["fondamentale","complementare","isolamento"].map(o=>`<option ${o===(v||"complementare")?"selected":""}>${o}</option>`).join("")}</select></td>`;
+      else if(k==="gruppo")r+=`<td><input data-k="gruppo" list="dl-gr" value="${esc(v)}" ${ed?"":"readonly"}></td>`;
+      else r+=`<td><input data-k="${k}" value="${esc(v)}" ${ed?"":"readonly"} ${k==="video"&&!v&&ed&&!nuova?'class="senza"':""}></td>`;
+    });
+    return r+"</tr>";
+  };
+  lista.forEach(e=>h+=riga(e,false));
+  if(ed)h+=riga({},true);
+  $("a-tab").style.width=cols.reduce((a,c)=>a+c[2],0)+"px";
+  $("a-tab").innerHTML=h;
+  if(!ed)return;
+  document.querySelectorAll("#a-tab tr[data-n]").forEach(tr=>tr.querySelectorAll("input,select").forEach(i=>i.onchange=()=>salvaArc(tr)));
+}
+async function salvaArc(tr){
+  const o={}; tr.querySelectorAll("input,select").forEach(i=>o[i.dataset.k]=i.value.trim());
+  if(!o.esercizio){return}
+  const nuovo=!tr.dataset.n;
+  if(nuovo&&ARC.esercizi.some(e=>e.esercizio.toLowerCase()===o.esercizio.toLowerCase())){toast("Esiste già un esercizio con questo nome");return}
+  const j=await rpc("gc_t_archivio_salva",{p_cod:CODE,p:o});
+  if(!j.ok){toast(j.errore);return}
+  toast("Salvato ✔");
+  const i=ARC.esercizi.findIndex(e=>e.esercizio===o.esercizio);
+  if(i>=0)ARC.esercizi[i]=o;else ARC.esercizi.push(o);
+  ARC.esercizi.sort((a,b)=>a.esercizio.toLowerCase().localeCompare(b.esercizio.toLowerCase()));
+  caricaCatalogo();
+  if(nuovo){disegnaTabArchivio()} else {$("a-conta").textContent=ARC.esercizi.filter(e=>e.video).length+" su "+ARC.esercizi.length+" con video"}
+}
+$("a-cerca").oninput=()=>ARC&&disegnaTabArchivio();
+$("a-senza").onchange=()=>ARC&&disegnaTabArchivio();
 
 // ---------- statistiche del blocco ----------
 const num=v=>{const m=String(v==null?"":v).replace(",",".").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):NaN};
