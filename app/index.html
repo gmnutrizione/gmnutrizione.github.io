@@ -4462,7 +4462,153 @@
   function chiudiCfStampa(){
     document.getElementById('cf-stampa-overlay').style.display = 'none';
   }
+
+  /* ================= PDF SU iPHONE / iPAD =================
+     Su iPhone e iPad la finestra di stampa del browser non è affidabile (soprattutto nell'app
+     aggiunta alla Home): qui i tre documenti — Piano Generico, Piano Settimanale e Confronto
+     controlli — vengono invece disegnati come immagini, impaginati in un vero file PDF e offerti
+     con "Condividi / Salva" (Salva su File, WhatsApp, Mail...). Il grafico dei documenti è lo stesso
+     della stampa da computer: le regole @media print vengono copiate in una versione "a schermo"
+     limitata al contenitore .pdfcap (vedi pdfPreparaStili_). Su computer non cambia nulla. */
+  function pdfSuTelefono_(){
+    const ua = navigator.userAgent || '';
+    return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  }
+  const PDF_LIB_URL = {
+    html2canvas: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    jspdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  };
+  function pdfCaricaScript_(src){
+    return new Promise((ok, ko) => {
+      const el = document.createElement('script');
+      el.src = src; el.onload = () => ok(); el.onerror = () => ko(new Error('Connessione assente o libreria non raggiungibile'));
+      document.head.appendChild(el);
+    });
+  }
+  async function pdfCaricaLibs_(){
+    if(!window.html2canvas) await pdfCaricaScript_(PDF_LIB_URL.html2canvas);
+    if(!(window.jspdf && window.jspdf.jsPDF)) await pdfCaricaScript_(PDF_LIB_URL.jspdf);
+  }
+  // Copia le regole di stampa dei tre documenti (@media print) in uno stile normale valido solo
+  // dentro .pdfcap, così il disegno del PDF segue sempre il CSS di stampa del computer.
+  function pdfPreparaStili_(){
+    if(document.getElementById('pdfcap-css')) return;
+    const marker = /\.pg-doc|\.cfpdf|\.ptpdf/;
+    let css = '';
+    const aggiungi = (r) => {
+      const sel = r.selectorText.split(',').map(x => x.trim()).filter(x => marker.test(x))
+        .map(x => '.pdfcap ' + x.replace(/^body\.printing-(?:cf|pt|pg)\s*/, ''));
+      if(sel.length) css += sel.join(',') + '{' + r.style.cssText + '}\n';
+    };
+    Array.from(document.styleSheets).forEach(sh => {
+      let rules; try{ rules = sh.cssRules; } catch(e){ return; }
+      Array.from(rules || []).forEach(r => {
+        if(r.constructor && r.constructor.name === 'CSSMediaRule' && /print/.test(r.media.mediaText) && !/screen/.test(r.media.mediaText)){
+          Array.from(r.cssRules).forEach(rr => { if(rr.selectorText) aggiungi(rr); });
+        }
+      });
+    });
+    css += '.pdfcap .ptpdf-doc, .pdfcap .cfpdf-doc{ box-shadow:none !important; border-radius:0 !important; margin:0 !important; }\n';
+    css += '.pdfcap .pg-doc{ margin:0 !important; }\n';
+    const st = document.createElement('style');
+    st.id = 'pdfcap-css'; st.textContent = css;
+    document.head.appendChild(st);
+  }
+  function pdfMessaggioAttesa_(testo){
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;inset:0;z-index:100000;background:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font:600 16px/1.4 -apple-system,system-ui,sans-serif;color:#17221D;';
+    el.textContent = testo;
+    document.body.appendChild(el);
+    return el;
+  }
+  function pdfMostraPronto_(file){
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    ov.style.cssText = 'display:flex;z-index:100001;';
+    ov.innerHTML = '<div class="modal-card" style="max-width:360px;text-align:center;"><h3 style="margin:0 0 6px;">PDF pronto</h3><p style="margin:0 0 16px;font-size:13.5px;color:var(--ink-soft);"></p>'
+      + '<div style="display:flex;flex-direction:column;gap:8px;"><button type="button" class="btn primary" data-a="condividi">Condividi / Salva</button><button type="button" class="btn ghost" data-a="apri">Apri</button><button type="button" class="btn ghost" data-a="chiudi">Chiudi</button></div></div>';
+    ov.querySelector('p').textContent = file.name;
+    const apri = () => {
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.download = file.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    };
+    ov.addEventListener('click', async (ev) => {
+      const a = ev.target && ev.target.getAttribute && ev.target.getAttribute('data-a');
+      if(a === 'chiudi' || ev.target === ov){ ov.remove(); return; }
+      if(a === 'apri'){ apri(); return; }
+      if(a === 'condividi'){
+        try{
+          if(navigator.canShare && navigator.canShare({ files:[file] })) await navigator.share({ files:[file], title:file.name });
+          else apri();
+        }catch(e){ if(!e || e.name !== 'AbortError') apri(); }
+      }
+    });
+    document.body.appendChild(ov);
+  }
+  // tipo: 'pg' (Piano Generico, A4 verticale, una immagine per pagina), 'cf' (Confronto controlli,
+  // A4 verticale, una pagina) oppure 'pt' (Piano Settimanale, A4 orizzontale, una pagina).
+  async function pdfDaHtml_(tipo, html, nomeFile){
+    const attesa = pdfMessaggioAttesa_('Sto creando il PDF…');
+    const cont = document.createElement('div');
+    const orizz = tipo === 'pt';
+    cont.className = 'pdfcap';
+    cont.style.cssText = 'position:absolute;left:0;top:0;z-index:-1;background:#fff;width:' + (orizz ? 273 : 186) + 'mm;';
+    try{
+      await pdfCaricaLibs_();
+      pdfPreparaStili_();
+      if(document.fonts && document.fonts.ready) await document.fonts.ready;
+      cont.innerHTML = html;
+      document.body.appendChild(cont);
+      window.scrollTo(0, 0);
+      await Promise.all(Array.from(cont.querySelectorAll('img')).map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; })));
+      await new Promise(r => setTimeout(r, 250));
+      const pagine = tipo === 'pg' ? Array.from((cont.querySelector('.pg-doc') || cont).children) : [cont.firstElementChild];
+      const pdf = new window.jspdf.jsPDF({ orientation: orizz ? 'landscape' : 'portrait', unit:'mm', format:'a4', compress:true });
+      const mx = 12, my = orizz ? 12 : 20, largMax = orizz ? 273 : 186, altMax = orizz ? 186 : 263;
+      let primo = true;
+      for(const el of pagine){
+        if(!el || !el.offsetHeight) continue;
+        const canvas = await window.html2canvas(el, { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false, windowWidth:1200, scrollX:0, scrollY:0 });
+        let w = largMax, h = canvas.height / canvas.width * w;
+        if(tipo !== 'pg' && h > altMax){ w = largMax * altMax / h; h = altMax; }
+        const x = mx + (largMax - w) / 2;
+        const pxPagina = Math.round(canvas.height * altMax / h);   // altezza (px) di una pagina intera
+        const nPag = tipo === 'pg' && h > altMax + 0.5 ? Math.ceil(canvas.height / pxPagina) : 1;
+        for(let k = 0; k < nPag; k++){
+          if(!primo) pdf.addPage();
+          primo = false;
+          if(nPag === 1){
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', x, my, w, h);
+          } else {
+            const parte = document.createElement('canvas');
+            const alt = Math.min(pxPagina, canvas.height - k * pxPagina);
+            parte.width = canvas.width; parte.height = alt;
+            const cx = parte.getContext('2d');
+            cx.fillStyle = '#fff'; cx.fillRect(0, 0, parte.width, parte.height);
+            cx.drawImage(canvas, 0, k * pxPagina, canvas.width, alt, 0, 0, canvas.width, alt);
+            pdf.addImage(parte.toDataURL('image/jpeg', 0.92), 'JPEG', x, my, w, alt / canvas.width * w);
+          }
+        }
+      }
+      if(primo) throw new Error('Il documento è vuoto');
+      const blob = pdf.output('blob');
+      const file = new File([blob], nomeFile.replace(/[\\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim() + '.pdf', { type:'application/pdf' });
+      attesa.remove();
+      pdfMostraPronto_(file);
+    } catch(err){
+      console.warn('Creazione PDF non riuscita:', err);
+      showToast('Non sono riuscito a creare il PDF: ' + ((err && err.message) || 'errore sconosciuto'));
+    } finally {
+      cont.remove();
+      attesa.remove();
+    }
+  }
+
   function cfAvviaStampa_(){
+    if(pdfSuTelefono_()){ pdfDaHtml_('cf', document.getElementById('cf-stampa-contenuto').innerHTML, cfNomeFile_()); return; }
     cpAssicuraOverlayInBody_('cf-stampa-overlay');
     document.body.classList.add('printing-cf');
     // Il nome proposto dal browser per il file PDF è il titolo della pagina: lo impostiamo a
@@ -5583,6 +5729,12 @@
   }
   function chiudiPtStampa(){ document.getElementById('pt-stampa-overlay').style.display = 'none'; }
   function ptAvviaStampa_(){
+    if(pdfSuTelefono_()){
+      const nomeP = ((currentPatientMeta && currentPatientMeta.Nome) || '').trim();
+      const oggi = new Date(), mese = oggi.toLocaleDateString('it-IT', { month:'long' });
+      pdfDaHtml_('pt', document.getElementById('pt-stampa-contenuto').innerHTML, [nomeP, 'Piano Settimanale', mese.charAt(0).toUpperCase() + mese.slice(1), oggi.getFullYear()].filter(Boolean).join(' '));
+      return;
+    }
     cpAssicuraOverlayInBody_('pt-stampa-overlay');
     document.body.classList.add('printing-pt');
     const nome = ((currentPatientMeta && currentPatientMeta.Nome) || '').replace(/[\\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -9446,6 +9598,12 @@
   // Entrambi vengono spostati come figli diretti di <body> alla prima stampa (vedi
   // cpAssicuraOverlayInBody_): è lì che il CSS di stampa li tiene visibili nascondendo il resto.
   function pgAvviaStampa_(elementoId){
+    if(pdfSuTelefono_()){
+      const nomeP = String((elementoId === 'p-piano-generico' ? (SESSION && SESSION.paziente && SESSION.paziente.Nome) : (currentPatientMeta && currentPatientMeta.Nome)) || '').trim();
+      const sorgente = document.getElementById(elementoId === 'p-piano-generico' ? 'p-piano-generico-contenuto' : 'pg-stampa-contenuto');
+      pdfDaHtml_('pg', sorgente ? sorgente.innerHTML : '', (nomeP ? nomeP + ' ' : '') + 'Piano Alimentare');
+      return;
+    }
     cpAssicuraOverlayInBody_(elementoId || 'pg-stampa-overlay');
     document.body.classList.add('printing-pg');
     // Nome file proposto dal browser per il PDF: "Nome Cognome Piano Alimentare" (nome del paziente).
