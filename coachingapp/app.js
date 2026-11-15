@@ -1633,3 +1633,12 @@ function inviaEvento(dati, diretto) {
     fetch(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(dati) }).catch(() => {});
   }
 }
+
+
+// Pulsante "Esci": dimentica il codice su questo telefono e torna alla schermata di inserimento codice.
+document.addEventListener("click", e => {
+  if (!e.target || e.target.id !== "btn-esci-cliente") return;
+  if (!confirm("Vuoi uscire e inserire un altro codice?")) return;
+  try { localStorage.removeItem("gm_sessione"); } catch (err) {}
+  location.reload();
+});
