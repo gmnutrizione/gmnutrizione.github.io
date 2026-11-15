@@ -99,6 +99,16 @@ td input[readonly]{color:#555}
     <div style="display:flex;gap:8px;margin-top:8px"><button class="r" id="cc-ok" style="flex:1">Salva</button><button class="l" id="cc-no">Annulla</button></div>
   </div>
 </div>
+<div id="inc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:5">
+  <div class="box" style="width:min(760px,94vw);margin:0">
+    <b style="font-size:17px">Incolla da Excel</b>
+    <div class="nota" style="margin:6px 0 8px">Copia le celle dal foglio e incollale qui. Se la prima riga ha le intestazioni (Giorno, Esercizio, Serie…) le uso per riconoscere le colonne; altrimenti l'ordine è: Giorno, Ordine, Gruppo muscolare, Esercizio, Variante, Serie, Rep, Tipo, Passo, Recupero, Bloccato, Video, Carico 1, Carico 2…</div>
+    <textarea id="inc-t" style="width:100%;height:260px;font:12px monospace;padding:8px;border:1px solid #ccc;border-radius:8px" placeholder="Incolla qui…"></textarea>
+    <label style="display:block;margin-top:8px"><input type="checkbox" id="inc-s"> Sostituisci tutte le righe del blocco (altrimenti aggiungo in fondo)</label>
+    <div id="inc-e" style="color:var(--rosso);margin-top:6px;min-height:18px"></div>
+    <div style="display:flex;gap:8px;margin-top:6px"><button class="r" id="inc-ok">Importa</button><button class="l" id="inc-no">Annulla</button></div>
+  </div>
+</div>
 <div id="msg"></div>
 
 <script src="config.js"></script>
@@ -187,9 +197,12 @@ function disegna(){
   document.querySelectorAll(".tab").forEach(e=>e.onclick=()=>{BLOCCO=+e.dataset.b;disegna()});
   statistiche();
   const ed=editabile();
+  const fo2=DATI.cliente.fonte==="supabase";
   $("barra").innerHTML=`<span class="badge ${done(BLOCCO)?"b-ok":"b-in"}">${done(BLOCCO)?"Blocco completato · sola lettura":"Blocco in corso"}</span>`+
-    (ed?`<button id="nuova" class="r">+ Aggiungi esercizio</button><span style="color:var(--testo2);font-size:13px">Le modifiche si salvano da sole quando esci dalla cella.</span>`:"");
-  if(ed)$("nuova").onclick=nuovaRiga;
+    (ed?`<button id="nuova" class="r">+ Aggiungi esercizio</button><button id="incolla" class="l">Incolla da Excel</button><span style="color:var(--testo2);font-size:13px">Le modifiche si salvano da sole quando esci dalla cella.</span>`:"")+
+    (fo2?`<button id="nblocco" class="l" style="margin-left:auto">+ Nuovo blocco</button>`:"");
+  if(ed){$("nuova").onclick=nuovaRiga;$("incolla").onclick=apriIncolla}
+  if(fo2)$("nblocco").onclick=nuovoBlocco;
   disegnaTab();
 }
 
@@ -270,7 +283,7 @@ function nSett(){let n=3;DATI.righe.forEach(r=>{Object.keys(r.carichi||{}).conca
 function disegnaTab(){
   const ed=editabile(), N=Math.max(nSett(),DATI.cliente.n_sedute||0);
   const camp=[["giorno","Giorno",74],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",160],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",58],["passo","Passo",42],["recupero","Recupero",58],["video","Video",54]];
-  const WB=52,WC=62,WN=48,WD=34;
+  const WB=52,WC=62,WN=48,WD=62;
   const tot=camp.reduce((a,x)=>a+x[2],0)+WB+N*WC+N*WN+(ed?WD:0);
   let h=`<colgroup>${camp.map(x=>`<col style="width:${x[2]}px">`).join("")}<col style="width:${WB}px">`+Array.from({length:N},()=>`<col style="width:${WC}px">`).join("")+Array.from({length:N},()=>`<col style="width:${WN}px">`).join("")+(ed?`<col style="width:${WD}px">`:"")+"</colgroup>";
   h+="<tr>"+camp.map(x=>`<th>${x[1]}</th>`).join("")+"<th>Bloccato</th>";
@@ -285,7 +298,7 @@ function disegnaTab(){
     h+=`<td style="text-align:center"><input type="checkbox" data-k="bloccato" ${r.bloccato?"checked":""} ${ed?"":"disabled"} style="width:auto;padding:0"></td>`;
     for(let i=1;i<=N;i++)h+=`<td><input data-c="${i}" value="${esc((r.carichi||{})[i])}" ${ed?"":"readonly"}></td>`;
     for(let i=1;i<=N;i++)h+=`<td><input data-n="${i}" value="${esc((r.note||{})[i])}" ${ed?"":"readonly"}></td>`;
-    if(ed)h+=`<td><button class="l" data-del="1" style="padding:3px 7px">✕</button></td>`;
+    if(ed)h+=`<td style="white-space:nowrap"><button class="l" data-dup="1" title="Duplica" style="padding:3px 6px">⧉</button><button class="l" data-del="1" title="Elimina" style="padding:3px 6px">✕</button></td>`;
     h+="</tr>";
   });
   $("tab").innerHTML=h||"";
@@ -294,6 +307,7 @@ function disegnaTab(){
   document.querySelectorAll("#tab tr[data-id]").forEach(tr=>{
     tr.querySelectorAll("input").forEach(i=>i.onchange=()=>salvaRiga(tr));
     const d=tr.querySelector("[data-del]"); if(d)d.onclick=()=>elimina(tr);
+    const dp=tr.querySelector("[data-dup]"); if(dp)dp.onclick=()=>duplica(tr);
   });
 }
 function leggi(tr){
@@ -316,14 +330,63 @@ async function salvaRiga(tr){
   }catch(e){toast("Errore di salvataggio")}
 }
 async function nuovaRiga(){
-  const g=prompt("Giorno (es. Giorno A):",(DATI.righe.filter(r=>r.blocco===BLOCCO).slice(-1)[0]||{}).giorno||"Giorno A");
-  if(!g)return;
-  const e=prompt("Nome esercizio:"); if(!e)return;
-  const ord=DATI.righe.filter(r=>r.blocco===BLOCCO&&r.giorno===g).length+1;
-  const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:{blocco:BLOCCO,giorno:g,ordine:ord,esercizio:e}});
+  const R=DATI.righe.filter(r=>r.blocco===BLOCCO), ul=R[R.length-1]||{};
+  const g=ul.giorno||"Giorno A", ord=R.filter(r=>r.giorno===g).length+1;
+  const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:{blocco:BLOCCO,giorno:g,ordine:ord,esercizio:"",serie:ul.serie||"",rep:ul.rep||"",tipo:ul.tipo||"",recupero:ul.recupero||""}});
   if(!j.ok){toast(j.errore);return}
-  apri(CUR,BLOCCO);
+  await apri(CUR,BLOCCO);
+  const trs=document.querySelectorAll("#tab tr[data-id]"); const last=trs[trs.length-1];
+  if(last){last.scrollIntoView({block:"center"});const e=last.querySelector('[data-k="esercizio"]');if(e)e.focus()}
 }
+async function duplica(tr){
+  const o=leggi(tr); o.id=null; o.ordine=(parseInt(o.ordine)||0)+1;
+  const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:o});
+  if(!j.ok){toast(j.errore);return} toast("Riga duplicata ✔"); apri(CUR,BLOCCO);
+}
+async function nuovoBlocco(){
+  const bl=[...new Set(DATI.righe.map(r=>r.blocco))].sort((a,b)=>a-b), ult=bl[bl.length-1]||null;
+  const copia=ult?confirm("Creare il Blocco "+((ult||0)+1)+" copiando il Blocco "+ult+"?\n\nOK = copia degli esercizi (carichi azzerati tranne il primo)\nAnnulla = blocco vuoto"):false;
+  if(!confirm("Attenzione: creando un nuovo blocco, il Blocco "+ult+" diventa completato e in sola lettura. Procedere?"))return;
+  const j=await rpc("gc_t_blocco_crea",{p_cod:CODE,p_cl:CUR,p_da:copia?ult:null});
+  if(!j.ok){toast(j.errore);return} toast("Blocco "+j.blocco+" creato ✔"); apri(CUR,j.blocco);
+}
+// --- incolla da Excel ---
+function apriIncolla(){ $("inc-t").value="";$("inc-s").checked=false;$("inc-e").textContent="";$("inc").style.display="flex";$("inc-t").focus() }
+function parseIncolla(txt){
+  const N=Math.max(nSett(),DATI.cliente.n_sedute||0);
+  const righe=txt.replace(/\r/g,"").split("\n").filter(l=>l.trim()!=="").map(l=>l.split("\t"));
+  if(!righe.length)return [];
+  const norm=x=>String(x||"").trim().toLowerCase();
+  let cols=["giorno","ordine","gruppo","esercizio","variante","serie","rep","tipo","passo","recupero","bloccato","video"];
+  for(let i=1;i<=N;i++)cols.push("c"+i);
+  let start=0;
+  const h=righe[0].map(norm);
+  if(h.includes("esercizio")){
+    start=1;
+    cols=h.map(x=>{
+      if(x==="giorno")return"giorno"; if(x==="ordine")return"ordine"; if(x.startsWith("gruppo"))return"gruppo";
+      if(x==="esercizio")return"esercizio"; if(x==="variante")return"variante"; if(x==="serie")return"serie"; if(x==="rep")return"rep";
+      if(x==="tipo")return"tipo"; if(x==="passo")return"passo"; if(x==="recupero")return"recupero"; if(x==="bloccato")return"bloccato"; if(x==="video")return"video";
+      let m=x.match(/^carico\s*(\d+)/); if(m)return"c"+m[1]; m=x.match(/^nota\s*(\d+)/); if(m)return"n"+m[1]; return null});
+  }
+  return righe.slice(start).map(r=>{
+    const o={carichi:{},note:{}};
+    r.forEach((v,i)=>{const k=cols[i]; if(!k)return; v=String(v).trim();
+      if(k==="bloccato")o.bloccato=/^(si|sì|true|1|x)$/i.test(v);
+      else if(k[0]==="c"&&/^c\d+$/.test(k)){if(v!=="")o.carichi[k.slice(1)]=v}
+      else if(/^n\d+$/.test(k)){if(v!=="")o.note[k.slice(1)]=v}
+      else o[k]=v});
+    return o}).filter(o=>(o.esercizio||"").trim()!=="");
+}
+$("inc-no").onclick=()=>$("inc").style.display="none";
+$("inc-ok").onclick=async()=>{
+  const r=parseIncolla($("inc-t").value);
+  if(!r.length){$("inc-e").textContent="Non trovo righe con un esercizio. Copia dal foglio le celle (con o senza intestazioni).";return}
+  if($("inc-s").checked&&!confirm("Sostituire TUTTE le righe del Blocco "+BLOCCO+" con queste "+r.length+"?"))return;
+  const j=await rpc("gc_t_incolla",{p_cod:CODE,p_cl:CUR,p_blocco:BLOCCO,p_sostituisci:$("inc-s").checked,p_righe:r});
+  if(!j.ok){$("inc-e").textContent=j.errore;return}
+  $("inc").style.display="none"; toast(j.righe+" righe aggiunte ✔"); apri(CUR,BLOCCO);
+};
 async function elimina(tr){
   if(!confirm("Eliminare questo esercizio?"))return;
   const j=await rpc("gc_t_riga_elimina",{p_cod:CODE,p_cl:CUR,p_id:+tr.dataset.id});
