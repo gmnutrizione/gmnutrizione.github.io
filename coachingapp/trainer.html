@@ -450,12 +450,13 @@ async function applicaProg(tr,sel){
   const ext=Object.assign({},r.extra||{}), car=Object.assign({},r.carichi||{});
   const vecchia=PROG.find(x=>String(x.id)===String((r.extra||{}).ProgId));
   if(vecchia)(vecchia.settimane||[]).forEach(w=>{if(w.carico&&car[w.n]===w.carico)delete car[w.n]}); // toglie solo i carichi scritti dalla progressione
-  ["Progressione","ProgId","ProgSchema"].forEach(k=>delete ext[k]);
+  ["Progressione","ProgId","ProgSchema","Prog test"].forEach(k=>delete ext[k]);
   Object.keys(ext).filter(k=>/^Prog nota /.test(k)).forEach(k=>delete ext[k]); // le note personali (Note 1..N) non si toccano mai
   if(sel.value){
     const p=PROG.find(x=>String(x.id)===sel.value);
     if(!eFond(r.esercizio)){toast("La progressione vale solo per gli esercizi fondamentali");annulla();return}
     ext.Progressione=p.testo; ext.ProgId=String(p.id); ext.ProgSchema=p.schema||"";
+    const w1=(p.settimane||[]).find(w=>w.test); if(w1)ext["Prog test"]=w1.test;
     (p.settimane||[]).forEach(w=>{ext["Prog nota "+w.n]=w.nota; if(w.carico&&w.n<=CTX.N&&!String(car[w.n]||"").trim())car[w.n]=w.carico});
     cv(tr,"serie").value=p.serie; cv(tr,"rep").value=p.rep;
     cv(tr,"recupero").value=recAuto(cv(tr,"tipo").value,p.rep,cv(tr,"esercizio").value);

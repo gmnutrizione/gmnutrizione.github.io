@@ -1160,6 +1160,8 @@ function apriDettaglio(ex, giorno, gruppo) {
     giorno, gruppo, esercizio: nomeGrezzo,
     serie: parseInt(ex.Serie) || 1,
     ripetizioni: ex.Rep,
+    progTest: (ex["Prog test"] || "").trim(),
+    progNota1: (ex["Prog nota 1"] || "").trim(),
     recupero: parseRecuperoSecondi(ex.Recupero),
     tipo: (ex.Tipo || "pesi").toLowerCase(),
     caricoPrevisto,
@@ -1246,8 +1248,18 @@ function apriDettaglio(ex, giorno, gruppo) {
     if (progTxt) {
       const esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
       const notaProg = (ex["Prog nota " + currentSessione] || "").trim();
-      progBox.innerHTML = "<b>Progressione da seguire</b><br>" + esc(progTxt) +
-        (notaProg ? '<div class="prog-oggi"><b>Allenamento ' + currentSessione + '</b><br>' + esc(notaProg) + "</div>" : "");
+      const inTest = currentDettaglio.progTest && currentSessione === 1; // nel test il testo e' gia' mostrato in grande
+      progBox.innerHTML =
+        '<div class="prog-toggle"><span class="prog-title">Progressione da seguire</span><span class="chevron"></span></div>' +
+        '<div class="prog-body" style="display:none;">' + esc(progTxt) +
+        (notaProg && !inTest ? '<div class="prog-oggi"><b>Allenamento ' + currentSessione + '</b><br>' + esc(notaProg) + "</div>" : "") +
+        "</div>";
+      progBox.querySelector(".prog-toggle").addEventListener("click", () => {
+        const body = progBox.querySelector(".prog-body"), chev = progBox.querySelector(".chevron");
+        const open = body.style.display !== "none";
+        body.style.display = open ? "none" : "block";
+        chev.classList.toggle("open", !open);
+      });
       progBox.style.display = "block";
     } else {
       progBox.style.display = "none";
@@ -1485,8 +1497,38 @@ function renderSetsInputs() {
   const isCorpoLibero = tipo.includes("corpo");
   const savedRep = getSavedInput("valori") || [];
   const savedKg = getSavedInput("valoriKg") || [];
-  const kgSuggerito = estraiKgDaCarico(currentDettaglio.caricoPrevisto);
+  let kgSuggerito = estraiKgDaCarico(currentDettaglio.caricoPrevisto);
   const targetSecondi = parseInt(currentDettaglio.ripetizioni) || "";
+
+  // progressione con test (es. 10RM): nell'allenamento 1 si mostra solo il test; dopo, il carico parte da quello trovato
+  if (currentDettaglio.progTest && !isCorpoLibero) {
+    if (currentSessione === 1) {
+      const kgTest = savedKg[0] !== undefined ? savedKg[0] : "";
+      const esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      wrap.innerHTML = `
+        <div class="test-box">
+          <p class="test-title">Allenamento 1 &rarr; TEST ${esc(currentDettaglio.progTest)}</p>
+          <p class="test-text">${esc(currentDettaglio.progNota1)}</p>
+          <p class="test-label">Il tuo ${esc(currentDettaglio.progTest)}</p>
+          <div class="test-input-group">
+            <input type="text" inputmode="decimal" placeholder="0" class="kg-input test-kg" data-idx="0" value="${esc(kgTest)}">
+            <span class="test-unit">Kg</span>
+          </div>
+          <input type="text" class="rep-input" data-idx="0" value="${kgTest ? "10" : ""}" style="display:none;">
+        </div>`;
+      wrap.querySelector(".test-kg").addEventListener("input", e => {
+        wrap.querySelector(".rep-input").value = e.target.value.trim() ? "10" : ""; // il 10RM vale 10 ripetizioni
+        salvaValoriCorrenti();
+      });
+      return;
+    }
+    if (!kgSuggerito) {
+      for (let s = currentSessione - 1; s >= 1; s--) {
+        const v = (getSavedInputSessione(s, "valoriKg") || []).find(x => x && String(x).trim() !== "");
+        if (v) { kgSuggerito = v; break; }
+      }
+    }
+  }
 
   for (let i = 1; i <= currentDettaglio.serie; i++) {
     const row = document.createElement("div");
