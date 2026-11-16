@@ -1,6 +1,6 @@
 {
-  "name": "Percorso - GM Nutrizione e Benessere",
-  "short_name": "Percorso",
+  "name": "GM Program",
+  "short_name": "GM Program",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
