@@ -34,7 +34,7 @@ body {
 .screen { display: none; min-height: 100vh; }
 .screen.active { display: block; }
 
-.page-pad { padding: 1.25rem 1rem 2rem; }
+.page-pad { padding: 2.25rem 1rem 2rem; }
 
 /* ---- loading / errore / accesso ---- */
 .loading-box, .center-box {
@@ -99,7 +99,7 @@ body {
 .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.02em; margin: 0 0 1.25rem; }
 .page-title-inline { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.02em; margin: 0; }
 
-.top-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; }
+.top-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; padding-top: 1rem; }
 .back-arrow {
   font-size: 20px; color: var(--text-secondary); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
