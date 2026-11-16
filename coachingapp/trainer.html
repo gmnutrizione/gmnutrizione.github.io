@@ -109,6 +109,47 @@ td input[readonly]{color:#555}
 .spl h3{margin:0 0 8px}
 .fl{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .xb{padding:3px 8px!important;line-height:1}
+
+/* ===== statistiche compatte ===== */
+#stat{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.s4{grid-column:span 4}
+#stat .card{padding:8px 10px;border-radius:10px}
+#stat .card h3{font-size:16px;margin:0 0 5px;line-height:1.1}
+#stat .card h3 small{font-size:10.5px;margin-left:5px}
+#stat .nota{font-size:11px;margin-top:4px}
+#stat .rules{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+#stat .rr{padding:3px 0;gap:6px;flex-wrap:nowrap}
+#stat .rn{font-size:12px;line-height:1.15}#stat .rn small{font-size:10.5px}
+#stat .g{font-size:10px;margin-left:3px}
+#stat .chip{padding:0 7px;font-size:11.5px;border-width:1.3px}
+#stat .rc{gap:3px;flex:none}
+#stat .al{padding:6px 10px;margin-bottom:6px;font-size:12px;border-radius:9px}
+#stat .al ul{margin:3px 0 4px 16px}#stat .al li{line-height:1.3}
+#stat .avv{font-size:11px;padding-top:4px;margin-top:3px}
+#stat .two{gap:6px}#stat .two h4{font-size:10.5px;margin:0}
+#stat .two svg{max-height:118px}
+#stat .rad svg{height:225px;width:100%}
+#stat .hm{gap:2px 5px;min-width:0;grid-template-columns:66px repeat(var(--ng),minmax(20px,34px)) minmax(80px,1fr) 78px}
+#stat .hl{font-size:11.5px}#stat .hh{font-size:10px}
+#stat .hc{height:19px;line-height:19px;font-size:11px;border-radius:5px}
+#stat .zb{line-height:19px;font-size:11px;border-radius:5px}
+#stat .leg{font-size:10.5px;margin-top:5px}#stat .leg i{width:10px;height:10px;margin:0 3px 0 7px}
+#stat .fr{grid-template-columns:66px 1fr 78px 70px;gap:2px 6px;margin-bottom:2px}
+#stat .fn{font-size:10px}#stat .fnd{font-size:11px}
+.ftr{position:relative;height:18px;border-radius:4px;overflow:hidden;display:flex}
+.ftr .z1{background:#eee}.ftr .z2{background:#fbe9c0}.ftr .z3{background:#f7c9cb}
+.ftr .d{position:absolute;top:3px;width:12px;height:12px;border-radius:50%;margin-left:-6px;border:1.5px solid #fff;box-sizing:border-box}
+.ftr .m{position:absolute;top:0;bottom:0;width:2.5px;background:#111;margin-left:-1px}
+#stat .ax{height:11px;font-size:9.5px}
+#stat .cut{gap:8px}#stat .ci{padding:6px 10px;font-size:11.5px;line-height:1.35;border-radius:9px}
+#stat .ci b.t{font-size:12.5px;margin-bottom:1px}#stat .ci .k{margin-bottom:2px;font-size:10px;padding:0 6px}
+#stat .kpi{gap:10px}#stat .kpi b{font-size:22px}#stat .kpi div{font-size:11px;min-width:50px}
+#stat .rb{margin:2px 0;font-size:12px}#stat .rb .b{height:10px}
+#stat .rb .n{width:70px}
+.fa{display:flex;align-items:center;gap:10px}.fa svg{width:104px;flex:none}.fa .lg{font-size:11.5px;line-height:1.7}
+.fa .lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+@media(max-width:1100px){#stat{grid-template-columns:repeat(2,minmax(0,1fr))}.s3,.s4{grid-column:span 2}}
+@media(max-width:700px){#stat{grid-template-columns:1fr}.s2,.s3,.s4{grid-column:auto}#stat .rules{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -467,7 +508,7 @@ function svgRadar(lab,vals){
   let o="";
   [.33,.66,1].forEach(k=>o+=`<polygon points="${lab.map((_,i)=>p(i,k).map(z=>z.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="#ddd"/>`);
   lab.forEach((l,i)=>{const[x,y]=p(i,1),[lx,ly]=p(i,1.24);
-    o+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#ddd"/><text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" font-size="11" text-anchor="middle" font-weight="600">${l} <tspan fill="${BADC}" font-weight="800">${vals[i]}</tspan></text>`});
+    o+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#ddd"/><text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" font-size="14" text-anchor="middle" font-weight="600">${l} <tspan fill="${BADC}" font-weight="800">${vals[i]}</tspan></text>`});
   o+=`<polygon points="${vals.map((v,i)=>p(i,v/mx).map(z=>z.toFixed(1)).join(",")).join(" ")}" fill="${BADC}" fill-opacity=".25" stroke="${BADC}" stroke-width="2"/>`;
   return `<svg viewBox="0 0 ${w} ${h}" width="100%">${o}</svg>`;
 }
@@ -477,8 +518,8 @@ function svgBarraVolume(t,cut,mxs){
   const bands=[[0,mvMin,"#eeeeee"],[mvMin,mvMax,"#fbe3b8"],[mvMax,mevMax,"#d6e4fb"],[mevMax,mavMax,"#cfeedb"]];
   let last=mavMax; if(cut){bands.push([mavMax,altoMax,"#fde0c0"]);last=altoMax}
   bands.push([last,mxs,"#f7c9cb"]);
-  const o=bands.map(([a,b,c])=>`<rect x="${sc(a)}" y="9" width="${Math.max(0,sc(b)-sc(a))}" height="12" fill="${c}"/>`).join("")+`<line x1="${sc(Math.min(t,mxs))}" y1="3" x2="${sc(Math.min(t,mxs))}" y2="27" stroke="#111" stroke-width="3"/>`;
-  return `<svg viewBox="0 0 ${W} 30" width="100%" height="26" preserveAspectRatio="none">${o}</svg>`;
+  const o=bands.map(([a,b,c])=>`<rect x="${sc(a)}" y="7" width="${Math.max(0,sc(b)-sc(a))}" height="16" fill="${c}"/>`).join("")+`<line x1="${sc(Math.min(t,mxs))}" y1="3" x2="${sc(Math.min(t,mxs))}" y2="27" stroke="#111" stroke-width="3"/>`;
+  return `<svg viewBox="0 0 ${W} 30" width="100%" height="18" preserveAspectRatio="none">${o}</svg>`;
 }
 function svgCiambella(parts){
   const w=200,h=170,cx=100,cy=85,R=58,tot=parts.reduce((a,p)=>a+p[1],0);
@@ -490,7 +531,7 @@ function svgCiambella(parts){
       o+=`<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 ${a1-a0>Math.PI?1:0} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${c}" stroke-width="26"/>`}
     a0=a1});
   o+=`<text x="${cx}" y="${cy+6}" font-size="22" font-weight="800" text-anchor="middle">${tot}</text><text x="${cx}" y="${cy+22}" font-size="10" text-anchor="middle" fill="#777">serie</text>`;
-  return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:260px;display:block;margin:0 auto">${o}</svg>`;
+  return `<svg viewBox="0 0 ${w} ${h}">${o}</svg>`;
 }
 function datiFatica(){
   const out={}; GRUPPI.forEach(g=>out[g]=[]);
@@ -502,23 +543,21 @@ function datiFatica(){
   return out;
 }
 function htmlFatica(){
-  const D=datiFatica(), W=420,x0=10,sc=v=>x0+(v-1)/9*(W-2*x0), b6=sg("fatica_bassa",1), b8=sg("fatica_media",1);
+  const D=datiFatica(), b6=sg("fatica_bassa",1), b8=sg("fatica_media",1), pos=v=>((v-1)/9*100);
   const col=v=>v<=b6?"#9aa0a6":v<=b8?"#e0a100":BADC;
-  let h=`<div class="fr"><div></div><div class="ax">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<span style="left:${(sc(i)/W*100).toFixed(1)}%">${i}</span>`).join("")}</div><div></div><div></div></div>`;
+  let h=`<div class="fr"><div></div><div class="ax">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<span style="left:${pos(i).toFixed(1)}%">${i}</span>`).join("")}</div><div></div><div></div></div>`;
   let any=false;
   GRUPPI.forEach(g=>{
     const v=D[g]; if(v.length)any=true;
-    if(!v.length){h+=`<div class="fr"><div class="hl">${g}</div><div class="fnd">dati insufficienti</div><div></div><div class="fn">0 rilevazioni</div></div>`;return}
-    const m=v.reduce((a,b)=>a+b,0)/v.length;
-    const bands=`<rect x="${x0-4}" y="6" width="${sc(b6+.5)-x0+4}" height="16" fill="#eeeeee"/><rect x="${sc(b6+.5)}" y="6" width="${sc(b8+.5)-sc(b6+.5)}" height="16" fill="#fbe9c0"/><rect x="${sc(b8+.5)}" y="6" width="${sc(10)-sc(b8+.5)+4}" height="16" fill="#f7c9cb"/>`;
-    const seen={},cnt={}; v.forEach(a=>cnt[a]=(cnt[a]||0)+1);
-    const dots=v.map(a=>{const i=seen[a]||0;seen[a]=i+1;return `<circle cx="${(sc(a)+(i-(cnt[a]-1)/2)*9).toFixed(1)}" cy="14" r="5" fill="${col(a)}" fill-opacity=".9" stroke="#fff" stroke-width="1.2"/>`}).join("");
+    if(!v.length){h+=`<div class="fr"><div class="hl">${g}</div><div class="fnd">dati insufficienti</div><div></div><div class="fn">0 rilev.</div></div>`;return}
+    const m=v.reduce((a,b)=>a+b,0)/v.length, seen={}, cnt={}; v.forEach(a=>cnt[a]=(cnt[a]||0)+1);
+    const dots=v.map(a=>{const i=seen[a]||0;seen[a]=i+1;return `<span class="d" style="left:calc(${pos(a).toFixed(1)}% + ${((i-(cnt[a]-1)/2)*8).toFixed(0)}px);background:${col(a)}"></span>`}).join("");
     const z=m>b8?"alta":m>b6?"media":"bassa", zb=m>b8?"#f7c9cb":m>b6?"#fbe9c0":"#eee", zc=m>b8?BADC:m>b6?"#a86a00":"#777";
-    h+=`<div class="fr"><div class="hl">${g}</div><svg viewBox="0 0 ${W} 28" width="100%">${bands}${dots}<line x1="${sc(m)}" y1="2" x2="${sc(m)}" y2="26" stroke="#111" stroke-width="2.5"/></svg><div class="zb" style="background:${zb};color:${zc}"><b>${m.toFixed(1).replace(".",",")}</b> ${z}</div><div class="fn">${v.length} rilevazion${v.length===1?"e":"i"}</div></div>`;
+    h+=`<div class="fr"><div class="hl">${g}</div><div class="ftr"><div class="z1" style="width:${pos(b6+.5)}%"></div><div class="z2" style="width:${pos(b8+.5)-pos(b6+.5)}%"></div><div class="z3" style="flex:1"></div>${dots}<span class="m" style="left:${pos(m).toFixed(1)}%"></span></div><div class="zb" style="background:${zb};color:${zc}"><b>${m.toFixed(1).replace(".",",")}</b> ${z}</div><div class="fn">${v.length} rilev.</div></div>`;
   });
   if(STORICO===null)h+=`<div class="nota">Carico i dati…</div>`;
   else if(!any)h+=`<div class="nota">Nessuna fatica registrata in questo blocco.</div>`;
-  return h+`<div class="leg"><i style="background:#eeeeee"></i>bassa 1–${b6}<i style="background:#fbe9c0"></i>media ${b6+1}–${b8}<i style="background:#f7c9cb"></i>alta ${b8+1}–10<span style="margin-left:10px">● ogni punto = una rilevazione · barra nera = media</span></div>`;
+  return h+`<div class="leg"><i style="background:#eee"></i>bassa 1–${b6}<i style="background:#fbe9c0"></i>media ${b6+1}–${b8}<i style="background:#f7c9cb"></i>alta ${b8+1}–10 · punto = una rilevazione · barra nera = media</div>`;
 }
 function statistiche(){
   const c=DATI.cliente, cut=!!((CLIENTI.find(z=>z.codice===c.codice)||{}).ipocalorica);
@@ -576,20 +615,20 @@ function statistiche(){
   // ---- fasce di ripetizioni
   const ciamb=svgCiambella([["Forza 1–6",A.fa.forza,"#111111"],["Ipertrofia 7–12",A.fa.ipertrofia,BADC],["Resistenza 13+",A.fa.resistenza,"#f4a3a6"]]);
   const totFa=A.fa.forza+A.fa.ipertrofia+A.fa.resistenza, pc=v=>totFa?Math.round(v/totFa*100)+"%":"–";
-  const legFa=`<div class="leg"><i style="background:#111"></i>Forza ${pc(A.fa.forza)}<i style="background:${BADC}"></i>Ipertrofia ${pc(A.fa.ipertrofia)}<i style="background:#f4a3a6"></i>Resistenza ${pc(A.fa.resistenza)}</div>`;
+  const legFa=`<div class="lg"><i style="background:#111"></i>Forza 1–6 · ${pc(A.fa.forza)}<br><i style="background:${BADC}"></i>Ipertrofia 7–12 · ${pc(A.fa.ipertrofia)}<br><i style="background:#f4a3a6"></i>Resistenza 13+ · ${pc(A.fa.resistenza)}</div>`;
   // ---- consigli ipocalorica
-  const consigli=cut?`<div class="card s3"><h3>Consigli in ipocalorica<small>il cliente è in ipocalorica</small></h3><div class="cut">
+  const consigli=cut?`<div class="card s4"><h3>Consigli in ipocalorica</h3><div class="cut">
     <div class="ci"><span class="k">VOLUME</span><b class="t">Serie ottimali: ${rng("vol_mav_cut")} a settimana</b>Invece di ${rng("vol_mav")}. Il grafico del volume per gruppo usa già queste zone.</div>
     <div class="ci"><span class="k">INTENSITÀ</span><b class="t">Fondamentali: carico alto, serie dimezzate</b>Meno fatica sistemica. Il volume tolto ai fondamentali si può recuperare nei complementari e nell'isolamento, che non vanno abbassati.</div>
     <div class="ci"><span class="k">FREQUENZA</span><b class="t">Una seduta in più, se possibile</b>Stesse serie settimanali distribuite su più giorni: da 3 a 4 sedute (o da 2 a 3). Scheda attuale: ${NG} sedut${NG===1?"a":"e"}.</div></div></div>`:"";
   const html=`
-   <div class="card s2"><h3>Controllo regole<small>${DATI.cliente.nome} · blocco ${BLOCCO}${cut?" · ipocalorica":""}</small></h3>${boxAl}${tabRegole}<div class="nota">La durata è una stima da serie, ripetizioni e recuperi. Cardio escluso dai conteggi di serie ed esercizi.</div></div>
-   <div class="card"><h3>Fondamentali e complementari per seduta<small>con fascia del range</small></h3><div class="two"><div><h4>Fondamentali · ${rng("fond_seduta")}</h4>${colF}</div><div><h4>Complementari e isolamento · ${rng("compl_seduta")}</h4>${colC}</div></div></div>
-   <div class="card"><h3>Serie per gruppo muscolare<small>radar · a settimana</small></h3>${radar}</div>
-   <div class="card s2"><h3>Frequenza e volume per gruppo<small>serie per giorno · zona di volume settimanale</small></h3>${heat}</div>
+   <div class="card s2"><h3>Controllo regole<small>${esc(DATI.cliente.nome)} · blocco ${BLOCCO}${cut?" · ipocalorica":""} · durata = stima</small></h3>${boxAl}<div class="rules">${tabRegole}</div></div>
+   <div class="card"><h3>Fondamentali e compl. per seduta</h3><div class="two"><div><h4>Fondamentali · ${rng("fond_seduta")}</h4>${colF}</div><div><h4>Compl. + isolamento · ${rng("compl_seduta")}</h4>${colC}</div></div></div>
+   <div class="card rad"><h3>Serie per gruppo<small>a settimana</small></h3>${radar}</div>
+   <div class="card s2"><h3>Frequenza e volume per gruppo<small>serie per giorno · zona settimanale</small></h3>${heat}</div>
+   <div class="card s2"><h3>Fatica percepita<small>scala 1–10 · per gruppo</small></h3>${htmlFatica()}</div>
    ${consigli}
-   <div class="card"><h3>Fasce di ripetizioni<small>in serie</small></h3>${ciamb}${legFa}</div>
-   <div class="card s2"><h3>Fatica percepita per gruppo muscolare<small>scala 1–10 segnalata dal cliente</small></h3>${htmlFatica()}</div>
+   <div class="card"><h3>Fasce di ripetizioni<small>in serie</small></h3><div class="fa">${ciamb}${legFa}</div></div>
    ${statExtra()}`;
   $("stat").innerHTML=html;
 }
