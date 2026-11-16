@@ -505,7 +505,7 @@ function partiRiga(r){
   const nomi=String(r.esercizio||"").split("+").map(x=>x.trim()).filter(Boolean);
   return nomi.map(n=>{
     const c=CATMAP[n.toLowerCase()], g=gruppoCan((c&&c.gruppo)||r.gruppo), cr=c?(c.cat_raw||""):"";
-    return {nome:n,g,cat:g===null?"cardio":cr==="fondamentale"?"fond":(cr==="complementare"||cr==="isolamento")?"compl":"senza"};
+    return {nome:n,g,cat:g===null?"cardio":cr==="fondamentale"?"fond":cr==="complementare"?"compl":cr==="isolamento"?"iso":"senza"};
   });
 }
 function durataRiga(r){
@@ -517,7 +517,7 @@ function durataRiga(r){
 function analisi(){
   const R=righeBlocco(), NG=nGiorni();
   const giorni=Array.from({length:NG},(_,i)=>"Giorno "+LET[i]);
-  const D=giorni.map(()=>({fond:0,compl:0,sec:0,n:0,serie:{}}));
+  const D=giorni.map(()=>({fond:0,compl:0,iso:0,sec:0,n:0,serie:{}}));
   const senza=new Set(), tot={Altro:0}; GRUPPI.forEach(g=>tot[g]=0);
   const fa={forza:0,ipertrofia:0,resistenza:0};
   R.forEach(r=>{
@@ -526,7 +526,7 @@ function analisi(){
     d.n++; d.sec+=durataRiga(r);
     const x=repMedia(r.rep);
     partiRiga(r).forEach(p=>{
-      if(p.cat==="fond")d.fond++; else if(p.cat==="compl")d.compl++; else if(p.cat==="senza")senza.add(p.nome);
+      if(p.cat==="fond")d.fond++; else if(p.cat==="compl")d.compl++; else if(p.cat==="iso")d.iso++; else if(p.cat==="senza")senza.add(p.nome);
       if(p.g){tot[p.g]=(tot[p.g]||0)+s; d.serie[p.g]=(d.serie[p.g]||0)+s;
         if(!isNaN(x))fa[x<=6?"forza":x<=12?"ipertrofia":"resistenza"]+=s}
     });
@@ -635,11 +635,11 @@ function statistiche(){
   };
   perGiorno("Durata per seduta","durata_seduta","′",i=>Math.round(A.D[i].sec/60),(v,s,k)=>`dura circa ${v}′: ${s<0?"sotto il minimo di "+sg(k,0):"sopra il massimo di "+sg(k,1)}′`);
   perGiorno("Fondamentali per seduta","fond_seduta","",i=>A.D[i].fond,(v,s,k)=>`ha ${v} fondamentali: ${s<0?"il minimo è "+sg(k,0):"il massimo è "+sg(k,1)}`);
-  perGiorno("Complementari e isolamento per seduta","compl_seduta","",i=>A.D[i].compl,(v,s,k)=>`ha ${v} complementari/isolamento: ${s<0?"il minimo è "+sg(k,0):"il massimo è "+sg(k,1)}`);
+  perGiorno("Complementari per seduta","compl_seduta","",i=>A.D[i].compl,(v,s,k)=>`ha ${v} complementari: ${s<0?"il minimo è "+sg(k,0):"il massimo è "+sg(k,1)}`);
   const totF=A.D.reduce((a,d)=>a+d.fond,0), totC=A.D.reduce((a,d)=>a+d.compl,0);
   const sett=(titolo,k,v,txt)=>{const s=verdetto(v,k);if(s!==0)al.push(`<b>${txt}</b>: ${v} (${s<0?"minimo "+sg(k,0):"massimo "+sg(k,1)})`);righe.push({t:titolo,r:rng(k),c:[{g:"sett.",t:String(v),ok:s===0}]})};
   sett("Fondamentali a settimana","fond_sett",totF,"Fondamentali a settimana");
-  sett("Complementari e isolamento a settimana","compl_sett",totC,"Complementari/isolamento a settimana");
+  sett("Complementari a settimana","compl_sett",totC,"Complementari a settimana");
   sett("Sedute a settimana","sedute_sett",NG,"Sedute a settimana");
   // ---- volume per gruppo
   const gruppi=GRUPPI.slice(); if(A.tot.Altro)gruppi.push("Altro");
@@ -681,7 +681,7 @@ function statistiche(){
     <div class="ci"><span class="k">FREQUENZA</span><b class="t">Una seduta in più, se possibile</b>Stesse serie settimanali distribuite su più giorni: da 3 a 4 sedute (o da 2 a 3). Scheda attuale: ${NG} sedut${NG===1?"a":"e"}.</div></div></div>`:"";
   const html=`
    <div class="card s2"><h3>Controllo regole<small>${esc(DATI.cliente.nome)} · blocco ${BLOCCO}${cut?" · ipocalorica":""} · durata = stima</small></h3>${boxAl}<div class="rules">${tabRegole}</div></div>
-   <div class="card"><h3>Fondamentali e compl. per seduta</h3><div class="two"><div><h4>Fondamentali · ${rng("fond_seduta")}</h4>${colF}</div><div><h4>Compl. + isolamento · ${rng("compl_seduta")}</h4>${colC}</div></div></div>
+   <div class="card"><h3>Fondamentali e compl. per seduta</h3><div class="two"><div><h4>Fondamentali · ${rng("fond_seduta")}</h4>${colF}</div><div><h4>Complementari · ${rng("compl_seduta")} <small>(isolamento escluso)</small></h4>${colC}</div></div></div>
    <div class="card rad"><h3>Serie per gruppo<small>a settimana</small></h3>${radar}</div>
    <div class="card s2"><h3>Frequenza e volume per gruppo<small>serie per giorno · zona settimanale</small></h3>${heat}</div>
    <div class="card s2"><h3>Fatica percepita<small>scala 1–10 · per gruppo</small></h3>${htmlFatica()}</div>
