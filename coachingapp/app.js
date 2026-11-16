@@ -620,6 +620,26 @@ function segnaSessioneCompletata(giorno, sessione) {
   }
 }
 
+// durata di massima della seduta: serie x (ripetizioni x 4" + recupero) + 45" di cambio esercizio
+function durataGiornoMin(rows) {
+  const num = v => { const m = String(v == null ? "" : v).replace(",", ".").match(/\d+(\.\d+)?/); return m ? parseFloat(m[0]) : NaN; };
+  const rec = v => {
+    const t = String(v || "").trim(); if (!t) return 60;
+    let m = t.match(/^(\d+)\s*'(?!')\s*(\d+)?/); if (m) return parseInt(m[1]) * 60 + (m[2] ? parseInt(m[2]) : 0);
+    m = t.match(/^(\d+)\s*(''|"|s)/); if (m) return parseInt(m[1]);
+    const n = num(t); return isNaN(n) ? 60 : (n >= 15 ? n : n * 60);
+  };
+  let sec = 0;
+  rows.forEach(r => {
+    if (!String(r.Esercizio || "").trim()) return;
+    const s = num(r.Serie), serie = isNaN(s) ? 0 : s;
+    if (/min/i.test(String(r.Rep || ""))) { const m = num(r.Rep); sec += (isNaN(m) ? 0 : m) * 60 * (serie || 1); return; }
+    const t = String(r.Rep || "").replace(",", ".").match(/\d+(\.\d+)?/g), rp = t ? (t.length > 1 ? (parseFloat(t[0]) + parseFloat(t[1])) / 2 : parseFloat(t[0])) : 10;
+    sec += serie * (rp * 4 + rec(r.Recupero)) + 45;
+  });
+  return Math.round(sec / 60);
+}
+
 function buildGiorni() {
   giorni = [];
   esercizi.forEach(r => {
@@ -632,7 +652,7 @@ function buildGiorni() {
     const totale = rows.length ? Math.max(1, caricoColumns(rows[0]).length) : 0;
     const completate = getSessioniCompletate(giorno).length;
     const percentuale = totale > 0 ? Math.min(100, Math.round((completate / totale) * 100)) : 0;
-    return { giorno, gruppi, rowsCount: rows.length, totale, completate, percentuale };
+    return { giorno, gruppi, rowsCount: rows.length, totale, completate, percentuale, durata: durataGiornoMin(rows) };
   });
 
   // il "prossimo" e' quello non ancora completato al 100% con meno allenamenti fatti,
@@ -654,7 +674,7 @@ function buildGiorni() {
         <div class="day-icon-box${completato ? " completato" : ""}">${completato ? "&#10003;" : "&#127947;"}</div>
         <div class="day-info">
           <p class="day-name">${d.giorno} - ${d.gruppi.join(" e ")}</p>
-          <p class="day-sub">${d.totale > 0 ? d.completate + " di " + d.totale + " allenamenti" : d.rowsCount + " esercizi"}</p>
+          <p class="day-sub">${d.totale > 0 ? d.completate + " di " + d.totale + " allenamenti" : d.rowsCount + " esercizi"}${d.durata > 0 ? " · circa " + d.durata + " min" : ""}</p>
         </div>
         <span class="day-arrow">&#8250;</span>
       </div>

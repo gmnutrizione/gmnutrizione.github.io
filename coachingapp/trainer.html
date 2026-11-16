@@ -58,7 +58,9 @@ td input[readonly]{color:#555}
 .w60{min-width:60px}.w120{min-width:130px}.w200{min-width:200px}
 #msg{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--nero);color:#fff;padding:10px 16px;border-radius:8px;display:none}
 
-#stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-bottom:14px}
+#stat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.s2{grid-column:span 2}.s3{grid-column:span 3}
+@media(max-width:980px){#stat{grid-template-columns:1fr}.s2,.s3{grid-column:auto}}
 .card{background:#fff;border:1px solid var(--bordo);border-radius:12px;padding:14px}
 .card h3{margin:0 0 10px;font:400 20px 'Bebas Neue',sans-serif;letter-spacing:.8px}
 .card h3 small{font:500 11px Inter,sans-serif;color:var(--testo2);letter-spacing:0;margin-left:6px}
@@ -77,6 +79,36 @@ td input[readonly]{color:#555}
 .kpi b{display:block;font:400 30px 'Bebas Neue',sans-serif;color:var(--nero)}
 .nota{color:var(--testo2);font-size:12px;margin-top:8px}
 .riga-g td{background:#eee;font-weight:700;padding:6px 8px}
+
+.chip{display:inline-block;border:1.5px solid;border-radius:999px;padding:2px 10px;font-weight:700;font-size:13px;background:#fff}
+.chip.ok{border-color:#1f9d55;color:#1f9d55}.chip.no{border-color:#E31E24;color:#E31E24}.chip.nd{border-color:#aaa;color:#888}
+.rr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #eee;flex-wrap:wrap}.rr:last-of-type{border:0}
+.rn{font-weight:700;font-size:13.5px}.rn small{display:block;font-weight:500;color:var(--testo2);font-size:12px}
+.rc{display:flex;gap:6px;align-items:center}.g{font-size:11px;color:var(--testo2);margin-left:6px}
+.al{background:#fff3f3;border:1.5px solid #E31E24;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:13.5px}
+.al.ok{background:#f0faf3;border-color:#1f9d55}.al ul{margin:6px 0 8px 18px;padding:0}
+.avv{font-size:12.5px;color:#555;border-top:1px dashed #e8b4b4;padding-top:8px;margin-top:6px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.two h4{margin:0 0 2px;font-size:12px;color:var(--testo2);font-weight:600}
+.hmw{overflow-x:auto}
+.hm{display:grid;grid-template-columns:78px repeat(var(--ng),minmax(34px,52px)) minmax(120px,1fr) 92px;gap:4px 6px;align-items:center;min-width:420px}
+.hh{font-size:11px;color:var(--testo2);text-align:center}.hl{font-size:12.5px;font-weight:600}
+.hc{height:26px;border-radius:6px;text-align:center;line-height:26px;font-weight:700;font-size:12px}
+.zb{border-radius:6px;font-size:12px;text-align:center;line-height:26px;font-weight:600;white-space:nowrap}
+.leg{font-size:12px;color:var(--testo2);margin-top:8px}.leg i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin:0 4px 0 8px}
+.fr{display:grid;grid-template-columns:78px 1fr 92px 96px;gap:4px 8px;align-items:center;margin-bottom:5px}
+.fn{font-size:11px;color:var(--testo2)}.fnd{font-size:12px;color:var(--testo2);font-style:italic}
+.ax{position:relative;height:14px;font-size:10px;color:var(--testo2)}.ax span{position:absolute;transform:translateX(-50%)}
+.cut{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}@media(max-width:980px){.cut{grid-template-columns:1fr}}
+.ci{border-radius:12px;background:#fff6f6;border:1px solid #f1c9c9;padding:12px 14px;font-size:13px;line-height:1.5}
+.ci b.t{display:block;font-size:14px;margin-bottom:4px}.ci .k{display:inline-block;background:#E31E24;color:#fff;border-radius:6px;font-size:11px;padding:1px 7px;margin-bottom:6px;font-weight:700}
+.spl{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.spl .row{display:flex;gap:8px}.spl .col{flex:1;display:flex;flex-direction:column;gap:6px}
+.spl .b{border-radius:9px;text-align:center;padding:8px 0;font-size:13.5px;font-weight:600;box-shadow:0 1px 2px #0002}
+.spl .dn{text-align:center;font-weight:800;margin-top:2px;font-size:14px}
+.spl .nt{font-size:12.5px;color:#555;margin-top:8px;line-height:1.45;background:#f6f6f6;border-radius:8px;padding:8px 10px}
+.spl h3{margin:0 0 8px}
+.fl{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.xb{padding:3px 8px!important;line-height:1}
 </style>
 </head>
 <body>
@@ -89,7 +121,7 @@ td input[readonly]{color:#555}
 
 <div id="app" style="display:none">
 <header><h1>DASHBOARD <span>GM COACHING</span></h1>
-  <nav id="nav"><button data-v="clienti" class="on">Clienti</button><button data-v="archivio">Archivio esercizi</button></nav>
+  <nav id="nav"><button data-v="clienti" class="on">Clienti</button><button data-v="archivio">Archivio esercizi</button><button data-v="split">Modelli di split</button></nav>
   <button class="l" id="esci" style="margin-left:auto">Esci</button></header>
 <main id="vista-clienti">
   <div class="box">
@@ -112,6 +144,11 @@ td input[readonly]{color:#555}
     <span id="a-conta" style="color:var(--testo2);font-size:13px"></span>
   </div>
   <div class="scroll" style="max-height:74vh"><table id="a-tab"></table></div>
+</main>
+<main id="vista-split" style="display:none">
+  <div class="box"><b style="font-size:18px">Modelli di split</b><div class="nota" style="margin-top:4px">Da consultare quando prepari una scheda nuova. Ogni gruppo muscolare è allenato 2 volte a settimana. Le note segnalano i gruppi che arrivano già affaticati dalla seduta precedente.</div></div>
+  <div class="fl" id="s-filtri"></div>
+  <div class="spl" id="s-lista"></div>
 </main>
 </div>
 <div id="inc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:5">
@@ -156,7 +193,7 @@ async function entra(){
     const j=await rpc("gc_t_clienti",{p_cod:c});
     if(!j.ok){$("errL").textContent="Codice non valido";return}
     CODE=c; CLIENTI=j.clienti; try{sessionStorage.setItem("gt_c",c)}catch(e){}
-    $("login").style.display="none";$("app").style.display="block";disegnaElenco();caricaCatalogo();
+    $("login").style.display="none";$("app").style.display="block";disegnaElenco();caricaCatalogo();caricaSoglie();
   }catch(e){$("errL").textContent="Errore di connessione"}
 }
 $("entra").onclick=entra; $("cod").onkeydown=e=>{if(e.key==="Enter")entra()};
@@ -191,7 +228,8 @@ async function apri(cod,blocco){
   CUR=cod;
   const j=await rpc("gc_t_scheda",{p_cod:CODE,p_cl:cod});
   if(!j.ok){toast(j.errore);return}
-  DATI=j; $("scheda").style.display="block";
+  DATI=j; STORICO=null; $("scheda").style.display="block";
+  rpc("gc_t_storico",{p_cod:CODE,p_cl:cod}).then(r=>{if(r&&r.ok&&CUR===cod){STORICO=r.righe;if(DATI&&DATI.cliente.codice===cod)statistiche()}}).catch(()=>{});
   const bl=[...new Set(j.righe.map(r=>r.blocco))].sort((a,b)=>a-b);
   BLOCCO=blocco&&bl.includes(blocco)?blocco:(bl[bl.length-1]||1);
   disegna();
@@ -203,10 +241,15 @@ function disegna(){
   $("testa").innerHTML=`<b style="font-size:18px">${esc(c.nome)}</b><span>Codice ${esc(c.codice)}</span>
    <span class="badge ${fo?"b-ok":"b-fo"}">${fo?"Modifica da dashboard attiva":"Scheda ancora gestita dal foglio (sola lettura)"}</span>
    <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;margin-left:auto"><input type="checkbox" id="fzk" ${(CLIENTI.find(z=>z.codice===c.codice)||{}).funzionale?"checked":""}> Funzionale attivo</label>
+   <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer"><input type="checkbox" id="ipk" ${(CLIENTI.find(z=>z.codice===c.codice)||{}).ipocalorica?"checked":""}> Ipocalorica</label>
    <button class="${fo?"l":"r"}" id="passa">${fo?"Torna al foglio":"Attiva modifica da dashboard"}</button>`;
   $("fzk").onchange=async e=>{
     const v=e.target.checked, j=await rpc("gc_t_funzionale",{p_cod:CODE,p_cl:c.codice,p_val:v});
     if(j&&j.ok){const x=CLIENTI.find(z=>z.codice===c.codice);if(x)x.funzionale=v;toast(v?"Funzionale attivato":"Funzionale disattivato")}else{e.target.checked=!v;toast((j&&j.errore)||"errore")}
+  };
+  $("ipk").onchange=async e=>{
+    const v=e.target.checked, j=await rpc("gc_t_ipocalorica",{p_cod:CODE,p_cl:c.codice,p_val:v});
+    if(j&&j.ok){const x=CLIENTI.find(z=>z.codice===c.codice);if(x)x.ipocalorica=v;toast(v?"Ipocalorica attiva: range adattati":"Ipocalorica disattivata");statistiche()}else{e.target.checked=!v;toast((j&&j.errore)||"errore")}
   };
   $("passa").onclick=async()=>{
     if(!confirm(fo?"Tornare a gestire questo cliente dal foglio Google?":"Da ora la scheda di questo cliente si modifica SOLO da qui. Procedere?"))return;
@@ -233,7 +276,9 @@ document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x===b));
   $("vista-clienti").style.display=b.dataset.v==="clienti"?"block":"none";
   $("vista-archivio").style.display=b.dataset.v==="archivio"?"block":"none";
+  $("vista-split").style.display=b.dataset.v==="split"?"block":"none";
   if(b.dataset.v==="archivio")caricaArchivio();
+  if(b.dataset.v==="split")caricaSplit();
 });
 async function caricaArchivio(){
   const j=await rpc("gc_t_archivio",{p_cod:CODE});
@@ -257,13 +302,14 @@ function disegnaTabArchivio(){
   const q=$("a-cerca").value.toLowerCase().trim(), sv=$("a-senza").checked, ed=arcEd();
   const tutti=ARC.esercizi, lista=tutti.filter(e=>(!q||e.esercizio.toLowerCase().includes(q))&&(!sv||!e.video));
   $("a-conta").textContent=tutti.filter(e=>e.video).length+" su "+tutti.length+" con video · "+lista.length+" mostrati";
-  const cols=[["esercizio","Esercizio",230],["gruppo","Gruppo",100],["tipo","Tipo",70],["categoria","Categoria",100],["video","Link video",260],["descrizione","Descrizione",260],["alternative","Alternative",160],["immagine1","Immagine 1",140],["immagine2","Immagine 2",140]];
+  const cols=[["_x","",30],["esercizio","Esercizio",230],["gruppo","Gruppo",100],["tipo","Tipo",70],["categoria","Categoria",100],["video","Link video",260],["descrizione","Descrizione",260],["alternative","Alternative",160],["immagine1","Immagine 1",140],["immagine2","Immagine 2",140]];
   let h=`<colgroup>${cols.map(c=>`<col style="width:${c[2]}px">`).join("")}</colgroup><tr>${cols.map(c=>`<th>${c[1]}</th>`).join("")}</tr>`;
   const riga=(e,nuova)=>{
     let r=`<tr data-n="${nuova?"":esc(e.esercizio)}" class="${ed?"":"ro"}">`;
     cols.forEach(([k])=>{
       const v=e[k]||"";
-      if(k==="esercizio")r+=`<td><input data-k="esercizio" value="${esc(v)}" ${ed&&nuova?'placeholder="Nuovo esercizio…"':"readonly"}></td>`;
+      if(k==="_x")r+=`<td style="text-align:center">${ed&&!nuova?'<button class="l xb" data-x="1" title="Elimina questa riga">✕</button>':""}</td>`;
+      else if(k==="esercizio")r+=`<td><input data-k="esercizio" value="${esc(v)}" ${ed&&nuova?'placeholder="Nuovo esercizio…"':"readonly"}></td>`;
       else if(k==="tipo")r+=`<td><select data-k="tipo" ${ed?"":"disabled"}><option value="pesi" ${v!=="corpo libero"?"selected":""}>pesi</option><option value="corpo libero" ${v==="corpo libero"?"selected":""}>c. libero</option></select></td>`;
       else if(k==="categoria")r+=`<td><select data-k="categoria" ${ed?"":"disabled"}>${["fondamentale","complementare","isolamento"].map(o=>`<option ${o===(v||"complementare")?"selected":""}>${o}</option>`).join("")}</select></td>`;
       else if(k==="gruppo")r+=`<td><input data-k="gruppo" list="dl-gr" value="${esc(v)}" ${ed?"":"readonly"}></td>`;
@@ -276,7 +322,18 @@ function disegnaTabArchivio(){
   $("a-tab").style.width=cols.reduce((a,c)=>a+c[2],0)+"px";
   $("a-tab").innerHTML=h;
   if(!ed)return;
-  document.querySelectorAll("#a-tab tr[data-n]").forEach(tr=>tr.querySelectorAll("input,select").forEach(i=>i.onchange=()=>salvaArc(tr)));
+  document.querySelectorAll("#a-tab tr[data-n]").forEach(tr=>{
+    tr.querySelectorAll("input,select").forEach(i=>i.onchange=()=>salvaArc(tr));
+    const x=tr.querySelector("[data-x]"); if(x)x.onclick=()=>eliminaArc(tr);
+  });
+}
+async function eliminaArc(tr){
+  const n=tr.dataset.n; if(!n)return;
+  if(!confirm("Eliminare completamente «"+n+"» dall'archivio e dal catalogo?\n\nLe schede che lo usano già restano com'è."))return;
+  const j=await rpc("gc_t_archivio_elimina",{p_cod:CODE,p_esercizio:n});
+  if(!j.ok){toast(j.errore);return}
+  ARC.esercizi=ARC.esercizi.filter(e=>e.esercizio!==n);
+  toast("Eliminato ✔"); caricaCatalogo(); disegnaTabArchivio();
 }
 async function salvaArc(tr){
   const o={}; tr.querySelectorAll("input,select").forEach(i=>o[i.dataset.k]=i.value.trim());
@@ -295,6 +352,21 @@ async function salvaArc(tr){
 $("a-cerca").oninput=()=>ARC&&disegnaTabArchivio();
 $("a-senza").onchange=()=>ARC&&disegnaTabArchivio();
 
+
+// ---------- MODELLI DI SPLIT ----------
+let SPL=null, SPLF=0;
+const COLG={Petto:["radial-gradient(120% 220% at 0% 120%,#ff3b41,#e31e24 55%,#b3121a)","#fff"],Dorso:["radial-gradient(120% 220% at 0% 120%,#4a1014,#1a0a0b 55%,#0e0e0e)","#fff"],Spalle:["radial-gradient(120% 220% at 0% 120%,#b01a20,#7a0f16 60%,#4d0a0e)","#fff"],Gambe:["radial-gradient(120% 220% at 0% 120%,#ececec,#d4d4d4)","#222"],Tricipiti:["radial-gradient(120% 220% at 0% 120%,#ff8a8e,#ff6b6f 60%,#f0494e)","#fff"],Bicipiti:["radial-gradient(120% 220% at 0% 120%,#ffd9da,#ffc4c6)","#7a0f16"],Glutei:["radial-gradient(120% 220% at 0% 120%,#c0141b,#8f1519)","#fff"],Addome:["radial-gradient(120% 220% at 0% 120%,#f3f3f3,#e2e2e2)","#222"]};
+async function caricaSplit(){
+  if(!SPL){const j=await rpc("gc_t_split",{p_cod:CODE});if(!j.ok){toast(j.errore);return}SPL=j.split}
+  disegnaSplit();
+}
+function disegnaSplit(){
+  const gg=[...new Set(SPL.map(x=>x.n_giorni))].sort();
+  $("s-filtri").innerHTML=[0,...gg].map(n=>`<div class="tab ${SPLF===n?"on":""}" data-f="${n}">${n?n+" giorni":"Tutte"}</div>`).join("");
+  document.querySelectorAll("#s-filtri .tab").forEach(e=>e.onclick=()=>{SPLF=+e.dataset.f;disegnaSplit()});
+  $("s-lista").innerHTML=SPL.filter(x=>!SPLF||x.n_giorni===SPLF).map(x=>`<div class="card spl"><h3>${esc(x.nome)}<small>${x.n_giorni} giorni a settimana</small></h3><div class="row">${x.giorni.map((d,i)=>`<div class="col">${d.map(g=>{const c=COLG[g]||["#eee","#222"];return `<div class="b" style="background:${c[0]};color:${c[1]}">${esc(g)}</div>`}).join("")}<div class="dn">${LET[i]}</div></div>`).join("")}</div>${x.note?`<div class="nt">${esc(x.note)}</div>`:""}</div>`).join("")||'<div class="nota">Nessuna split.</div>';
+}
+
 // ---------- statistiche del blocco ----------
 const num=v=>{const m=String(v==null?"":v).replace(",",".").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):NaN};
 const repMedia=v=>{const t=String(v||"").replace(",",".").match(/\d+(\.\d+)?/g);if(!t)return NaN;const a=t.map(parseFloat);return a.length>1?(a[0]+a[1])/2:a[0]};
@@ -304,48 +376,231 @@ function secRec(v){
   m=t.match(/^(\d+)\s*(''|"|s)/); if(m)return parseInt(m[1]);
   const n=num(t); if(isNaN(n))return 60; return n>=15?n:n*60;
 }
-function catGruppo(g){
-  g=String(g||"").toLowerCase();
-  if(/petto|spall|tricip|deltoid/.test(g))return /posterior/.test(g)?"trazione":"spinta";
-  if(/dors|bicip|trapez|lombar|avambr/.test(g))return "trazione";
-  if(/gamb|glute|quadric|femor|polpac|adduttor|abduttor|cosc/.test(g))return "gambe";
-  return "altro";
-}
-function barre(obj,fmt){
-  const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]); const mx=Math.max(1,...e.map(x=>x[1]));
-  return e.map(([k,v])=>`<div class="rb"><span class="n" title="${esc(k)}">${esc(k)}</span><span class="b"><i style="width:${v/mx*100}%"></i></span><span class="v">${fmt?fmt(v):v}</span></div>`).join("")||'<i style="color:var(--testo2)">Nessun dato</i>';
-}
 function caricoRiga(r){ // lista dei carichi numerici in ordine di seduta
   return Object.keys(r.carichi||{}).map(Number).sort((a,b)=>a-b).map(k=>num(r.carichi[k])).filter(x=>!isNaN(x));
 }
+const ser=r=>{const n=num(r.serie);return isNaN(n)?0:n};
+
+// soglie (tabella gc_soglie su Supabase; i valori qui sono solo la copia di sicurezza)
+let SG={}, STORICO=null;
+const SGD={durata_seduta:[45,90],fond_seduta:[0,2],compl_seduta:[1,3],fond_sett:[1,4],compl_sett:[1,12],sedute_sett:[2,4],vol_mv:[8,10],vol_mev:[10,15],vol_mav:[15,25],vol_mev_cut:[10,17],vol_mav_cut:[18,22],vol_alto_cut:[22,25],fatica_bassa:[1,6],fatica_media:[7,8],sec_rep:[4,4],sec_cambio:[45,45]};
+const sg=(k,i)=>{const o=SG[k],f=i===0?"min":"max";return(o&&o[f]!=null&&!isNaN(Number(o[f])))?Number(o[f]):SGD[k][i]};
+async function caricaSoglie(){try{const j=await rpc("gc_t_soglie",{p_cod:CODE});if(j&&j.ok)SG=j.soglie||{}}catch(e){}}
+
+const GRUPPI=["Petto","Dorso","Spalle","Bicipiti","Tricipiti","Gambe","Glutei","Addome"];
+function gruppoCan(g){
+  g=String(g||"").toLowerCase();
+  if(/cardio/.test(g))return null;
+  if(/petto|pettor/.test(g))return "Petto";
+  if(/glute/.test(g))return "Glutei";
+  if(/tricip/.test(g))return "Tricipiti";
+  if(/bicip|avambr/.test(g))return "Bicipiti";
+  if(/dors|trapez|lombar/.test(g))return "Dorso";
+  if(/spall|deltoid/.test(g))return "Spalle";
+  if(/addom|core|obliq/.test(g))return "Addome";
+  if(/gamb|quadric|femor|polpac|aduttor|abduttor|cosc|ischi|vasto/.test(g))return "Gambe";
+  return "Altro";
+}
+// una riga puo' contenere piu' esercizi (superset "A + B"): li conto uno per uno
+function partiRiga(r){
+  const nomi=String(r.esercizio||"").split("+").map(x=>x.trim()).filter(Boolean);
+  return nomi.map(n=>{
+    const c=CATMAP[n.toLowerCase()], g=gruppoCan((c&&c.gruppo)||r.gruppo), cr=c?(c.cat_raw||""):"";
+    return {nome:n,g,cat:g===null?"cardio":cr==="fondamentale"?"fond":(cr==="complementare"||cr==="isolamento")?"compl":"senza"};
+  });
+}
+function durataRiga(r){
+  const s=ser(r);
+  if(/min/i.test(String(r.rep||""))){const m=num(r.rep);return (isNaN(m)?0:m)*60*(s||1)}
+  const rp=repMedia(r.rep), rv=isNaN(rp)?10:rp;
+  return s*(rv*sg("sec_rep",0)+secRec(r.recupero))+sg("sec_cambio",0);
+}
+function analisi(){
+  const R=righeBlocco(), NG=nGiorni();
+  const giorni=Array.from({length:NG},(_,i)=>"Giorno "+LET[i]);
+  const D=giorni.map(()=>({fond:0,compl:0,sec:0,n:0,serie:{}}));
+  const senza=new Set(), tot={Altro:0}; GRUPPI.forEach(g=>tot[g]=0);
+  const fa={forza:0,ipertrofia:0,resistenza:0};
+  R.forEach(r=>{
+    if(!String(r.esercizio||"").trim())return;
+    const gi=giornoIdx(r.giorno), d=D[gi>=0&&gi<NG?gi:NG-1], s=ser(r);
+    d.n++; d.sec+=durataRiga(r);
+    const x=repMedia(r.rep);
+    partiRiga(r).forEach(p=>{
+      if(p.cat==="fond")d.fond++; else if(p.cat==="compl")d.compl++; else if(p.cat==="senza")senza.add(p.nome);
+      if(p.g){tot[p.g]=(tot[p.g]||0)+s; d.serie[p.g]=(d.serie[p.g]||0)+s;
+        if(!isNaN(x))fa[x<=6?"forza":x<=12?"ipertrofia":"resistenza"]+=s}
+    });
+  });
+  return {giorni,D,senza:[...senza],tot,fa,NG};
+}
+function zonaVol(t,cut){
+  const mvMin=sg("vol_mv",0),mvMax=sg("vol_mv",1),mevMax=cut?sg("vol_mev_cut",1):sg("vol_mev",1),mavMax=cut?sg("vol_mav_cut",1):sg("vol_mav",1),altoMax=sg("vol_alto_cut",1);
+  if(t<mvMin)return{n:"sotto MV",bg:"#eeeeee",fg:"#777"};
+  if(t<=mvMax)return{n:"MV",bg:"#fbe3b8",fg:"#a86a00"};
+  if(t<=mevMax)return{n:"MEV",bg:"#d6e4fb",fg:"#2a5db0"};
+  if(t<=mavMax)return{n:"MAV",bg:"#cfeedb",fg:"#1f9d55"};
+  if(cut&&t<=altoMax)return{n:"alto",bg:"#fde0c0",fg:"#b25a00"};
+  return{n:"MRV",bg:"#f7c9cb",fg:"#E31E24"};
+}
+const OKC="#1f9d55", BADC="#E31E24";
+const chip=(t,ok)=>`<span class="chip ${ok===true?"ok":ok===false?"no":"nd"}"><b>${ok===true?"✓":ok===false?"⚠":"–"}</b> ${t}</span>`;
+const rng=k=>sg(k,0)+"–"+sg(k,1);
+
+function svgColonne(vals,k,w0){ // colonne per giorno con la fascia del range
+  const lo=sg(k,0),hi=sg(k,1), mx=Math.max(hi+1,...vals.filter(v=>v!=null))+0, h=160,base=h-22,top=22,W=44+vals.length*58;
+  const sy=v=>base-(v/mx)*(base-top);
+  let o=`<rect x="28" y="${sy(hi)}" width="${W-34}" height="${sy(lo)-sy(hi)}" fill="#dff3e6"/>`;
+  for(let t=0;t<=mx;t++)o+=`<text x="22" y="${sy(t)+4}" font-size="10" fill="#777" text-anchor="end">${t}</text>`;
+  vals.forEach((v,i)=>{
+    const x=44+i*58, L=LET[i];
+    if(v==null)o+=`<text x="${x+17}" y="${base-6}" font-size="10" fill="#777" text-anchor="middle">vuoto</text>`;
+    else{const ok=v>=lo&&v<=hi,c=ok?"#111":BADC,y=v?sy(v):base-2;
+      o+=`<rect x="${x}" y="${y}" width="34" height="${Math.max(base-y,2)}" rx="4" fill="${c}"/><text x="${x+17}" y="${y-5}" font-size="12" font-weight="800" text-anchor="middle" fill="${c}">${v}${ok?"":" ⚠"}</text>`}
+    o+=`<text x="${x+17}" y="${h-6}" font-size="12" text-anchor="middle" font-weight="700">${L}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${h}" width="100%">${o}</svg>`;
+}
+function svgRadar(lab,vals){
+  const w=320,h=270,cx=w/2,cy=h/2+4,R=84,n=lab.length,mx=Math.max(1,...vals);
+  const p=(i,k)=>{const a=-Math.PI/2+2*Math.PI*i/n;return[cx+R*k*Math.cos(a),cy+R*k*Math.sin(a)]};
+  let o="";
+  [.33,.66,1].forEach(k=>o+=`<polygon points="${lab.map((_,i)=>p(i,k).map(z=>z.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="#ddd"/>`);
+  lab.forEach((l,i)=>{const[x,y]=p(i,1),[lx,ly]=p(i,1.24);
+    o+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#ddd"/><text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" font-size="11" text-anchor="middle" font-weight="600">${l} <tspan fill="${BADC}" font-weight="800">${vals[i]}</tspan></text>`});
+  o+=`<polygon points="${vals.map((v,i)=>p(i,v/mx).map(z=>z.toFixed(1)).join(",")).join(" ")}" fill="${BADC}" fill-opacity=".25" stroke="${BADC}" stroke-width="2"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%">${o}</svg>`;
+}
+function svgBarraVolume(t,cut,mxs){
+  const W=300,sc=v=>v/mxs*W;
+  const mvMin=sg("vol_mv",0),mvMax=sg("vol_mv",1),mevMax=cut?sg("vol_mev_cut",1):sg("vol_mev",1),mavMax=cut?sg("vol_mav_cut",1):sg("vol_mav",1),altoMax=sg("vol_alto_cut",1);
+  const bands=[[0,mvMin,"#eeeeee"],[mvMin,mvMax,"#fbe3b8"],[mvMax,mevMax,"#d6e4fb"],[mevMax,mavMax,"#cfeedb"]];
+  let last=mavMax; if(cut){bands.push([mavMax,altoMax,"#fde0c0"]);last=altoMax}
+  bands.push([last,mxs,"#f7c9cb"]);
+  const o=bands.map(([a,b,c])=>`<rect x="${sc(a)}" y="9" width="${Math.max(0,sc(b)-sc(a))}" height="12" fill="${c}"/>`).join("")+`<line x1="${sc(Math.min(t,mxs))}" y1="3" x2="${sc(Math.min(t,mxs))}" y2="27" stroke="#111" stroke-width="3"/>`;
+  return `<svg viewBox="0 0 ${W} 30" width="100%" height="26" preserveAspectRatio="none">${o}</svg>`;
+}
+function svgCiambella(parts){
+  const w=200,h=170,cx=100,cy=85,R=58,tot=parts.reduce((a,p)=>a+p[1],0);
+  if(!tot)return '<i style="color:var(--testo2)">Nessun dato</i>';
+  let a0=-Math.PI/2,o="";
+  parts.forEach(([n,v,c])=>{if(!v)return;const a1=a0+2*Math.PI*v/tot;
+    if(v===tot)o+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${c}" stroke-width="26"/>`;
+    else{const x1=cx+R*Math.cos(a0),y1=cy+R*Math.sin(a0),x2=cx+R*Math.cos(a1),y2=cy+R*Math.sin(a1);
+      o+=`<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 ${a1-a0>Math.PI?1:0} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${c}" stroke-width="26"/>`}
+    a0=a1});
+  o+=`<text x="${cx}" y="${cy+6}" font-size="22" font-weight="800" text-anchor="middle">${tot}</text><text x="${cx}" y="${cy+22}" font-size="10" text-anchor="middle" fill="#777">serie</text>`;
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:260px;display:block;margin:0 auto">${o}</svg>`;
+}
+function datiFatica(){
+  const out={}; GRUPPI.forEach(g=>out[g]=[]);
+  (STORICO||[]).forEach(r=>{
+    if(r.blocco!=null&&r.blocco!==BLOCCO)return;
+    const m=String(r.commento||"").match(/^Fatica:\s*(\d+)\/10/); if(!m)return;
+    const g=gruppoCan(r.gruppo)||null; if(g&&out[g])out[g].push(parseInt(m[1],10));
+  });
+  return out;
+}
+function htmlFatica(){
+  const D=datiFatica(), W=420,x0=10,sc=v=>x0+(v-1)/9*(W-2*x0), b6=sg("fatica_bassa",1), b8=sg("fatica_media",1);
+  const col=v=>v<=b6?"#9aa0a6":v<=b8?"#e0a100":BADC;
+  let h=`<div class="fr"><div></div><div class="ax">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<span style="left:${(sc(i)/W*100).toFixed(1)}%">${i}</span>`).join("")}</div><div></div><div></div></div>`;
+  let any=false;
+  GRUPPI.forEach(g=>{
+    const v=D[g]; if(v.length)any=true;
+    if(!v.length){h+=`<div class="fr"><div class="hl">${g}</div><div class="fnd">dati insufficienti</div><div></div><div class="fn">0 rilevazioni</div></div>`;return}
+    const m=v.reduce((a,b)=>a+b,0)/v.length;
+    const bands=`<rect x="${x0-4}" y="6" width="${sc(b6+.5)-x0+4}" height="16" fill="#eeeeee"/><rect x="${sc(b6+.5)}" y="6" width="${sc(b8+.5)-sc(b6+.5)}" height="16" fill="#fbe9c0"/><rect x="${sc(b8+.5)}" y="6" width="${sc(10)-sc(b8+.5)+4}" height="16" fill="#f7c9cb"/>`;
+    const seen={},cnt={}; v.forEach(a=>cnt[a]=(cnt[a]||0)+1);
+    const dots=v.map(a=>{const i=seen[a]||0;seen[a]=i+1;return `<circle cx="${(sc(a)+(i-(cnt[a]-1)/2)*9).toFixed(1)}" cy="14" r="5" fill="${col(a)}" fill-opacity=".9" stroke="#fff" stroke-width="1.2"/>`}).join("");
+    const z=m>b8?"alta":m>b6?"media":"bassa", zb=m>b8?"#f7c9cb":m>b6?"#fbe9c0":"#eee", zc=m>b8?BADC:m>b6?"#a86a00":"#777";
+    h+=`<div class="fr"><div class="hl">${g}</div><svg viewBox="0 0 ${W} 28" width="100%">${bands}${dots}<line x1="${sc(m)}" y1="2" x2="${sc(m)}" y2="26" stroke="#111" stroke-width="2.5"/></svg><div class="zb" style="background:${zb};color:${zc}"><b>${m.toFixed(1).replace(".",",")}</b> ${z}</div><div class="fn">${v.length} rilevazion${v.length===1?"e":"i"}</div></div>`;
+  });
+  if(STORICO===null)h+=`<div class="nota">Carico i dati…</div>`;
+  else if(!any)h+=`<div class="nota">Nessuna fatica registrata in questo blocco.</div>`;
+  return h+`<div class="leg"><i style="background:#eeeeee"></i>bassa 1–${b6}<i style="background:#fbe9c0"></i>media ${b6+1}–${b8}<i style="background:#f7c9cb"></i>alta ${b8+1}–10<span style="margin-left:10px">● ogni punto = una rilevazione · barra nera = media</span></div>`;
+}
 function statistiche(){
+  const c=DATI.cliente, cut=!!((CLIENTI.find(z=>z.codice===c.codice)||{}).ipocalorica);
+  const A=analisi(), NG=A.NG, vuoto=i=>A.D[i].n===0;
+  const al=[], da=[];
+  const verdetto=(v,k)=>{const lo=sg(k,0),hi=sg(k,1);return v<lo?-1:v>hi?1:0};
+  // ---- controllo regole: righe
+  const righe=[];
+  const perGiorno=(titolo,k,unita,get,msg)=>{
+    const celle=A.giorni.map((g,i)=>{
+      if(vuoto(i))return{g:LET[i],t:"—",ok:null};
+      const v=get(i),s=verdetto(v,k);
+      if(s!==0)al.push(`<b>${g}</b> ${msg(v,s,k)}`);
+      return{g:LET[i],t:(k==="durata_seduta"?"~":"")+v+unita,ok:s===0};
+    });
+    righe.push({t:titolo,r:rng(k)+(k==="durata_seduta"?" min":""),c:celle});
+  };
+  perGiorno("Durata per seduta","durata_seduta","′",i=>Math.round(A.D[i].sec/60),(v,s,k)=>`dura circa ${v}′: ${s<0?"sotto il minimo di "+sg(k,0):"sopra il massimo di "+sg(k,1)}′`);
+  perGiorno("Fondamentali per seduta","fond_seduta","",i=>A.D[i].fond,(v,s,k)=>`ha ${v} fondamentali: ${s<0?"il minimo è "+sg(k,0):"il massimo è "+sg(k,1)}`);
+  perGiorno("Complementari e isolamento per seduta","compl_seduta","",i=>A.D[i].compl,(v,s,k)=>`ha ${v} complementari/isolamento: ${s<0?"il minimo è "+sg(k,0):"il massimo è "+sg(k,1)}`);
+  const totF=A.D.reduce((a,d)=>a+d.fond,0), totC=A.D.reduce((a,d)=>a+d.compl,0);
+  const sett=(titolo,k,v,txt)=>{const s=verdetto(v,k);if(s!==0)al.push(`<b>${txt}</b>: ${v} (${s<0?"minimo "+sg(k,0):"massimo "+sg(k,1)})`);righe.push({t:titolo,r:rng(k),c:[{g:"sett.",t:String(v),ok:s===0}]})};
+  sett("Fondamentali a settimana","fond_sett",totF,"Fondamentali a settimana");
+  sett("Complementari e isolamento a settimana","compl_sett",totC,"Complementari/isolamento a settimana");
+  sett("Sedute a settimana","sedute_sett",NG,"Sedute a settimana");
+  // ---- volume per gruppo
+  const gruppi=GRUPPI.slice(); if(A.tot.Altro)gruppi.push("Altro");
+  const volFuori=[];
+  gruppi.forEach(g=>{
+    const t=A.tot[g]||0;
+    if(cut){const lo=sg("vol_mav_cut",0),hi=sg("vol_mav_cut",1);if(t<lo||t>hi)volFuori.push(`${g} ${t}`)}
+    else if(g!=="Altro"&&zonaVol(t,false).n==="MRV")al.push(`<b>${g}</b>: ${t} serie, sopra il volume massimo recuperabile (${sg("vol_mav",1)})`);
+  });
+  if(cut&&volFuori.length)al.push(`<b>Ipocalorica</b>: fuori dal range ${rng("vol_mav_cut")} serie a settimana → ${volFuori.join(", ")}`);
+  A.giorni.forEach((g,i)=>{if(vuoto(i))da.push(`<b>${g}</b> non ha esercizi`)});
+  if(A.senza.length)da.push(`senza categoria (non contati): ${A.senza.slice(0,6).map(esc).join(", ")}${A.senza.length>6?" e altri "+(A.senza.length-6):""}`);
+  const boxAl=al.length?`<div class="al"><b>⚠ ${al.length} segnalazion${al.length===1?"e":"i"}</b><ul>${al.map(x=>`<li>${x}</li>`).join("")}</ul>${da.length?`<div class="avv"><b>Da controllare:</b> ${da.join(" · ")}</div>`:""}</div>`
+     :`<div class="al ok"><b>✓ Tutto nei range</b>${da.length?`<div class="avv"><b>Da controllare:</b> ${da.join(" · ")}</div>`:""}</div>`;
+  const tabRegole=righe.map(r=>`<div class="rr"><div class="rn">${r.t}<small>${r.r}</small></div><div class="rc">${r.c.map(x=>`<span class="g">${x.g}</span>${chip(x.t,x.ok)}`).join("")}</div></div>`).join("");
+  // ---- colonne fond / compl
+  const colF=svgColonne(A.D.map((d,i)=>vuoto(i)?null:d.fond),"fond_seduta"), colC=svgColonne(A.D.map((d,i)=>vuoto(i)?null:d.compl),"compl_seduta");
+  // ---- radar
+  const radar=svgRadar(GRUPPI,GRUPPI.map(g=>A.tot[g]||0));
+  // ---- frequenza e volume
+  const mxs=Math.max(32,...gruppi.map(g=>(A.tot[g]||0)+2));
+  let heat=`<div class="hmw"><div class="hm" style="--ng:${NG}"><div></div>${A.giorni.map((g,i)=>`<div class="hh">${LET[i]}</div>`).join("")}<div class="hh">Totale settimanale</div><div></div>`;
+  gruppi.forEach(g=>{
+    const t=A.tot[g]||0, z=zonaVol(t,cut);
+    heat+=`<div class="hl">${g}</div>`+A.D.map(d=>{const v=d.serie[g]||0,a=v?.18+Math.min(v,12)/12*.8:0;return `<div class="hc" style="background:${v?`rgba(227,30,36,${a.toFixed(2)})`:"#f4f4f4"};color:${a>.55?"#fff":"#444"}">${v||""}</div>`}).join("")+`<div>${svgBarraVolume(t,cut,mxs)}</div><div class="zb" style="background:${z.bg};color:${z.fg}"><b>${t}</b> ${z.n}</div>`;
+  });
+  heat+=`</div></div>`;
+  const legZ=cut?[["#eeeeee",`sotto MV 0–${sg("vol_mv",0)-1}`],["#fbe3b8",`MV ${rng("vol_mv")}`],["#d6e4fb",`MEV ${sg("vol_mv",1)+1}–${sg("vol_mev_cut",1)}`],["#cfeedb",`MAV ${rng("vol_mav_cut")}`],["#fde0c0",`alto ${sg("vol_mav_cut",1)+1}–${sg("vol_alto_cut",1)}`],["#f7c9cb",`MRV >${sg("vol_alto_cut",1)}`]]
+     :[["#eeeeee",`sotto MV 0–${sg("vol_mv",0)-1}`],["#fbe3b8",`MV ${rng("vol_mv")}`],["#d6e4fb",`MEV ${sg("vol_mv",1)+1}–${sg("vol_mev",1)}`],["#cfeedb",`MAV ${sg("vol_mev",1)+1}–${sg("vol_mav",1)}`],["#f7c9cb",`MRV >${sg("vol_mav",1)}`]];
+  heat+=`<div class="leg">${legZ.map(([c,t])=>`<i style="background:${c}"></i>${t}`).join("")}</div>`;
+  // ---- fasce di ripetizioni
+  const ciamb=svgCiambella([["Forza 1–6",A.fa.forza,"#111111"],["Ipertrofia 7–12",A.fa.ipertrofia,BADC],["Resistenza 13+",A.fa.resistenza,"#f4a3a6"]]);
+  const totFa=A.fa.forza+A.fa.ipertrofia+A.fa.resistenza, pc=v=>totFa?Math.round(v/totFa*100)+"%":"–";
+  const legFa=`<div class="leg"><i style="background:#111"></i>Forza ${pc(A.fa.forza)}<i style="background:${BADC}"></i>Ipertrofia ${pc(A.fa.ipertrofia)}<i style="background:#f4a3a6"></i>Resistenza ${pc(A.fa.resistenza)}</div>`;
+  // ---- consigli ipocalorica
+  const consigli=cut?`<div class="card s3"><h3>Consigli in ipocalorica<small>il cliente è in ipocalorica</small></h3><div class="cut">
+    <div class="ci"><span class="k">VOLUME</span><b class="t">Serie ottimali: ${rng("vol_mav_cut")} a settimana</b>Invece di ${rng("vol_mav")}. Il grafico del volume per gruppo usa già queste zone.</div>
+    <div class="ci"><span class="k">INTENSITÀ</span><b class="t">Fondamentali: carico alto, serie dimezzate</b>Meno fatica sistemica. Il volume tolto ai fondamentali si può recuperare nei complementari e nell'isolamento, che non vanno abbassati.</div>
+    <div class="ci"><span class="k">FREQUENZA</span><b class="t">Una seduta in più, se possibile</b>Stesse serie settimanali distribuite su più giorni: da 3 a 4 sedute (o da 2 a 3). Scheda attuale: ${NG} sedut${NG===1?"a":"e"}.</div></div></div>`:"";
+  const html=`
+   <div class="card s2"><h3>Controllo regole<small>${DATI.cliente.nome} · blocco ${BLOCCO}${cut?" · ipocalorica":""}</small></h3>${boxAl}${tabRegole}<div class="nota">La durata è una stima da serie, ripetizioni e recuperi. Cardio escluso dai conteggi di serie ed esercizi.</div></div>
+   <div class="card"><h3>Fondamentali e complementari per seduta<small>con fascia del range</small></h3><div class="two"><div><h4>Fondamentali · ${rng("fond_seduta")}</h4>${colF}</div><div><h4>Complementari e isolamento · ${rng("compl_seduta")}</h4>${colC}</div></div></div>
+   <div class="card"><h3>Serie per gruppo muscolare<small>radar · a settimana</small></h3>${radar}</div>
+   <div class="card s2"><h3>Frequenza e volume per gruppo<small>serie per giorno · zona di volume settimanale</small></h3>${heat}</div>
+   ${consigli}
+   <div class="card"><h3>Fasce di ripetizioni<small>in serie</small></h3>${ciamb}${legFa}</div>
+   <div class="card s2"><h3>Fatica percepita per gruppo muscolare<small>scala 1–10 segnalata dal cliente</small></h3>${htmlFatica()}</div>
+   ${statExtra()}`;
+  $("stat").innerHTML=html;
+}
+// altri dati del blocco (restano come prima)
+function statExtra(){
   const R=DATI.righe.filter(r=>r.blocco===BLOCCO), N=DATI.cliente.n_sedute||6;
-  const ser=r=>{const n=num(r.serie);return isNaN(n)?0:n};
-  // 1) serie per gruppo, 2) frequenza
-  const sg={},fr={};
-  R.forEach(r=>{const g=(r.gruppo||"—").trim()||"—";sg[g]=(sg[g]||0)+ser(r);(fr[g]=fr[g]||new Set()).add(r.giorno)});
-  const frO={};Object.keys(fr).forEach(g=>frO[g]=fr[g].size);
-  // 3) per giorno
-  const gg={};
-  R.forEach(r=>{const d=gg[r.giorno]=gg[r.giorno]||{es:0,se:0,sec:0};d.es++;d.se+=ser(r);
-    const rp=repMedia(r.rep);d.sec+=ser(r)*((isNaN(rp)?10:rp)*4+secRec(r.recupero))});
-  const durate=Object.values(gg).map(d=>d.sec), media=durate.length?durate.reduce((a,b)=>a+b,0)/durate.length:0;
-  const righeGG=Object.entries(gg).sort().map(([g,d])=>{const m=Math.round(d.sec/60);const t=media&&d.sec>media*1.25?'<span class="tag">lungo</span>':media&&d.sec<media*.75?'<span class="tag">corto</span>':"";return `<tr><td>${esc(g)}${t}</td><td>${d.es} es.</td><td>${d.se} serie</td><td>~${m} min</td></tr>`}).join("");
-  // 4) fasce rep (serie)
-  const fa={"Forza (1-6)":0,"Ipertrofia (7-12)":0,"Resistenza (13+)":0};
-  R.forEach(r=>{const x=repMedia(r.rep);if(isNaN(x))return;fa[x<=6?"Forza (1-6)":x<=12?"Ipertrofia (7-12)":"Resistenza (13+)"]+=ser(r)});
-  // 5) spinta/trazione
-  const ca={spinta:0,trazione:0,gambe:0,altro:0};R.forEach(r=>ca[catGruppo(r.gruppo)]+=ser(r));
-  const rap=ca.trazione?(ca.spinta/ca.trazione).toFixed(2).replace(".",","):"—";
-  const alto=ca.spinta+ca.trazione, rap2=ca.gambe?(alto/ca.gambe).toFixed(2).replace(".",","):"—";
-  // 6) sedute completate
   const giorni=[...new Set(R.map(r=>r.giorno))].sort();
   const sed=giorni.map(g=>{const n=new Set((DATI.sedute||[]).filter(x=>x.blocco===BLOCCO&&x.giorno===g).map(x=>x.sessione)).size;return [g,n]});
   const totS=sed.reduce((a,x)=>a+x[1],0), totMax=giorni.length*N;
-  // 7) progressione carichi
   let su=0,fe=0,bl=0,att=0,gi=0;
   R.forEach(r=>{const c=caricoRiga(r); if(r.bloccato)bl++; if(c.length<2){att++;return} const d=c[c.length-1]-c[0]; if(d>0)su++;else if(d<0)gi++;else fe++});
-  // 8) confronto con blocco precedente
   const bls=[...new Set(DATI.righe.map(r=>r.blocco))].sort((a,b)=>a-b), prev=bls[bls.indexOf(BLOCCO)-1];
   let conf='<i style="color:var(--testo2)">Disponibile dal secondo blocco.</i>';
   if(prev!==undefined){
@@ -355,17 +610,9 @@ function statistiche(){
     const pc=v.length?(v.reduce((a,b)=>a+b,0)/v.length*100):null, sg_=(x)=>(x>0?"+":"")+x.toFixed(1).replace(".",",");
     conf=`<div class="kpi"><div><b>${sC-sP>0?"+":""}${sC-sP}</b>serie totali (blocco ${prev}: ${sP})</div><div><b>${pc===null?"—":sg_(pc)+"%"}</b>carico medio, su ${v.length} esercizi in comune</div></div>`;
   }
-  const html=`
-   <div class="card"><h3>Serie per gruppo muscolare<small>blocco ${BLOCCO}</small></h3>${barre(sg,v=>v+" serie")}</div>
-   <div class="card"><h3>Frequenza per gruppo<small>giorni a settimana</small></h3>${barre(frO,v=>v+(v===1?" giorno":" giorni"))}</div>
-   <div class="card"><h3>Riepilogo per giorno<small>durata stimata</small></h3><table class="mini">${righeGG||"<tr><td>Nessun dato</td></tr>"}</table><div class="nota">Stima da serie, ripetizioni e recuperi.</div></div>
-   <div class="card"><h3>Fasce di ripetizioni<small>in serie</small></h3>${barre(fa,v=>v+" serie")}</div>
-   <div class="card"><h3>Spinta e trazione<small>in serie</small></h3>${barre({Spinta:ca.spinta,Trazione:ca.trazione,Gambe:ca.gambe,...(ca.altro?{Altro:ca.altro}:{})})}
-     <div class="kpi" style="margin-top:8px"><div><b>${rap}</b>spinta / trazione</div><div><b>${rap2}</b>parte alta / gambe</div></div></div>
-   <div class="card"><h3>Sedute completate<small>${totS} su ${totMax}</small></h3>${sed.map(([g,n])=>`<div class="rb"><span class="n">${esc(g)}</span><span class="b"><i style="width:${n/N*100}%"></i></span><span class="v">${n}/${N}</span></div>`).join("")||'<i style="color:var(--testo2)">Nessun giorno</i>'}</div>
+  return `<div class="card"><h3>Sedute completate<small>${totS} su ${totMax}</small></h3>${sed.map(([g,n])=>`<div class="rb"><span class="n">${esc(g)}</span><span class="b"><i style="width:${n/N*100}%"></i></span><span class="v">${n}/${N}</span></div>`).join("")||'<i style="color:var(--testo2)">Nessun giorno</i>'}</div>
    <div class="card"><h3>Progressione dei carichi<small>dalla 1ª seduta</small></h3><div class="kpi"><div><b>${su}</b>saliti</div><div><b>${fe}</b>fermi</div><div><b>${gi}</b>scesi</div><div><b>${bl}</b>bloccati</div><div><b>${att}</b>in attesa</div></div><div class="nota">“In attesa” = esercizi con meno di 2 carichi registrati.</div></div>
    <div class="card"><h3>Rispetto al blocco precedente</h3>${conf}</div>`;
-  $("stat").innerHTML=html;
 }
 
 function nSett(){let n=3;DATI.righe.forEach(r=>{Object.keys(r.carichi||{}).concat(Object.keys(r.note||{})).forEach(k=>{if(+k>n)n=+k})});return n}
