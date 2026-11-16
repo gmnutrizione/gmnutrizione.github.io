@@ -872,6 +872,7 @@ async function creaDaVuota(tr){
     if(!j.ok){toast(j.errore);return}
     tr.dataset.id=j.id; DATI.righe.push({...o,id:j.id});
     const az=tr.querySelector(".az"); if(az){az.innerHTML=AZIONI;collega(tr)}
+    const ps=tr.querySelector("[data-p]"); if(ps){const f=eFond(o.esercizio);ps.disabled=!f;ps.title=f?"":"Solo per esercizi fondamentali";ps.options[0].text=f?"—":"solo fondamentali"}
     if(!document.querySelector('#tab tr[data-id="new"]'))righeVuote(1);
     toast("Salvato ✔"); statistiche();
   }catch(e){toast("Errore di salvataggio")}
