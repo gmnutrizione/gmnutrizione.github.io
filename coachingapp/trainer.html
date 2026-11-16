@@ -150,6 +150,8 @@ td input[readonly]{color:#555}
 .fa .lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 @media(max-width:1100px){#stat{grid-template-columns:repeat(2,minmax(0,1fr))}.s3,.s4{grid-column:span 2}}
 @media(max-width:700px){#stat{grid-template-columns:1fr}.s2,.s3,.s4{grid-column:auto}#stat .rules{grid-template-columns:1fr}}
+#mancanti{background:#fdecea;border:1px solid #e57373;color:#8a1c1c;border-radius:8px;padding:8px 12px;margin:0 0 8px;font-size:13px}
+#tab td.mnc{background:#fdecea}#tab td.mnc input{color:#b3261e;font-weight:600}
 </style>
 </head>
 <body>
@@ -174,6 +176,7 @@ td input[readonly]{color:#555}
     <div id="tabs"></div>
     <div id="stat"></div>
     <div class="box" id="barra" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
+    <div id="mancanti" style="display:none"></div>
     <div class="scroll"><table id="tab"></table></div>
   </div>
 </main>
@@ -695,7 +698,11 @@ function rigaHtml(r,isNew){
       const t=String(v||"pesi").toLowerCase().startsWith("corpo")?"corpo libero":"pesi";
       h+=`<td><select data-k="tipo"><option value="pesi" ${t==="pesi"?"selected":""}>pesi</option><option value="corpo libero" ${t!=="pesi"?"selected":""}>c. libero</option></select></td>`;
     }else if(ed&&k==="esercizio"){
-      h+=`<td><input data-k="esercizio" list="dl-es" autocomplete="off" placeholder="Scrivi per cercare…" value="${esc(v)}"></td>`;
+      const mn=fuoriArchivio(v);
+      h+=`<td${mn.length?` class="mnc" title="Non è più nell'archivio: ${esc(mn.join(", "))}. Sostituiscilo con un esercizio dell'archivio."`:""}><input data-k="esercizio" list="dl-es" autocomplete="off" placeholder="Scrivi per cercare…" value="${esc(v)}"></td>`;
+    }else if(!ed&&k==="esercizio"){
+      const mn=fuoriArchivio(v);
+      h+=`<td${mn.length?` class="mnc" title="Non è più nell'archivio: ${esc(mn.join(", "))}"`:""}><input data-k="esercizio" value="${esc(v)}" readonly></td>`;
     }else if(ed&&k==="gruppo"){
       h+=`<td><input data-k="gruppo" list="dl-gr" autocomplete="off" value="${esc(v)}"></td>`;
     }else if(k==="video"){
@@ -729,7 +736,20 @@ function righeVuote(n){ // aggiunge n righe vuote da compilare in fondo alla tab
   }
   return primo;
 }
+function fuoriArchivio(v){ // parti del nome ("A + B") che non esistono più nell'archivio/catalogo
+  if(!CAT.length)return [];
+  return String(v||"").split("+").map(x=>x.trim()).filter(Boolean).filter(p=>!CATMAP[p.toLowerCase()]);
+}
+function segnalaMancanti(){
+  const el=$("mancanti"), m=new Map();
+  righeBlocco().forEach(r=>fuoriArchivio(r.esercizio).forEach(n=>{const a=m.get(n)||[];a.push(r.giorno.replace("Giorno ",""));m.set(n,a)}));
+  if(!m.size){el.style.display="none";el.innerHTML="";return}
+  el.style.display="block";
+  el.innerHTML=`<b>⚠ ${m.size===1?"1 esercizio di questa scheda non è più":m.size+" esercizi di questa scheda non sono più"} nell'archivio</b> (evidenziati in rosso nella tabella): `+
+    [...m].map(([n,g])=>`${esc(n)} <small>(giorno ${[...new Set(g)].join(", ")})</small>`).join(" · ")+`<br><small>Il cliente continua a vederli, ma senza video e senza categoria. Sostituiscili con un esercizio dell'archivio.</small>`;
+}
 function disegnaTab(){
+  segnalaMancanti();
   const ed=editabile(), N=Math.max(nSett(),DATI.cliente.n_sedute||0), NG=nGiorni();
   const camp=[["giorno","Giorno",70],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",200],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",64],["passo","Passo",42],["recupero","Recupero",58],["video","Video",54]];
   const WB=52,WC=62,WN=48,WD=62;
@@ -793,6 +813,11 @@ async function cella(tr,el){
     if(k==="giorno"||k==="tipo"||k==="ordine")return; // la riga si crea quando inizi a compilarla
     await creaDaVuota(tr);
   }else await salvaRiga(tr);
+  if(k==="esercizio"){
+    const mn=fuoriArchivio(el.value), td=el.closest("td");
+    if(td){td.classList.toggle("mnc",mn.length>0); if(!mn.length)td.removeAttribute("title")}
+    segnalaMancanti();
+  }
 }
 async function creaDaVuota(tr){
   const o=leggi(tr);
