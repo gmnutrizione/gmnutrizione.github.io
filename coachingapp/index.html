@@ -18,6 +18,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta http-equiv="Cache-Control" content="no-cache">
+<style>/* finche' gli stili non sono caricati non si vede nulla (niente pagina grezza) */
+html,body{margin:0;background:#fff}
+html:not(.pronto) #app{visibility:hidden}</style>
 </head>
 <body>
 
@@ -385,8 +388,9 @@
       e.onload = e.onerror = res; (js ? document.body : document.head).appendChild(e);
     });
   }
+  setTimeout(function () { document.documentElement.classList.add("pronto"); }, 4000); /* sicurezza: dopo 4 secondi mostro comunque */
   Promise.all(FILE_CSS.map(function (f) { return testo(f).then(aggiungiCss, function () { return viaFile(f, false); }); }))
-    .then(function () { return Promise.all(FILE_JS.map(function (f) { return testo(f).then(function (t) { return [f, t]; }, function () { return [f, null]; }); })); })
+    .then(function () { document.documentElement.classList.add("pronto"); return Promise.all(FILE_JS.map(function (f) { return testo(f).then(function (t) { return [f, t]; }, function () { return [f, null]; }); })); })
     .then(function (lista) {
       var p = Promise.resolve();
       lista.forEach(function (x) { p = p.then(function () { if (x[1] !== null) { eseguiJs(x[1]); } else { return viaFile(x[0], true); } }); });
