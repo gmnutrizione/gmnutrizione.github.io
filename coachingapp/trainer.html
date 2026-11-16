@@ -747,7 +747,7 @@ function rigaHtml(r,isNew){
       h+=`<td><input data-k="gruppo" list="dl-gr" autocomplete="off" value="${esc(v)}"></td>`;
     }else if(k==="prog"){
       const pid=String(((r.extra||{}).ProgId)||""), pn=(PROG.find(p=>String(p.id)===pid)||{}).nome||"";
-      h+=ed?`<td><select data-p="1" ${isNew||!eFond(r.esercizio)?'disabled title="Solo per esercizi fondamentali già inseriti"':""}><option value="">—</option>${PROG.map(p=>`<option value="${p.id}" ${String(p.id)===pid?"selected":""}>${esc(p.nome.replace("Progressione sulle ","Su "))}</option>`).join("")}</select></td>`:`<td><input value="${esc(pn)}" readonly></td>`;
+      h+=ed?`<td><select data-p="1" ${isNew||!eFond(r.esercizio)?'disabled title="Solo per esercizi fondamentali già inseriti"':""}><option value="">${isNew?"(salva la riga)":!eFond(r.esercizio)?"solo fondamentali":"—"}</option>${PROG.map(p=>`<option value="${p.id}" ${String(p.id)===pid?"selected":""}>${esc(p.nome.replace("Progressione sulle ","Su "))}</option>`).join("")}</select></td>`:`<td><input value="${esc(pn)}" readonly></td>`;
     }else if(k==="video"){
       const c=CATMAP[String(r.esercizio||"").split("+")[0].trim().toLowerCase()];
       h+=`<td><input data-k="video" value="${esc(v)}" placeholder="${c&&c.video?"▶ archivio":""}" ${ed?"":"readonly"}></td>`;
@@ -860,7 +860,7 @@ async function cella(tr,el){
     const mn=fuoriArchivio(el.value), td=el.closest("td");
     if(td){td.classList.toggle("mnc",mn.length>0); if(!mn.length)td.removeAttribute("title")}
     segnalaMancanti();
-    const ps=tr.querySelector("[data-p]"); if(ps&&!nuova){ps.disabled=!eFond(el.value);ps.title=ps.disabled?"Solo per esercizi fondamentali":""}
+    const ps=tr.querySelector("[data-p]"); if(ps&&!nuova){ps.disabled=!eFond(el.value);ps.title=ps.disabled?"Solo per esercizi fondamentali":"";ps.options[0].text=ps.disabled?"solo fondamentali":"—"}
   }
 }
 async function creaDaVuota(tr){
