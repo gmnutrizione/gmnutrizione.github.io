@@ -541,3 +541,15 @@ body {
 .ht-funz:not(.disabled) .ht-lucchetto, .ht-funz:not(.disabled) .ht-pill { display: none; }
 .ht-funz.disabled .ht-freccia, .ht-corsa .ht-freccia { display: none; }
 
+
+.prog-box {
+  background: var(--surface-2);
+  border: 1.5px solid var(--terracotta);
+  color: var(--text-primary, #222);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-bottom: 14px;
+}
+.prog-box b { color: var(--terracotta); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }

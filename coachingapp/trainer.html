@@ -152,6 +152,9 @@ td input[readonly]{color:#555}
 @media(max-width:700px){#stat{grid-template-columns:1fr}.s2,.s3,.s4{grid-column:auto}#stat .rules{grid-template-columns:1fr}}
 #mancanti{background:#fdecea;border:1px solid #e57373;color:#8a1c1c;border-radius:8px;padding:8px 12px;margin:0 0 8px;font-size:13px}
 #tab td.mnc{background:#fdecea}#tab td.mnc input{color:#b3261e;font-weight:600}
+.prg{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:14px}.prg h3{margin:0 0 6px}.prg h3 small{font-weight:500;color:#777;margin-left:8px;font-size:12.5px}
+.pt{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0 10px}.pt th,.pt td{border-bottom:1px solid #eee;padding:5px 6px;text-align:left;vertical-align:top}.pt th{font-size:12px;color:#777}.pt td:first-child{width:50px;text-align:center;font-weight:700}.pt td:nth-child(2){white-space:nowrap;width:90px}
+.prg .nt{font-size:12.5px;color:#555;line-height:1.45;background:#f6f6f6;border-radius:8px;padding:8px 10px}
 </style>
 </head>
 <body>
@@ -164,7 +167,7 @@ td input[readonly]{color:#555}
 
 <div id="app" style="display:none">
 <header><h1>DASHBOARD <span>GM COACHING</span></h1>
-  <nav id="nav"><button data-v="clienti" class="on">Clienti</button><button data-v="archivio">Archivio esercizi</button><button data-v="split">Modelli di split</button></nav>
+  <nav id="nav"><button data-v="clienti" class="on">Clienti</button><button data-v="archivio">Archivio esercizi</button><button data-v="split">Modelli di split</button><button data-v="prog">Progressioni</button></nav>
   <button class="l" id="esci" style="margin-left:auto">Esci</button></header>
 <main id="vista-clienti">
   <div class="box">
@@ -193,6 +196,10 @@ td input[readonly]{color:#555}
   <div class="box"><b style="font-size:18px">Modelli di split</b><div class="nota" style="margin-top:4px">Da consultare quando prepari una scheda nuova. Ogni gruppo muscolare è allenato 2 volte a settimana.</div></div>
   <div class="fl" id="s-filtri"></div>
   <div class="spl" id="s-lista"></div>
+</main>
+<main id="vista-prog" style="display:none">
+  <div class="box"><b style="font-size:18px">Progressioni</b><div class="nota" style="margin-top:4px">Valgono solo per gli esercizi fondamentali e durano un blocco. Nella scheda, scegli la progressione nella colonna «Progressione» della riga: serie, ripetizioni e note di ogni seduta si compilano da sole.</div></div>
+  <div class="prg" id="p-lista"></div>
 </main>
 </div>
 <div id="inc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:5">
@@ -237,7 +244,7 @@ async function entra(){
     const j=await rpc("gc_t_clienti",{p_cod:c});
     if(!j.ok){$("errL").textContent="Codice non valido";return}
     CODE=c; CLIENTI=j.clienti; try{sessionStorage.setItem("gt_c",c)}catch(e){}
-    $("login").style.display="none";$("app").style.display="block";disegnaElenco();caricaCatalogo();caricaSoglie();
+    $("login").style.display="none";$("app").style.display="block";disegnaElenco();caricaCatalogo();caricaSoglie();caricaProg();
   }catch(e){$("errL").textContent="Errore di connessione"}
 }
 $("entra").onclick=entra; $("cod").onkeydown=e=>{if(e.key==="Enter")entra()};
@@ -321,6 +328,8 @@ document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{
   $("vista-clienti").style.display=b.dataset.v==="clienti"?"block":"none";
   $("vista-archivio").style.display=b.dataset.v==="archivio"?"block":"none";
   $("vista-split").style.display=b.dataset.v==="split"?"block":"none";
+  $("vista-prog").style.display=b.dataset.v==="prog"?"block":"none";
+  if(b.dataset.v==="prog")disegnaProg();
   if(b.dataset.v==="archivio")caricaArchivio();
   if(b.dataset.v==="split")caricaSplit();
 });
@@ -421,6 +430,43 @@ function disegnaSplit(){
   $("s-filtri").innerHTML=[0,...gg].map(n=>`<div class="tab ${SPLF===n?"on":""}" data-f="${n}">${n?n+" giorni":"Tutte"}</div>`).join("");
   document.querySelectorAll("#s-filtri .tab").forEach(e=>e.onclick=()=>{SPLF=+e.dataset.f;disegnaSplit()});
   $("s-lista").innerHTML=SPL.filter(x=>!SPLF||x.n_giorni===SPLF).map(x=>`<div class="card spl"><h3>${esc(x.nome)}<small>${x.n_giorni} giorni a settimana</small></h3><div class="row">${x.giorni.map((d,i)=>`<div class="col">${d.map(g=>{const c=COLG[g]||["#eee","#222"];return `<div class="b" style="background:${c[0]};color:${c[1]}">${esc(g)}</div>`}).join("")}<div class="dn">${LET[i]}</div></div>`).join("")}</div>${x.note?`<div class="nt">${esc(x.note)}</div>`:""}</div>`).join("")||'<div class="nota">Nessuna split.</div>';
+}
+
+// ---------- PROGRESSIONI ----------
+let PROG=[];
+async function caricaProg(){try{const j=await rpc("gc_t_progressioni",{p_cod:CODE});if(j&&j.ok){PROG=j.progressioni||[];disegnaProg()}}catch(e){}}
+function disegnaProg(){
+  const el=$("p-lista"); if(!el)return;
+  el.innerHTML=PROG.map(p=>`<div class="card"><h3>${esc(p.nome)}<small>${p.durata_sett} settimane · 1 blocco · solo fondamentali</small></h3>
+    <div class="nota" style="margin-bottom:8px">${esc(p.sintesi)}</div>
+    <table class="pt"><tr><th>Seduta</th><th>Serie × rep</th><th>Indicazione nella casella note</th></tr>${(p.settimane||[]).map(w=>`<tr><td>${w.n}</td><td>${esc(w.serie)} × ${esc(w.rep)}</td><td>${esc(w.nota)}</td></tr>`).join("")}</table>
+    <div class="nt"><b>Scritta mostrata al cliente nell'esercizio:</b><br>${esc(p.testo)}</div></div>`).join("")||'<div class="nota">Nessuna progressione.</div>';
+}
+const eFond=ese=>{const c=CATMAP[String(ese||"").split("+")[0].trim().toLowerCase()];return !!c&&c.cat_raw==="fondamentale"};
+async function applicaProg(tr,sel){
+  const id=tr.dataset.id, r=DATI.righe.find(x=>String(x.id)===String(id));
+  const annulla=()=>{sel.value=(r&&r.extra&&r.extra.ProgId)||""};
+  if(!r){toast("Compila prima l'esercizio");annulla();return}
+  const vecchia=PROG.find(p=>String(p.id)===String((r.extra||{}).ProgId));
+  const ext=Object.assign({},r.extra||{}), note=Object.assign({},r.note||{});
+  const togliVecchia=()=>{if(vecchia)(vecchia.settimane||[]).forEach(w=>{if(note[w.n]===w.nota)delete note[w.n]})};
+  if(!sel.value){
+    togliVecchia(); delete ext.Progressione; delete ext.ProgId;
+  }else{
+    const p=PROG.find(x=>String(x.id)===sel.value);
+    if(!eFond(r.esercizio)){toast("La progressione vale solo per gli esercizi fondamentali");annulla();return}
+    togliVecchia();
+    const occ=(p.settimane||[]).filter(w=>note[w.n]&&String(note[w.n]).trim()!==""&&w.n<=CTX.N);
+    if(occ.length&&!confirm("Alcune note di questo esercizio verranno sostituite da quelle della progressione. Procedere?")){annulla();return}
+    (p.settimane||[]).forEach(w=>{if(w.n<=CTX.N)note[w.n]=w.nota});
+    ext.Progressione=p.testo; ext.ProgId=String(p.id);
+    cv(tr,"serie").value=p.serie; cv(tr,"rep").value=p.rep;
+    cv(tr,"recupero").value=recAuto(cv(tr,"tipo").value,p.rep,cv(tr,"esercizio").value);
+  }
+  r.extra=ext; r.note=note;
+  tr.querySelectorAll("[data-n]").forEach(i=>{i.value=note[i.dataset.n]||""});
+  await salvaRiga(tr);
+  toast(sel.value?"Progressione applicata ✔":"Progressione tolta");
 }
 
 // ---------- statistiche del blocco ----------
@@ -705,6 +751,9 @@ function rigaHtml(r,isNew){
       h+=`<td${mn.length?` class="mnc" title="Non è più nell'archivio: ${esc(mn.join(", "))}"`:""}><input data-k="esercizio" value="${esc(v)}" readonly></td>`;
     }else if(ed&&k==="gruppo"){
       h+=`<td><input data-k="gruppo" list="dl-gr" autocomplete="off" value="${esc(v)}"></td>`;
+    }else if(k==="prog"){
+      const pid=String(((r.extra||{}).ProgId)||""), pn=(PROG.find(p=>String(p.id)===pid)||{}).nome||"";
+      h+=ed?`<td><select data-p="1" ${isNew||!eFond(r.esercizio)?'disabled title="Solo per esercizi fondamentali già inseriti"':""}><option value="">—</option>${PROG.map(p=>`<option value="${p.id}" ${String(p.id)===pid?"selected":""}>${esc(p.nome.replace("Progressione sulle ","Su "))}</option>`).join("")}</select></td>`:`<td><input value="${esc(pn)}" readonly></td>`;
     }else if(k==="video"){
       const c=CATMAP[String(r.esercizio||"").split("+")[0].trim().toLowerCase()];
       h+=`<td><input data-k="video" value="${esc(v)}" placeholder="${c&&c.video?"▶ archivio":""}" ${ed?"":"readonly"}></td>`;
@@ -718,7 +767,7 @@ function rigaHtml(r,isNew){
 }
 const AZIONI=`<button class="l" data-dup="1" title="Duplica" style="padding:3px 6px">⧉</button><button class="l" data-del="1" title="Elimina" style="padding:3px 6px">✕</button>`;
 function collega(tr){
-  tr.querySelectorAll("input,select").forEach(i=>i.onchange=()=>cella(tr,i));
+  tr.querySelectorAll("input,select").forEach(i=>i.onchange=i.dataset.p?()=>applicaProg(tr,i):()=>cella(tr,i));
   const d=tr.querySelector("[data-del]"); if(d)d.onclick=()=>elimina(tr);
   const dp=tr.querySelector("[data-dup]"); if(dp)dp.onclick=()=>duplica(tr);
 }
@@ -751,7 +800,7 @@ function segnalaMancanti(){
 function disegnaTab(){
   segnalaMancanti();
   const ed=editabile(), N=Math.max(nSett(),DATI.cliente.n_sedute||0), NG=nGiorni();
-  const camp=[["giorno","Giorno",70],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",200],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",64],["passo","Passo",42],["recupero","Recupero",58],["video","Video",54]];
+  const camp=[["giorno","Giorno",70],["ordine","Ordine",44],["gruppo","Gruppo muscolare",92],["esercizio","Esercizio",200],["variante","Variante",98],["serie","Serie",40],["rep","Rep",46],["tipo","Tipo",64],["passo","Passo",42],["recupero","Recupero",58],["video","Video",54],["prog","Progressione",128]];
   const WB=52,WC=62,WN=48,WD=62;
   CTX={camp,N,NG,ed};
   const tot=camp.reduce((a,x)=>a+x[2],0)+WB+N*WC+N*WN+(ed?WD:0);
@@ -817,6 +866,7 @@ async function cella(tr,el){
     const mn=fuoriArchivio(el.value), td=el.closest("td");
     if(td){td.classList.toggle("mnc",mn.length>0); if(!mn.length)td.removeAttribute("title")}
     segnalaMancanti();
+    const ps=tr.querySelector("[data-p]"); if(ps&&!nuova){ps.disabled=!eFond(el.value);ps.title=ps.disabled?"Solo per esercizi fondamentali":""}
   }
 }
 async function creaDaVuota(tr){
@@ -840,6 +890,7 @@ function leggi(tr){
     else if(i.dataset.c){if(i.value!=="")o.carichi[i.dataset.c]=i.value}
     else if(i.dataset.n){if(i.value!=="")o.note[i.dataset.n]=i.value}
   });
+  const rr=DATI.righe.find(x=>String(x.id)===String(tr.dataset.id)); if(rr&&rr.extra)o.extra=rr.extra;
   return o;
 }
 async function salvaRiga(tr){

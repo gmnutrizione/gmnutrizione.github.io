@@ -1233,6 +1233,15 @@ function apriDettaglio(ex, giorno, gruppo) {
       notaBanner.style.display = "none";
     }
 
+    const progBox = document.getElementById("prog-box");
+    const progTxt = (ex.Progressione || "").trim();
+    if (progTxt) {
+      progBox.innerHTML = "<b>Progressione da seguire</b><br>" + progTxt.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      progBox.style.display = "block";
+    } else {
+      progBox.style.display = "none";
+    }
+
     renderSetsInputs();
   } else {
     renderSuperset();
