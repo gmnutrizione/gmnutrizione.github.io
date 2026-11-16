@@ -318,8 +318,30 @@ function storageKey(suffix) {
   return "gm_palestra_" + btoa(clienteCsvUrl).slice(0, 40) + "_" + suffix;
 }
 
+const FRASI_HOME = ["Scegli il tuo allenamento", "Pronto per allenarti?", "Che allenamento fai oggi?", "È ora di allenarsi", "Iniziamo!"];
+
+function rigaCliente() {
+  return clientiList.find(x => (x.Cliente || "").trim().toLowerCase() === (clienteNome || "").trim().toLowerCase());
+}
+
+function saluto() {
+  const r = rigaCliente();
+  const k = "gm_visto_" + ((r && r.Codice) ? String(r.Codice).trim() : (clienteNome || "").toLowerCase());
+  let visto = false;
+  try { visto = !!localStorage.getItem(k); localStorage.setItem(k, "1"); } catch (e) {}
+  document.getElementById("home-saluto").textContent = visto ? "Bentornato" : "Benvenuto";
+  document.getElementById("greeting-text").textContent = clienteNome ? String(clienteNome).trim().split(/\s+/)[0] : "";
+  // frase casuale, mai la stessa due aperture di fila
+  let ultima = -1;
+  try { ultima = parseInt(localStorage.getItem("gm_ultima_frase"), 10); } catch (e) {}
+  let i;
+  do { i = Math.floor(Math.random() * FRASI_HOME.length); } while (i === ultima && FRASI_HOME.length > 1);
+  try { localStorage.setItem("gm_ultima_frase", String(i)); } catch (e) {}
+  document.getElementById("home-frase").textContent = FRASI_HOME[i];
+}
+
 function afterAccessGranted() {
-  document.getElementById("greeting-text").textContent = clienteNome ? ("Ciao " + clienteNome) : "Ciao";
+  saluto();
   abilitaFunzionale();
   showScreen("screen-categorie");
 }
@@ -335,20 +357,33 @@ function trainerAttivo() {
   const v = ((r && r.Trainer) || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   return v === "si" || v === "s" || v === "yes" || v === "x";
 }
-function abilitaFunzionale() {
+// permessi (Funzionale / Trainer): letti da Supabase per codice cliente; se non risponde, valgono le colonne del foglio
+async function leggiPermessi() {
+  const r = rigaCliente();
+  const sheet = { funzionale: funzionaleAttivo(), trainer: trainerAttivo() };
+  if (!r || !r.Codice || !supabaseAttivo()) return sheet;
+  try {
+    const res = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/rpc/gc_permessi", {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_codice: String(r.Codice).trim() })
+    });
+    if (!res.ok) return sheet;
+    const j = await res.json();
+    if (j && typeof j === "object") return { funzionale: !!j.funzionale, trainer: !!j.trainer };
+  } catch (e) {}
+  return sheet;
+}
+async function abilitaFunzionale() {
   const gest = document.getElementById("cat-gestione");
-  if (gest) gest.style.display = trainerAttivo() ? "" : "none";
   const card = document.getElementById("cat-funzionale");
+  const p = await leggiPermessi();
+  if (gest) gest.style.display = p.trainer ? "" : "none";
   if (!card) return;
-  const ok = funzionaleAttivo();
+  const ok = p.funzionale;
   card.classList.toggle("disabled", !ok);
   card.classList.toggle("active", ok);
   if (ok) card.dataset.category = "funzionale"; else delete card.dataset.category;
-  const soon = card.querySelector(".cat-soon");
-  if (soon) soon.style.display = ok ? "none" : "";
-  let arrow = card.querySelector(".cat-arrow");
-  if (ok && !arrow) { arrow = document.createElement("span"); arrow.className = "cat-arrow"; arrow.innerHTML = "&#8250;"; card.appendChild(arrow); }
-  if (!ok && arrow) arrow.remove();
 }
 
 // ============================================================

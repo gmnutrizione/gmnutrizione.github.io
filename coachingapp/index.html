@@ -55,31 +55,27 @@
   <!-- SCHERMATA: categorie -->
   <div id="screen-categorie" class="screen">
     <div class="page-pad">
-      <button type="button" id="btn-esci-cliente" style="float:right;background:#fff;color:#111;border:1px solid #ccc;border-radius:8px;padding:7px 14px;font:inherit;font-weight:600;cursor:pointer">Esci</button>
-      <p class="greeting" id="greeting-text">Ciao</p>
-      <p class="page-title">Cosa alleni oggi?</p>
-      <div class="category-list">
-        <div class="category-card active" data-category="palestra">
-          <span class="cat-icon">&#127947;</span>
-          <span class="cat-name">Palestra</span>
-          <span class="cat-arrow">&#8250;</span>
-        </div>
-        <div class="category-card disabled">
-          <span class="cat-icon">&#127939;</span>
-          <span class="cat-name">Corsa</span>
-          <span class="cat-soon">presto</span>
-        </div>
-        <div class="category-card disabled" id="cat-funzionale" data-category-futura="funzionale">
-          <span class="cat-icon">&#9995;</span>
-          <span class="cat-name">Allenamento funzionale</span>
-          <span class="cat-soon">presto</span>
-        </div>
+      <div class="home-top">
+        <p class="home-ciao" id="home-saluto">Benvenuto</p>
+        <button type="button" id="btn-esci-cliente" class="btn-esci">Esci</button>
       </div>
-      <div class="category-list" style="margin-top:14px">
-        <div class="category-card fg-trainer" id="cat-gestione" data-fg-apri="1" style="display:none">
-          <span class="cat-icon">&#9881;</span>
-          <span class="cat-name">Gestisci allenamenti</span>
-          <span class="cat-soon">solo trainer</span>
+      <div class="home-box"><p class="home-nome" id="greeting-text"></p></div>
+      <p class="page-title" id="home-frase">Iniziamo!</p>
+      <div class="home-grid">
+        <div class="category-card home-tile ht-palestra active" data-category="palestra">
+          <span class="ht-nome">Palestra</span><span class="ht-freccia">&#8250;</span>
+        </div>
+        <div class="category-card home-tile ht-funz disabled" id="cat-funzionale" data-category-futura="funzionale">
+          <span class="ht-lucchetto"><svg width="32" height="32" viewBox="0 0 24 24"><defs><linearGradient id="lb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5a5f"/><stop offset=".5" stop-color="#e31e24"/><stop offset="1" stop-color="#8a0e13"/></linearGradient><linearGradient id="ls" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8d9199"/><stop offset=".35" stop-color="#fff"/><stop offset="1" stop-color="#7a7e86"/></linearGradient><filter id="ds" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="1" stdDeviation=".7" flood-color="#000" flood-opacity=".5"/></filter></defs><g filter="url(#ds)"><path d="M7.6 11V7.8a4.4 4.4 0 0 1 8.8 0V11" fill="none" stroke="url(#ls)" stroke-width="2.3" stroke-linecap="round"/><rect x="4.6" y="10.4" width="14.8" height="10.6" rx="3" fill="url(#lb)" stroke="#6d0a0e" stroke-width=".5"/><path d="M6.2 12.2h11.6" stroke="#fff" stroke-opacity=".45" stroke-width="1.1" stroke-linecap="round"/><circle cx="12" cy="15.3" r="1.5" fill="#240507"/><path d="M12 16v2.4" stroke="#240507" stroke-width="1.5" stroke-linecap="round"/></g></svg></span><span class="ht-pill">presto</span>
+          <span class="ht-nome">Funzionale</span><span class="ht-freccia">&#8250;</span>
+        </div>
+        <div class="category-card home-tile ht-corsa disabled">
+          <span class="ht-lucchetto"><svg width="32" height="32" viewBox="0 0 24 24"><defs><linearGradient id="lb2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5a5f"/><stop offset=".5" stop-color="#e31e24"/><stop offset="1" stop-color="#8a0e13"/></linearGradient><linearGradient id="ls2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8d9199"/><stop offset=".35" stop-color="#fff"/><stop offset="1" stop-color="#7a7e86"/></linearGradient><filter id="ds2" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="1" stdDeviation=".7" flood-color="#000" flood-opacity=".5"/></filter></defs><g filter="url(#ds2)"><path d="M7.6 11V7.8a4.4 4.4 0 0 1 8.8 0V11" fill="none" stroke="url(#ls2)" stroke-width="2.3" stroke-linecap="round"/><rect x="4.6" y="10.4" width="14.8" height="10.6" rx="3" fill="url(#lb2)" stroke="#6d0a0e" stroke-width=".5"/><path d="M6.2 12.2h11.6" stroke="#fff" stroke-opacity=".45" stroke-width="1.1" stroke-linecap="round"/><circle cx="12" cy="15.3" r="1.5" fill="#240507"/><path d="M12 16v2.4" stroke="#240507" stroke-width="1.5" stroke-linecap="round"/></g></svg></span><span class="ht-pill">presto</span>
+          <span class="ht-nome">Corsa</span>
+        </div>
+        <div class="category-card home-tile ht-gest fg-trainer" id="cat-gestione" data-fg-apri="1" style="display:none">
+          <span class="ht-ingranaggio"><svg width="32" height="32" viewBox="0 0 24 24"><defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#c9ccd1"/><stop offset="1" stop-color="#6b6f77"/></linearGradient><filter id="gs" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="1" stdDeviation=".7" flood-color="#000" flood-opacity=".6"/></filter></defs><g filter="url(#gs)"><path d="M19.75 10.01 L22.28 10.44 L22.28 13.56 L19.75 13.99 L18.89 16.07 L20.38 18.17 L18.17 20.38 L16.07 18.89 L13.99 19.75 L13.56 22.28 L10.44 22.28 L10.01 19.75 L7.93 18.89 L5.83 20.38 L3.62 18.17 L5.11 16.07 L4.25 13.99 L1.72 13.56 L1.72 10.44 L4.25 10.01 L5.11 7.93 L3.62 5.83 L5.83 3.62 L7.93 5.11 L10.01 4.25 L10.44 1.72 L13.56 1.72 L13.99 4.25 L16.07 5.11 L18.17 3.62 L20.38 5.83 L18.89 7.93Z" fill="url(#gg)" stroke="#4a4d54" stroke-width=".5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.4" fill="#141416" stroke="#4a4d54" stroke-width=".5"/></g></svg></span><span class="ht-pill">solo trainer</span>
+          <span class="ht-nome">Gestisci allenamenti</span><span class="ht-freccia">&#8250;</span>
         </div>
       </div>
     </div>

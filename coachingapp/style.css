@@ -506,3 +506,37 @@ body {
 @media (max-width: 520px) {
   html, body { background: var(--surface-2); }
 }
+
+/* ---- home: saluto + quadrati ---- */
+.home-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.home-ciao { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 0.02em; margin: 0; line-height: 1; text-transform: uppercase; }
+.btn-esci { background: #fff; color: #111; border: 1px solid #ccc; border-radius: 8px; padding: 7px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+.home-box {
+  border-radius: 24px; margin-bottom: 18px; min-height: 68px; padding: 0 20px; display: flex; align-items: center;
+  background: radial-gradient(90% 190% at 0% 120%, #b01a20 0%, #5c0f13 35%, #1a0a0b 68%, #0e0e0e 100%);
+}
+.home-nome { margin: 0; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.02em; line-height: 1; text-transform: uppercase; }
+#screen-categorie .page-title { margin: 0 0 14px; text-transform: uppercase; }
+.home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.category-card.home-tile {
+  position: relative; display: block; aspect-ratio: 1; border-radius: 20px; padding: 0; overflow: hidden;
+  background-color: #111; background-size: cover; background-position: center; color: #fff; opacity: 1;
+}
+.home-tile::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,0) 55%); }
+.ht-nome { position: absolute; left: 14px; right: 34px; bottom: 14px; font-family: 'Bebas Neue', sans-serif; font-size: 24px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase; }
+.ht-freccia { position: absolute; right: 12px; bottom: 12px; font-size: 22px; line-height: 1; }
+.ht-pill { position: absolute; right: 12px; top: 14px; font-size: 11px; font-weight: 500; background: rgba(255,255,255,.22); color: #fff; border-radius: 999px; padding: 4px 9px; }
+.ht-lucchetto, .ht-ingranaggio { position: absolute; left: 14px; top: 12px; line-height: 0; z-index: 2; }
+.ht-pill { z-index: 2; }
+.category-card.home-tile.ht-palestra { background-image: url(img/home-palestra.jpg); }
+.category-card.home-tile.ht-funz { background-image: url(img/home-funzionale.jpg); }
+.category-card.home-tile.ht-corsa { background-image: url(img/home-corsa.jpg); }
+.category-card.home-tile.ht-gest { background-image: radial-gradient(120% 120% at 100% 0%, #2a2a2e 0%, #111 60%); }
+.ht-gest::before { display: none; }
+.ht-ingranaggio { display: block; }
+/* bloccati: foto scurita e senza colori */
+.ht-corsa::before, .ht-funz.disabled::before { background: linear-gradient(0deg, rgba(0,0,0,.8) 0%, rgba(0,0,0,.35) 100%); }
+.category-card.home-tile.ht-funz.disabled { background-image: url(img/home-funzionale-bn.jpg); }
+.ht-funz.disabled .ht-nome, .ht-corsa .ht-nome { color: #ddd; }
+.ht-funz:not(.disabled) .ht-lucchetto, .ht-funz:not(.disabled) .ht-pill { display: none; }
+.ht-funz.disabled .ht-freccia, .ht-corsa .ht-freccia { display: none; }

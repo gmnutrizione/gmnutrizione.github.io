@@ -202,7 +202,12 @@ function disegna(){
   const c=DATI.cliente, fo=c.fonte==="supabase";
   $("testa").innerHTML=`<b style="font-size:18px">${esc(c.nome)}</b><span>Codice ${esc(c.codice)}</span>
    <span class="badge ${fo?"b-ok":"b-fo"}">${fo?"Modifica da dashboard attiva":"Scheda ancora gestita dal foglio (sola lettura)"}</span>
-   <button class="${fo?"l":"r"}" id="passa" style="margin-left:auto">${fo?"Torna al foglio":"Attiva modifica da dashboard"}</button>`;
+   <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;margin-left:auto"><input type="checkbox" id="fzk" ${(CLIENTI.find(z=>z.codice===c.codice)||{}).funzionale?"checked":""}> Funzionale attivo</label>
+   <button class="${fo?"l":"r"}" id="passa">${fo?"Torna al foglio":"Attiva modifica da dashboard"}</button>`;
+  $("fzk").onchange=async e=>{
+    const v=e.target.checked, j=await rpc("gc_t_funzionale",{p_cod:CODE,p_cl:c.codice,p_val:v});
+    if(j&&j.ok){const x=CLIENTI.find(z=>z.codice===c.codice);if(x)x.funzionale=v;toast(v?"Funzionale attivato":"Funzionale disattivato")}else{e.target.checked=!v;toast((j&&j.errore)||"errore")}
+  };
   $("passa").onclick=async()=>{
     if(!confirm(fo?"Tornare a gestire questo cliente dal foglio Google?":"Da ora la scheda di questo cliente si modifica SOLO da qui. Procedere?"))return;
     const j=await rpc("gc_t_passa",{p_cod:CODE,p_cl:c.codice,p_fonte:fo?"foglio":"supabase"});
