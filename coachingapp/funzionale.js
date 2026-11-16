@@ -2,8 +2,13 @@
 // ALLENAMENTO FUNZIONALE
 // ============================================================
 const FZ_TIPI = ["Pesi + Corsa", "Pesi senza Corsa", "Corpo libero + Corsa", "Corpo libero senza Corsa"];
-const FZ_LIVELLI = ["Standard", "Facile", "Intermedio", "Difficile"];
-const FZ_CLASSE = { Standard: "fz-s", Facile: "fz-f", Intermedio: "fz-i", Difficile: "fz-d" };
+// ordine e nomi mostrati al cliente (i nomi interni dei tipi restano quelli dei dati)
+const FZ_HOME = [
+  { tipo: "Pesi senza Corsa", nome: "Pesi", img: "fz-pesi" },
+  { tipo: "Pesi + Corsa", nome: "Pesi + Corsa", img: "fz-pesi-corsa" },
+  { tipo: "Corpo libero senza Corsa", nome: "Corpo libero", img: "fz-corpo-libero" },
+  { tipo: "Corpo libero + Corsa", nome: "Corpo libero + Corsa", img: "fz-corpo-libero-corsa" }
+];
 
 let fzDati = [];
 let fzCaricato = false;
@@ -73,23 +78,24 @@ async function fzCarica() {
 async function fzApri() {
   showScreen("screen-fz-tipo");
   const box = fzEl("fz-tipi");
-  // ordine e nomi mostrati al cliente (i nomi interni dei tipi restano quelli dei dati)
-  const FZ_HOME = [
-    { tipo: "Pesi senza Corsa", nome: "Pesi", img: "fz-pesi" },
-    { tipo: "Pesi + Corsa", nome: "Pesi + Corsa", img: "fz-pesi-corsa" },
-    { tipo: "Corpo libero senza Corsa", nome: "Corpo libero", img: "fz-corpo-libero" },
-    { tipo: "Corpo libero + Corsa", nome: "Corpo libero + Corsa", img: "fz-corpo-libero-corsa" }
-  ];
   box.className = "fz-grid";
   box.innerHTML = FZ_HOME.map((t, i) =>
-    '<button class="fz-tile fz-t' + (i % 2 ? "b" : "a") + '" type="button" data-fz-tipo="' + fzEsc(t.tipo) + '" style="background-image:url(img/' + t.img + '.jpg),radial-gradient(120% 120% at ' + (i % 2 ? "100%" : "0%") + ' 110%,#7a1015 0%,#1a0b0c 55%,#0e0e0e 100%)"><span class="fz-tn">' + fzEsc(t.nome) + '</span></button>'
+    '<button class="fz-tile fz-t' + (i % 2 ? "b" : "a") + '" type="button" data-fz-tipo="' + fzEsc(t.tipo) + '" style="background-image:url(img/' + t.img + '.jpg),radial-gradient(120% 120% at ' + (i % 2 ? "100%" : "0%") + ' 110%,#7a1015 0%,#1a0b0c 55%,#0e0e0e 100%)"><span class="fz-cnt" data-cnt="' + fzEsc(t.tipo) + '"></span><span class="fz-tn">' + fzEsc(t.nome) + '</span></button>'
   ).join("");
-  const adatta = () => box.querySelectorAll(".fz-tn").forEach(el => {  // la scritta sta sempre su una riga: se non ci sta si rimpicciolisce
-    let f = 22; el.style.fontSize = f + "px";
-    while (el.scrollWidth > el.clientWidth && f > 11) { f -= 1; el.style.fontSize = f + "px"; }
-  });
+  const adatta = () => {  // la scritta sta su una riga e ha la stessa grandezza in tutti e 4 i quadrati
+    const els = Array.from(box.querySelectorAll(".fz-tn"));
+    let min = 22;
+    els.forEach(el => {
+      let f = 22; el.style.fontSize = f + "px";
+      while (el.scrollWidth > el.clientWidth && f > 11) { f -= 1; el.style.fontSize = f + "px"; }
+      if (f < min) min = f;
+    });
+    els.forEach(el => { el.style.fontSize = min + "px"; });
+  };
   adatta();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(adatta);
+  const conta = () => box.querySelectorAll(".fz-cnt").forEach(el => { el.textContent = fzNumAllenamenti(el.dataset.cnt) || ""; });
+  if (fzCaricato) conta();
   if (typeof FUNZIONALE_CSV_URL === "undefined" || FUNZIONALE_CSV_URL.includes("INSERISCI")) {
     fzEl("fz-tipi-msg").textContent = "Elenco allenamenti non ancora collegato.";
     return;
@@ -98,6 +104,7 @@ async function fzApri() {
   try {
     await fzCarica();
     fzEl("fz-tipi-msg").textContent = "";
+    conta();
     fzSincronizza();
   } catch (e) {
     console.error(e);
@@ -106,30 +113,32 @@ async function fzApri() {
 }
 
 // ---- elenco allenamenti per tipo ----
+// allenamenti distinti di un tipo (il livello resta nei dati per i tempi gia' salvati, ma non si mostra)
+function fzAllenamentiTipo(tipo) {
+  const out = [];
+  fzDati.filter(r => fzNorm(r.Tipo) === fzNorm(tipo)).forEach(r => {
+    const n = (r.Allenamento || "").trim(), liv = (r.Livello || "").trim();
+    if (n && !out.some(o => o.nome === n && fzNorm(o.liv) === fzNorm(liv))) out.push({ nome: n, liv: liv });
+  });
+  return out;
+}
+function fzNumAllenamenti(tipo) { return fzAllenamentiTipo(tipo).length; }
+
 function fzApriTipo(tipo) {
   fzSel.tipo = tipo;
-  fzEl("fz-liv-title").textContent = tipo;
-  const righe = fzDati.filter(r => fzNorm(r.Tipo) === fzNorm(tipo));
+  const voce = FZ_HOME.find(x => x.tipo === tipo);
+  fzEl("fz-liv-title").textContent = voce ? voce.nome : tipo;
   const box = fzEl("fz-livelli");
-  if (!righe.length) {
+  const lista = fzAllenamentiTipo(tipo);
+  if (!lista.length) {
     box.innerHTML = '<p class="fz-empty">Nessun allenamento disponibile per ora.</p>';
     showScreen("screen-fz-liv");
     return;
   }
-  let html = "";
-  FZ_LIVELLI.forEach(liv => {
-    const rl = righe.filter(r => fzNorm(r.Livello) === fzNorm(liv));
-    const nomi = [];
-    rl.forEach(r => { const n = (r.Allenamento || "").trim(); if (n && !nomi.includes(n)) nomi.push(n); });
-    if (!nomi.length) return;
-    html += '<div class="fz-group"><h3>' + liv + ' <span class="fz-tag ' + FZ_CLASSE[liv] + '">' + nomi.length + (nomi.length === 1 ? ' allenamento' : ' allenamenti') + '</span></h3>';
-    nomi.forEach(n => {
-      const q = rl.filter(r => (r.Allenamento || "").trim() === n).length;
-      html += '<button class="fz-card" type="button" data-fz-liv="' + fzEsc(liv) + '" data-fz-nome="' + fzEsc(n) + '"><span class="txt"><span class="n">' + fzEsc(n) + '</span><span class="s">' + q + ' esercizi</span></span><span class="ar">&#8250;</span></button>';
-    });
-    html += '</div>';
-  });
-  box.innerHTML = html || '<p class="fz-empty">Nessun allenamento disponibile per ora.</p>';
+  box.innerHTML = '<div class="fz-list">' + lista.map(o => {
+    const q = fzDati.filter(r => fzNorm(r.Tipo) === fzNorm(tipo) && (r.Allenamento || "").trim() === o.nome && fzNorm(r.Livello) === fzNorm(o.liv)).length;
+    return '<button class="fz-card" type="button" data-fz-liv="' + fzEsc(o.liv) + '" data-fz-nome="' + fzEsc(o.nome) + '"><span class="txt"><span class="n">' + fzEsc(o.nome) + '</span><span class="s">' + q + (q === 1 ? ' esercizio' : ' esercizi') + '</span></span><span class="ar">&#8250;</span></button>';
+  }).join("") + '</div>';
   showScreen("screen-fz-liv");
 }
 
@@ -243,7 +252,7 @@ function fzApriDettaglio(liv, nome) {
   const sesso = fzSesso();
   const haPesi = fzBase.some(e => e.kg);
   fzEl("fz-det-meta").innerHTML =
-    '<span class="fz-tag ' + FZ_CLASSE[liv] + '">' + liv + '</span><span class="fz-pill">' + fzBase.length + ' esercizi</span>' +
+    '<span class="fz-pill">' + fzBase.length + ' esercizi</span>' +
     (haPesi ? '<span class="fz-pill">Pesi per ' + (sesso === "F" ? "donna" : "uomo") + '</span>' : '');
   fzEl("fz-det-tempi").innerHTML = fzListaTempi(fzMigliori(fzTempi()));
   if (fzSyncP) fzSyncP.then(() => {

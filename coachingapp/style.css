@@ -541,6 +541,3 @@ body {
 .ht-funz:not(.disabled) .ht-lucchetto, .ht-funz:not(.disabled) .ht-pill { display: none; }
 .ht-funz.disabled .ht-freccia, .ht-corsa .ht-freccia { display: none; }
 
-/* caricamento: il messaggio compare solo se l'attesa si allunga (oltre 1,5 secondi), cosi' all'apertura non si vede */
-.loading-box { opacity: 0; animation: lb-show .25s ease 1.5s forwards; }
-@keyframes lb-show { to { opacity: 1; } }

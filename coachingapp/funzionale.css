@@ -144,3 +144,5 @@
 .fz-tile{position:relative;aspect-ratio:1;border:0;border-radius:20px;overflow:hidden;cursor:pointer;padding:0;color:#fff;background-color:#111;background-size:cover;background-position:center;font:inherit;text-align:left;width:100%}
 .fz-tile::before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,0) 55%)}
 .fz-tn{position:absolute;left:14px;right:10px;bottom:14px;font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.fz-cnt{position:absolute;right:12px;top:12px;min-width:28px;height:28px;padding:0 8px;border-radius:999px;background:rgba(255,255,255,.22);color:#fff;font:700 14px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;z-index:2}
+.fz-cnt:empty{display:none}
