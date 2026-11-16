@@ -582,6 +582,7 @@ function resetAllenamenti() {
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
+  if (id === "screen-dettaglio") window.scrollTo(0, 0);
 }
 
 document.addEventListener("click", e => {
@@ -1260,7 +1261,7 @@ function apriDettaglio(ex, giorno, gruppo) {
         body.style.display = open ? "none" : "block";
         chev.classList.toggle("open", !open);
       });
-      progBox.style.display = "block";
+      progBox.style.display = inTest ? "none" : "block"; // nel test (allenamento 1) il box non serve
     } else {
       progBox.style.display = "none";
     }
@@ -1508,7 +1509,7 @@ function renderSetsInputs() {
       wrap.innerHTML = `
         <div class="test-box">
           <p class="test-title">Allenamento 1 &rarr; TEST ${esc(currentDettaglio.progTest)}</p>
-          <p class="test-text">${esc(currentDettaglio.progNota1)}</p>
+          <div class="test-text">${currentDettaglio.progNota1.split(/\n+/).filter(Boolean).map(p => "<p>" + esc(p) + "</p>").join("")}</div>
           <p class="test-label">Il tuo ${esc(currentDettaglio.progTest)}</p>
           <div class="test-input-group">
             <input type="text" inputmode="decimal" placeholder="0" class="kg-input test-kg" data-idx="0" value="${esc(kgTest)}">

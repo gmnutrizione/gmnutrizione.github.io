@@ -558,10 +558,13 @@ body {
 .prog-oggi { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--terracotta); }
 .prog-oggi b { font-size: 12px; }
 .sets-reps-prog { font-size: 20px; line-height: 1.15; flex-shrink: 1; }
-.test-box { background: var(--surface-1); border-radius: 14px; padding: 16px; margin-bottom: 10px; }
-.test-title { font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 0.02em; line-height: 1.05; margin: 0 0 10px; color: var(--terracotta); }
-.test-text { font-size: 14px; line-height: 1.5; margin: 0 0 14px; white-space: pre-line; }
+.test-box { background: var(--surface-1); border-radius: 14px; padding: 14px; margin-bottom: 8px; }
+.test-title { font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 0.02em; line-height: 1.05; margin: 0 0 8px; color: var(--terracotta); }
+.test-text { font-size: 14px; line-height: 1.38; margin: 0 0 10px; }
+.test-text p { margin: 0 0 6px; }
 .test-label { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 6px; }
 .test-input-group { display: flex; align-items: center; gap: 10px; }
-.test-input-group input { flex: 1; min-width: 0; height: 68px; font-size: 38px; font-weight: 700; text-align: center; border: 2px solid var(--terracotta); border-radius: 12px; background: var(--surface-2); color: var(--text-primary); }
+.test-input-group input { flex: 1; min-width: 0; height: 62px; font-size: 38px; font-weight: 700; text-align: center; border: 2px solid var(--terracotta); border-radius: 12px; background: var(--surface-2); color: var(--text-primary); }
 .test-unit { font-size: 22px; font-weight: 700; color: var(--text-secondary); }
+
+#screen-dettaglio .top-bar { padding-top: 0.25rem; margin-bottom: 0.75rem; }
