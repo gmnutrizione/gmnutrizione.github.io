@@ -417,7 +417,7 @@ function notaColonnaSessione(row, sessione) {
 
 function estraiKgDaCarico(testo) {
   const str = (testo || "").toString().trim();
-  if (!str) return "";
+  if (!str || /test/i.test(str)) return "";
   const conUnita = str.match(/(\d+(?:[.,]\d+)?)\s*kg/i);
   if (conUnita) return conUnita[1].replace(",", ".");
   const soloNumero = str.match(/(\d+(?:[.,]\d+)?)/);
@@ -428,7 +428,7 @@ function ultimoCarico(row) {
   const cols = caricoColumns(row);
   for (let i = cols.length - 1; i >= 0; i--) {
     const val = (row[cols[i].key] || "").trim();
-    if (val) return val;
+    if (val && !/test/i.test(val)) return val;
   }
   return "";
 }

@@ -439,7 +439,7 @@ function disegnaProg(){
   const el=$("p-lista"); if(!el)return;
   el.innerHTML=PROG.map(p=>`<div class="card"><h3>${esc(p.nome)}<small>${p.durata_sett} settimane · 1 blocco · solo fondamentali</small></h3>
     <div class="nota" style="margin-bottom:8px">${esc(p.sintesi)}</div>
-    <table class="pt"><tr><th>Seduta</th><th>Serie × rep</th><th>Nota di progressione (separata dalle note personali)</th></tr>${(p.settimane||[]).map(w=>`<tr><td>${w.n}</td><td>${esc(w.serie)} × ${esc(w.rep)}</td><td>${esc(w.nota)}</td></tr>`).join("")}</table>
+    <table class="pt"><tr><th>Seduta</th><th>Serie × rep</th><th>Carico</th><th>Nota di progressione (separata dalle note personali)</th></tr>${(p.settimane||[]).map(w=>`<tr><td>${w.n}</td><td>${esc(w.serie)} × ${esc(w.rep)}</td><td>${esc(w.carico||"")}</td><td>${esc(w.nota)}</td></tr>`).join("")}</table>
     <div class="nt"><b>Nell'esercizio il cliente vede:</b> «Progressione: ${esc(p.schema)}» e questa scritta:<br>${esc(p.testo)}</div></div>`).join("")||'<div class="nota">Nessuna progressione.</div>';
 }
 const eFond=ese=>{const c=CATMAP[String(ese||"").split("+")[0].trim().toLowerCase()];return !!c&&c.cat_raw==="fondamentale"};
@@ -447,18 +447,21 @@ async function applicaProg(tr,sel){
   const id=tr.dataset.id, r=DATI.righe.find(x=>String(x.id)===String(id));
   const annulla=()=>{sel.value=(r&&r.extra&&r.extra.ProgId)||""};
   if(!r){toast("Compila prima l'esercizio");annulla();return}
-  const ext=Object.assign({},r.extra||{});
+  const ext=Object.assign({},r.extra||{}), car=Object.assign({},r.carichi||{});
+  const vecchia=PROG.find(x=>String(x.id)===String((r.extra||{}).ProgId));
+  if(vecchia)(vecchia.settimane||[]).forEach(w=>{if(w.carico&&car[w.n]===w.carico)delete car[w.n]}); // toglie solo i carichi scritti dalla progressione
   ["Progressione","ProgId","ProgSchema"].forEach(k=>delete ext[k]);
   Object.keys(ext).filter(k=>/^Prog nota /.test(k)).forEach(k=>delete ext[k]); // le note personali (Note 1..N) non si toccano mai
   if(sel.value){
     const p=PROG.find(x=>String(x.id)===sel.value);
     if(!eFond(r.esercizio)){toast("La progressione vale solo per gli esercizi fondamentali");annulla();return}
     ext.Progressione=p.testo; ext.ProgId=String(p.id); ext.ProgSchema=p.schema||"";
-    (p.settimane||[]).forEach(w=>{ext["Prog nota "+w.n]=w.nota});
+    (p.settimane||[]).forEach(w=>{ext["Prog nota "+w.n]=w.nota; if(w.carico&&w.n<=CTX.N&&!String(car[w.n]||"").trim())car[w.n]=w.carico});
     cv(tr,"serie").value=p.serie; cv(tr,"rep").value=p.rep;
     cv(tr,"recupero").value=recAuto(cv(tr,"tipo").value,p.rep,cv(tr,"esercizio").value);
   }
-  r.extra=ext;
+  r.extra=ext; r.carichi=car;
+  tr.querySelectorAll("[data-c]").forEach(i=>{i.value=car[i.dataset.c]||""});
   await salvaRiga(tr);
   toast(sel.value?"Progressione applicata ✔":"Progressione tolta");
 }
@@ -473,7 +476,7 @@ function secRec(v){
   const n=num(t); if(isNaN(n))return 60; return n>=15?n:n*60;
 }
 function caricoRiga(r){ // lista dei carichi numerici in ordine di seduta
-  return Object.keys(r.carichi||{}).map(Number).sort((a,b)=>a-b).map(k=>num(r.carichi[k])).filter(x=>!isNaN(x));
+  return Object.keys(r.carichi||{}).map(Number).sort((a,b)=>a-b).filter(k=>!/test/i.test(String(r.carichi[k]))).map(k=>num(r.carichi[k])).filter(x=>!isNaN(x));
 }
 const ser=r=>{const n=num(r.serie);return isNaN(n)?0:n};
 
