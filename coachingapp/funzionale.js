@@ -73,9 +73,23 @@ async function fzCarica() {
 async function fzApri() {
   showScreen("screen-fz-tipo");
   const box = fzEl("fz-tipi");
-  box.innerHTML = FZ_TIPI.map(t =>
-    '<button class="fz-card" type="button" data-fz-tipo="' + fzEsc(t) + '"><span class="txt"><span class="n">' + fzEsc(t) + '</span></span><span class="ar">&#8250;</span></button>'
+  // ordine e nomi mostrati al cliente (i nomi interni dei tipi restano quelli dei dati)
+  const FZ_HOME = [
+    { tipo: "Pesi senza Corsa", nome: "Pesi", img: "fz-pesi" },
+    { tipo: "Pesi + Corsa", nome: "Pesi + Corsa", img: "fz-pesi-corsa" },
+    { tipo: "Corpo libero senza Corsa", nome: "Corpo libero", img: "fz-corpo-libero" },
+    { tipo: "Corpo libero + Corsa", nome: "Corpo libero + Corsa", img: "fz-corpo-libero-corsa" }
+  ];
+  box.className = "fz-grid";
+  box.innerHTML = FZ_HOME.map((t, i) =>
+    '<button class="fz-tile fz-t' + (i % 2 ? "b" : "a") + '" type="button" data-fz-tipo="' + fzEsc(t.tipo) + '" style="background-image:url(img/' + t.img + '.jpg),radial-gradient(120% 120% at ' + (i % 2 ? "100%" : "0%") + ' 110%,#7a1015 0%,#1a0b0c 55%,#0e0e0e 100%)"><span class="fz-tn">' + fzEsc(t.nome) + '</span></button>'
   ).join("");
+  const adatta = () => box.querySelectorAll(".fz-tn").forEach(el => {  // la scritta sta sempre su una riga: se non ci sta si rimpicciolisce
+    let f = 22; el.style.fontSize = f + "px";
+    while (el.scrollWidth > el.clientWidth && f > 11) { f -= 1; el.style.fontSize = f + "px"; }
+  });
+  adatta();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(adatta);
   if (typeof FUNZIONALE_CSV_URL === "undefined" || FUNZIONALE_CSV_URL.includes("INSERISCI")) {
     fzEl("fz-tipi-msg").textContent = "Elenco allenamenti non ancora collegato.";
     return;
