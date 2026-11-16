@@ -187,7 +187,7 @@ td input[readonly]{color:#555}
   <div class="scroll" style="max-height:74vh"><table id="a-tab"></table></div>
 </main>
 <main id="vista-split" style="display:none">
-  <div class="box"><b style="font-size:18px">Modelli di split</b><div class="nota" style="margin-top:4px">Da consultare quando prepari una scheda nuova. Ogni gruppo muscolare è allenato 2 volte a settimana. Le note segnalano i gruppi che arrivano già affaticati dalla seduta precedente.</div></div>
+  <div class="box"><b style="font-size:18px">Modelli di split</b><div class="nota" style="margin-top:4px">Da consultare quando prepari una scheda nuova. Ogni gruppo muscolare è allenato 2 volte a settimana.</div></div>
   <div class="fl" id="s-filtri"></div>
   <div class="spl" id="s-lista"></div>
 </main>
@@ -350,7 +350,7 @@ function disegnaTabArchivio(){
     cols.forEach(([k])=>{
       const v=e[k]||"";
       if(k==="_x")r+=`<td style="text-align:center">${ed&&!nuova?'<button class="l xb" data-x="1" title="Elimina questa riga">✕</button>':""}</td>`;
-      else if(k==="esercizio")r+=`<td><input data-k="esercizio" value="${esc(v)}" ${ed&&nuova?'placeholder="Nuovo esercizio…"':"readonly"}></td>`;
+      else if(k==="esercizio")r+=`<td><input data-k="esercizio" value="${esc(v)}" ${ed?(nuova?'placeholder="Nuovo esercizio…"':""):"readonly"}></td>`;
       else if(k==="tipo")r+=`<td><select data-k="tipo" ${ed?"":"disabled"}><option value="pesi" ${v!=="corpo libero"?"selected":""}>pesi</option><option value="corpo libero" ${v==="corpo libero"?"selected":""}>c. libero</option></select></td>`;
       else if(k==="categoria")r+=`<td><select data-k="categoria" ${ed?"":"disabled"}>${["fondamentale","complementare","isolamento"].map(o=>`<option ${o===(v||"complementare")?"selected":""}>${o}</option>`).join("")}</select></td>`;
       else if(k==="gruppo")r+=`<td><input data-k="gruppo" list="dl-gr" value="${esc(v)}" ${ed?"":"readonly"}></td>`;
@@ -368,6 +368,17 @@ function disegnaTabArchivio(){
     const x=tr.querySelector("[data-x]"); if(x)x.onclick=()=>eliminaArc(tr);
   });
 }
+async function rinominaArc(tr,vecchio,nuovo){
+  const inp=tr.querySelector('[data-k="esercizio"]');
+  if(!confirm("Rinominare «"+vecchio+"» in «"+nuovo+"»?\n\nIl nome cambia anche in tutte le schede e nello storico dei clienti gestiti da qui."))return inp.value=vecchio;
+  const j=await rpc("gc_t_archivio_rinomina",{p_cod:CODE,p_vecchio:vecchio,p_nuovo:nuovo});
+  if(!j.ok){toast(j.errore);inp.value=vecchio;return}
+  const e=ARC.esercizi.find(x=>x.esercizio===vecchio); if(e)e.esercizio=nuovo.replace(/\s+/g," ").trim();
+  ARC.esercizi.sort((a,b)=>a.esercizio.toLowerCase().localeCompare(b.esercizio.toLowerCase()));
+  toast("Rinominato ✔"+(j.schede?" · aggiornate "+j.schede+" schede":""));
+  caricaCatalogo(); disegnaTabArchivio();
+  if(CUR&&j.schede)apri(CUR,BLOCCO);
+}
 async function eliminaArc(tr){
   const n=tr.dataset.n; if(!n)return;
   if(!confirm("Eliminare completamente «"+n+"» dall'archivio e dal catalogo?\n\nLe schede che lo usano già restano com'è."))return;
@@ -380,6 +391,7 @@ async function salvaArc(tr){
   const o={}; tr.querySelectorAll("input,select").forEach(i=>o[i.dataset.k]=i.value.trim());
   if(!o.esercizio){return}
   const nuovo=!tr.dataset.n;
+  if(!nuovo&&tr.dataset.n!==o.esercizio){ await rinominaArc(tr,tr.dataset.n,o.esercizio); return }
   if(nuovo&&ARC.esercizi.some(e=>e.esercizio.toLowerCase()===o.esercizio.toLowerCase())){toast("Esiste già un esercizio con questo nome");return}
   const j=await rpc("gc_t_archivio_salva",{p_cod:CODE,p:o});
   if(!j.ok){toast(j.errore);return}
