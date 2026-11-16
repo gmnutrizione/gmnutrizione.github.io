@@ -319,7 +319,7 @@ function storageKey(suffix) {
 }
 
 function afterAccessGranted() {
-  document.getElementById("greeting-text").textContent = clienteNome ? ("Ciao " + clienteNome) : "Ciao";
+  document.getElementById("greeting-text").textContent = clienteNome ? String(clienteNome).trim().split(/\s+/)[0] : "";
   abilitaFunzionale();
   showScreen("screen-categorie");
 }
