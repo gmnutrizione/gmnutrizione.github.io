@@ -1221,7 +1221,15 @@ function apriDettaglio(ex, giorno, gruppo) {
     document.getElementById("desc-text").textContent = info.descrizione || "Nessuna descrizione disponibile.";
     document.getElementById("desc-text").style.display = "none";
     document.getElementById("desc-chevron").classList.remove("open");
-    document.getElementById("detail-sets-reps").textContent = currentDettaglio.serie + " x " + currentDettaglio.ripetizioni;
+    const setsEl = document.getElementById("detail-sets-reps");
+    const progSchema = (ex.ProgSchema || "").trim();
+    if (progSchema) {
+      setsEl.textContent = "Progressione: " + progSchema.replace(/\s*→\s*/, " → ");
+      setsEl.classList.add("sets-reps-prog");
+    } else {
+      setsEl.textContent = currentDettaglio.serie + " x " + currentDettaglio.ripetizioni;
+      setsEl.classList.remove("sets-reps-prog");
+    }
     document.getElementById("rec-static").textContent = "Rec " + ((ex.Recupero || "").trim() || (currentDettaglio.recupero + "''"));
 
     const nota = notaColonnaSessione(ex, currentSessione);
@@ -1236,7 +1244,10 @@ function apriDettaglio(ex, giorno, gruppo) {
     const progBox = document.getElementById("prog-box");
     const progTxt = (ex.Progressione || "").trim();
     if (progTxt) {
-      progBox.innerHTML = "<b>Progressione da seguire</b><br>" + progTxt.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      const esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      const notaProg = (ex["Prog nota " + currentSessione] || "").trim();
+      progBox.innerHTML = "<b>Progressione da seguire</b><br>" + esc(progTxt) +
+        (notaProg ? '<div class="prog-oggi"><b>Allenamento ' + currentSessione + '</b><br>' + esc(notaProg) + "</div>" : "");
       progBox.style.display = "block";
     } else {
       progBox.style.display = "none";

@@ -198,7 +198,7 @@ td input[readonly]{color:#555}
   <div class="spl" id="s-lista"></div>
 </main>
 <main id="vista-prog" style="display:none">
-  <div class="box"><b style="font-size:18px">Progressioni</b><div class="nota" style="margin-top:4px">Valgono solo per gli esercizi fondamentali e durano un blocco. Nella scheda, scegli la progressione nella colonna «Progressione» della riga: serie, ripetizioni e note di ogni seduta si compilano da sole.</div></div>
+  <div class="box"><b style="font-size:18px">Progressioni</b><div class="nota" style="margin-top:4px">Valgono solo per gli esercizi fondamentali e durano un blocco. Nella scheda, scegli la progressione nella colonna «Progressione» della riga: serie, ripetizioni e note di progressione di ogni seduta si compilano da sole (le note personali restano tue).</div></div>
   <div class="prg" id="p-lista"></div>
 </main>
 </div>
@@ -439,32 +439,26 @@ function disegnaProg(){
   const el=$("p-lista"); if(!el)return;
   el.innerHTML=PROG.map(p=>`<div class="card"><h3>${esc(p.nome)}<small>${p.durata_sett} settimane · 1 blocco · solo fondamentali</small></h3>
     <div class="nota" style="margin-bottom:8px">${esc(p.sintesi)}</div>
-    <table class="pt"><tr><th>Seduta</th><th>Serie × rep</th><th>Indicazione nella casella note</th></tr>${(p.settimane||[]).map(w=>`<tr><td>${w.n}</td><td>${esc(w.serie)} × ${esc(w.rep)}</td><td>${esc(w.nota)}</td></tr>`).join("")}</table>
-    <div class="nt"><b>Scritta mostrata al cliente nell'esercizio:</b><br>${esc(p.testo)}</div></div>`).join("")||'<div class="nota">Nessuna progressione.</div>';
+    <table class="pt"><tr><th>Seduta</th><th>Serie × rep</th><th>Nota di progressione (separata dalle note personali)</th></tr>${(p.settimane||[]).map(w=>`<tr><td>${w.n}</td><td>${esc(w.serie)} × ${esc(w.rep)}</td><td>${esc(w.nota)}</td></tr>`).join("")}</table>
+    <div class="nt"><b>Nell'esercizio il cliente vede:</b> «Progressione: ${esc(p.schema)}» e questa scritta:<br>${esc(p.testo)}</div></div>`).join("")||'<div class="nota">Nessuna progressione.</div>';
 }
 const eFond=ese=>{const c=CATMAP[String(ese||"").split("+")[0].trim().toLowerCase()];return !!c&&c.cat_raw==="fondamentale"};
 async function applicaProg(tr,sel){
   const id=tr.dataset.id, r=DATI.righe.find(x=>String(x.id)===String(id));
   const annulla=()=>{sel.value=(r&&r.extra&&r.extra.ProgId)||""};
   if(!r){toast("Compila prima l'esercizio");annulla();return}
-  const vecchia=PROG.find(p=>String(p.id)===String((r.extra||{}).ProgId));
-  const ext=Object.assign({},r.extra||{}), note=Object.assign({},r.note||{});
-  const togliVecchia=()=>{if(vecchia)(vecchia.settimane||[]).forEach(w=>{if(note[w.n]===w.nota)delete note[w.n]})};
-  if(!sel.value){
-    togliVecchia(); delete ext.Progressione; delete ext.ProgId;
-  }else{
+  const ext=Object.assign({},r.extra||{});
+  ["Progressione","ProgId","ProgSchema"].forEach(k=>delete ext[k]);
+  Object.keys(ext).filter(k=>/^Prog nota /.test(k)).forEach(k=>delete ext[k]); // le note personali (Note 1..N) non si toccano mai
+  if(sel.value){
     const p=PROG.find(x=>String(x.id)===sel.value);
     if(!eFond(r.esercizio)){toast("La progressione vale solo per gli esercizi fondamentali");annulla();return}
-    togliVecchia();
-    const occ=(p.settimane||[]).filter(w=>note[w.n]&&String(note[w.n]).trim()!==""&&w.n<=CTX.N);
-    if(occ.length&&!confirm("Alcune note di questo esercizio verranno sostituite da quelle della progressione. Procedere?")){annulla();return}
-    (p.settimane||[]).forEach(w=>{if(w.n<=CTX.N)note[w.n]=w.nota});
-    ext.Progressione=p.testo; ext.ProgId=String(p.id);
+    ext.Progressione=p.testo; ext.ProgId=String(p.id); ext.ProgSchema=p.schema||"";
+    (p.settimane||[]).forEach(w=>{ext["Prog nota "+w.n]=w.nota});
     cv(tr,"serie").value=p.serie; cv(tr,"rep").value=p.rep;
     cv(tr,"recupero").value=recAuto(cv(tr,"tipo").value,p.rep,cv(tr,"esercizio").value);
   }
-  r.extra=ext; r.note=note;
-  tr.querySelectorAll("[data-n]").forEach(i=>{i.value=note[i.dataset.n]||""});
+  r.extra=ext;
   await salvaRiga(tr);
   toast(sel.value?"Progressione applicata ✔":"Progressione tolta");
 }

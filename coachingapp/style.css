@@ -553,3 +553,6 @@ body {
   margin-bottom: 14px;
 }
 .prog-box b { color: var(--terracotta); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+.sets-reps-prog { font-size: 20px; line-height: 1.15; flex-shrink: 1; }
+.prog-oggi { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--terracotta); }
+.prog-oggi b { font-size: 12px; }
