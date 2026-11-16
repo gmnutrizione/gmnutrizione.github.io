@@ -902,9 +902,21 @@ async function salvaRiga(tr){
     tr.classList.remove("sal"); toast("Salvato ✔"); statistiche();
   }catch(e){toast("Errore di salvataggio")}
 }
-function aggiungiRighe(n){
-  const tr=righeVuote(n);
-  if(tr){tr.scrollIntoView({block:"center"});const e=cv(tr,"esercizio");if(e)e.focus()}
+async function aggiungiRighe(n){ // le righe vengono salvate subito (anche vuote): restano dopo l'aggiornamento della pagina; il cliente non le vede finche' non hanno un esercizio
+  const btn=$("nuova"); if(btn)btn.disabled=true;
+  try{
+    const R=righeBlocco(), giorno=(R[R.length-1]||{}).giorno||"Giorno A"; let primo=null;
+    for(let i=0;i<n;i++){
+      const o={blocco:BLOCCO,id:null,giorno,ordine:prossimoOrdine(giorno,null),tipo:"pesi",gruppo:"",esercizio:"",variante:"",serie:"",rep:"",passo:"",recupero:"",video:"",bloccato:false,carichi:{},note:{}};
+      const j=await rpc("gc_t_riga_salva",{p_cod:CODE,p_cl:CUR,p:o});
+      if(!j.ok){toast(j.errore);break}
+      DATI.righe.push({...o,id:j.id,extra:{}}); if(!primo)primo=j.id;
+    }
+    disegnaTab();
+    if(primo){const tr=document.querySelector(`#tab tr[data-id="${primo}"]`);if(tr){tr.scrollIntoView({block:"center"});const e=cv(tr,"esercizio");if(e)e.focus()}}
+    toast(n+(n===1?" riga aggiunta ✔":" righe aggiunte ✔"));
+  }catch(e){toast("Errore di salvataggio")}
+  if(btn)btn.disabled=false;
 }
 async function duplica(tr){
   const o=leggi(tr); o.id=null; o.ordine=prossimoOrdine(o.giorno,null);
