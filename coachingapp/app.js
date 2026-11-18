@@ -444,9 +444,9 @@ function buildBlocchi() {
       card.innerHTML = `
         <div style="flex:1;">
           <p class="blocco-nome">Blocco ${i}</p>
-          <p class="blocco-stato">Completato &middot; solo lettura</p>
+          <p class="blocco-stato">COMPLETATO</p>
         </div>
-        <span style="font-size:16px;">&#10003;</span>
+        <span class="blocco-check"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
       `;
       card.style.cursor = "pointer";
       card.addEventListener("click", () => apriBloccoLettura(i));
@@ -641,6 +641,12 @@ function durataGiornoMin(rows) {
   return Math.round(sec / 60);
 }
 
+const CHECK_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+// icone dei giorni: ordine casuale diverso a ogni apertura dell'app (uguale per tutta la sessione)
+const ICONE_GIORNO = ["<svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11\"/></svg>", "<svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8.5 8.5a3.5 3.5 0 0 1 7 0\"/><path d=\"M9 8.5C6 10 4.5 12.5 4.5 15a5 5 0 0 0 5 5h5a5 5 0 0 0 5-5c0-2.5-1.5-5-4.5-6.5\"/></svg>", "<svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M13 2L4.5 13.5H11L10 22l9-12h-6.5z\"/></svg>", "<svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 22c4 0 7-2.8 7-6.8 0-3.2-2-5.2-3.5-7-.4 1.8-1.5 2.8-2.5 3 .5-3.5-.5-6.5-4-9.2C9.5 6 5 9.5 5 15.2 5 19.2 8 22 12 22z\"/></svg>", "<svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.5 2.5h5v3h-5z\"/><path d=\"M8 5.5h8a1 1 0 0 1 1 1V8l-1 1.5V20a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9.5L7 8V6.5a1 1 0 0 1 1-1z\"/><path d=\"M8 14c1.3-1 2.7 1 4 0s2.7-1 4 0\"/></svg>", "<svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"13.5\" r=\"7.5\"/><path d=\"M12 13.5V9M9.5 2.5h5M12 2.5v3M19 6l1.5-1.5\"/></svg>", "<svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20.5s-8-4.8-8-10.5a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.7-8 10.5-8 10.5z\"/><path d=\"M6.5 12h3l1.5-2.5 2 5 1.5-2.5h3\"/></svg>"];
+const ORDINE_ICONE = ICONE_GIORNO.map((_, i) => i).sort(() => Math.random() - 0.5);
+function iconaGiorno(idx) { return ICONE_GIORNO[ORDINE_ICONE[idx % ICONE_GIORNO.length]]; }
+
 function buildGiorni() {
   giorni = [];
   esercizi.forEach(r => {
@@ -664,7 +670,7 @@ function buildGiorni() {
 
   const list = document.getElementById("day-list");
   list.innerHTML = "";
-  dati.forEach(d => {
+  dati.forEach((d, idx) => {
     const completato = d.totale > 0 && d.percentuale >= 100;
     const evidenziato = d.giorno === prossimoGiorno;
 
@@ -672,9 +678,9 @@ function buildGiorni() {
     card.className = "day-card" + (evidenziato ? " day-card-next" : "");
     card.innerHTML = `
       <div class="day-card-top">
-        <div class="day-icon-box${completato ? " completato" : ""}">${completato ? "&#10003;" : "&#127947;"}</div>
+        <div class="day-icon-box${completato ? " completato" : ""}">${completato ? CHECK_SVG : iconaGiorno(idx)}</div>
         <div class="day-info">
-          <p class="day-name">${d.giorno} - ${d.gruppi.join(" e ")}</p>
+          <p class="day-name">${d.giorno}${evidenziato ? '<span class="next-badge">Prossimo</span>' : ""}</p>
           <p class="day-sub">${d.totale > 0 ? d.completate + " di " + d.totale + " allenamenti" : d.rowsCount + " esercizi"}${d.durata > 0 ? " · circa " + d.durata + " min" : ""}</p>
         </div>
         <span class="day-arrow">&#8250;</span>
@@ -708,9 +714,9 @@ function apriSessioni(giorno) {
     card.className = "day-card" + (evidenziato ? " day-card-next" : "");
     card.innerHTML = `
       <div class="day-card-top">
-        <div class="day-icon-box${fatto ? " completato" : ""}">${fatto ? "&#10003;" : i}</div>
+        <div class="day-icon-box${fatto ? " completato" : ""}">${fatto ? CHECK_SVG : i}</div>
         <div class="day-info">
-          <p class="day-name">Allenamento ${i}</p>
+          <p class="day-name">Allenamento ${i}${evidenziato ? '<span class="next-badge">Oggi</span>' : ""}</p>
           <p class="day-sub">${fatto ? "Completato" : "Da fare"}</p>
         </div>
         <span class="day-arrow">&#8250;</span>
