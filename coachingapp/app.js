@@ -1037,10 +1037,8 @@ function renderRigaEsercizio(ex, giorno, gruppo, chiave, bloccato, editMode, onC
   }
 
   row.innerHTML = `
-    <div>
-      <p class="exercise-name">${nome}${variante}</p>
-      <p class="exercise-sub">${serie} x ${rip}</p>
-    </div>
+    <p class="exercise-name">${nome}${variante}</p>
+    <span class="exercise-sub">${serie} x ${rip}</span>
     ${iconsHtml}
   `;
 

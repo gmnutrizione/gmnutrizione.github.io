@@ -233,13 +233,15 @@ body {
   display: flex; justify-content: space-between; align-items: center;
   background: var(--surface-1);
   border-radius: 12px;
-  padding: 9px 14px;
+  padding: 11px 14px;
+  gap: 10px;
   margin-bottom: 5px;
   border-radius: 10px;
   cursor: pointer;
 }
-.exercise-name { font-weight: 700; font-size: 16px; line-height: 1.25; margin: 0; }
-.exercise-sub { font-size: 13px; color: var(--text-secondary); margin: 0; }
+.exercise-name { font-weight: 700; font-size: 16px; line-height: 1.25; margin: 0; flex: 1; min-width: 0; }
+.exercise-sub { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 0; white-space: nowrap; }
+.exercise-chevron { line-height: 1; }
 .exercise-chevron { font-size: 18px; color: var(--text-muted); }
 
 .edit-icons { display: flex; justify-content: flex-end; gap: 6px; min-width: 58px; }
