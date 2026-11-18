@@ -242,14 +242,14 @@ async function entra(){
   const c=$("cod").value.trim(); $("errL").textContent="";
   try{
     const j=await rpc("gc_t_clienti",{p_cod:c});
-    if(!j.ok){$("errL").textContent="Codice non valido";return}
-    CODE=c; CLIENTI=j.clienti; try{sessionStorage.setItem("gt_c",c)}catch(e){}
+    if(!j.ok){$("errL").textContent="Codice non valido";try{localStorage.removeItem("gt_c")}catch(e){};return}
+    CODE=c; CLIENTI=j.clienti; try{localStorage.setItem("gt_c",c)}catch(e){}
     $("login").style.display="none";$("app").style.display="block";disegnaElenco();caricaCatalogo();caricaSoglie();caricaProg();
   }catch(e){$("errL").textContent="Errore di connessione"}
 }
 $("entra").onclick=entra; $("cod").onkeydown=e=>{if(e.key==="Enter")entra()};
-$("esci").onclick=()=>{try{sessionStorage.removeItem("gt_c")}catch(e){};location.reload()};
-try{const s=sessionStorage.getItem("gt_c");if(s){$("cod").value=s;entra()}}catch(e){}
+$("esci").onclick=()=>{try{localStorage.removeItem("gt_c");sessionStorage.removeItem("gt_c")}catch(e){};location.reload()};
+try{const s=localStorage.getItem("gt_c")||sessionStorage.getItem("gt_c");if(s){$("cod").value=s;entra()}}catch(e){}
 
 let SEL=0;
 function disegnaElenco(){
