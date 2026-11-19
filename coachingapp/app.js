@@ -1387,6 +1387,7 @@ function vaiAValutazione() {
       grid.querySelectorAll(".rpe-option").forEach(o => o.classList.remove("selezionato"));
       opt.classList.add("selezionato");
       saveInput("rpe", i);
+      pianificaAutosalvataggio();
     });
     grid.appendChild(opt);
   }
@@ -1571,6 +1572,57 @@ function renderSetsInputs() {
   });
 }
 
+// ============================================================
+// SALVATAGGIO AUTOMATICO DELL'ESERCIZIO COMPLETATO
+// Quando tutte le serie (kg e rep) di un esercizio sono compilate, l'esercizio parte da solo
+// verso il database, in background (nessuna attesa). "Concludi allenamento" resta il passaggio
+// che segna l'allenamento come completato. Vale solo per i clienti gestiti dal database.
+// ============================================================
+const AUTOSAVE_MS = 2500;
+const autoTimers = {};
+const autoUltimo = {};
+
+function costruisciBozzaEsercizio() {
+  const d = currentDettaglio;
+  if (!d || !clienteNome || typeof APPS_SCRIPT_URL === "undefined" || !APPS_SCRIPT_URL) return null;
+  if ((d.esercizio || "").includes("+")) return null; // super-set / tri-set: si salvano a fine allenamento
+  const repEls = [...document.querySelectorAll("#sets-inputs .rep-input")];
+  const kgEls = [...document.querySelectorAll("#sets-inputs .kg-input")];
+  if (!repEls.length && !kgEls.length) return null;
+  const pieno = el => el.value.trim() !== "";
+  if (!repEls.every(pieno) || !kgEls.every(pieno)) return null; // esercizio non ancora completo
+  const rpe = getSavedInput("rpe");
+  const commento = (document.getElementById("comment-input") || {}).value || getSavedInput("commento") || "";
+  return {
+    tipo: "Bozza esercizio",
+    cliente: clienteNome,
+    blocco: currentBloccoNumero,
+    giorno: d.giorno,
+    sessione: currentSessione,
+    gruppoMuscolare: d.gruppo,
+    esercizio: d.esercizio,
+    kg: kgEls.length ? kgEls.map(e => e.value.trim()).join("-") : "",
+    rep: repEls.map(e => e.value.trim()).join("-"),
+    commento: (rpe ? "Fatica: " + rpe + "/10. " : "") + commento
+  };
+}
+
+function pianificaAutosalvataggio() {
+  let ev;
+  try { ev = costruisciBozzaEsercizio(); } catch (e) { return; }
+  if (!ev) return;
+  const chiave = ev.giorno + "|" + ev.gruppoMuscolare + "|" + ev.esercizio + "|s" + ev.sessione;
+  clearTimeout(autoTimers[chiave]);
+  autoTimers[chiave] = setTimeout(() => {
+    const body = JSON.stringify(ev);
+    if (autoUltimo[chiave] === body) return;
+    autoUltimo[chiave] = body;
+    try {
+      fetch(APPS_SCRIPT_URL, { method: "POST", body, keepalive: true, mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" } }).catch(() => { delete autoUltimo[chiave]; });
+    } catch (e) { delete autoUltimo[chiave]; }
+  }, AUTOSAVE_MS);
+}
+
 function salvaValoriCorrenti() {
   const valoriRep = [];
   document.querySelectorAll("#sets-inputs .rep-input").forEach(inp => {
@@ -1583,10 +1635,12 @@ function salvaValoriCorrenti() {
     valoriKg[parseInt(inp.dataset.idx)] = inp.value;
   });
   saveInput("valoriKg", valoriKg);
+  pianificaAutosalvataggio();
 }
 
 document.getElementById("comment-input").addEventListener("input", e => {
   saveInput("commento", e.target.value);
+  pianificaAutosalvataggio();
 });
 
 // ============================================================
