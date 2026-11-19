@@ -2,6 +2,7 @@
 // STATO GLOBALE
 // ============================================================
 let clienteNome = "";
+let clienteCodice = ""; // codice del cliente: e' quello che lo identifica nel database
 let clienteCsvUrl = "";
 let clientiList = [];     // elenco Codice/Cliente/Link scheda
 let eserciziTotali = []; // tutte le righe del foglio del cliente, tutti i blocchi
@@ -38,6 +39,13 @@ async function init() {
     const obj = JSON.parse(sessione);
     clienteNome = obj.cliente;
     clienteCsvUrl = obj.csvUrl;
+    clienteCodice = String(obj.codice || "").trim();
+    if (!clienteCodice) {
+      // sessioni salvate prima di questa versione: il codice si ricava dall'elenco clienti
+      const rg = clientiList.find(r => (r.Cliente || "").trim().toLowerCase() === (clienteNome || "").trim().toLowerCase());
+      clienteCodice = rg ? String(rg.Codice || "").trim() : "";
+      if (clienteCodice) { try { obj.codice = clienteCodice; localStorage.setItem("gm_sessione", JSON.stringify(obj)); } catch (e) {} }
+    }
     await caricaSchedaCliente();
     return;
   }
@@ -56,7 +64,8 @@ async function provaAccesso() {
   }
   clienteNome = (riga.Cliente || "").trim();
   clienteCsvUrl = (riga["Link scheda"] || "").trim();
-  localStorage.setItem("gm_sessione", JSON.stringify({ cliente: clienteNome, csvUrl: clienteCsvUrl }));
+  clienteCodice = inserito;
+  localStorage.setItem("gm_sessione", JSON.stringify({ cliente: clienteNome, csvUrl: clienteCsvUrl, codice: clienteCodice }));
 
   document.getElementById("access-submit").textContent = "Attendere...";
   await caricaSchedaCliente();
@@ -1596,6 +1605,7 @@ function costruisciBozzaEsercizio() {
   return {
     tipo: "Bozza esercizio",
     cliente: clienteNome,
+    codice: clienteCodice,
     blocco: currentBloccoNumero,
     giorno: d.giorno,
     sessione: currentSessione,
@@ -1765,7 +1775,7 @@ function codaScrivi(arr) {
 function inviaBatch(eventi, giorno, sessione) {
   if (typeof APPS_SCRIPT_URL === "undefined" || !APPS_SCRIPT_URL || !eventi || !eventi.length) return;
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  const payload = { batch: true, id, cliente: clienteNome, eventi };
+  const payload = { batch: true, id, cliente: clienteNome, codice: clienteCodice, eventi };
   const coda = codaLeggi();
   coda.push({ id, payload, cliente: clienteNome, blocco: currentBloccoNumero, giorno, sessione, ts: Date.now(), ultimo: Date.now() });
   codaScrivi(coda);
@@ -1802,6 +1812,7 @@ function riprovaCoda(progressi) {
 function inviaEvento(dati, diretto) {
   if (typeof APPS_SCRIPT_URL === "undefined" || !APPS_SCRIPT_URL) return;
   dati.cliente = clienteNome;
+  dati.codice = clienteCodice;
   if (codaBatch && !diretto) { codaBatch.push(dati); return; }
   try {
     navigator.sendBeacon(APPS_SCRIPT_URL, new Blob([JSON.stringify(dati)], { type: "text/plain;charset=utf-8" }));
