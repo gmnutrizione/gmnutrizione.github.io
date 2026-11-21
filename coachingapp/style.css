@@ -585,3 +585,47 @@ body {
 #screen-esercizi { padding-top: 10px; }
 .fine-nota { margin: 12px 16px 0; padding: 10px 12px; border-radius: 10px; background: #fdecec; color: #7a1217; font-size: 13px; font-weight: 600; line-height: 1.35; text-align: center; }
 #screen-esercizi #exercise-groups { padding-top: 12px; }
+
+/* ---- nuova sezione esercizio (dettaglio) ---- */
+.dett-pos { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.dett-progress { height: 4px; background: #eee; border-radius: 4px; margin: 0 0 12px; overflow: hidden; }
+.dett-progress-fill { height: 100%; width: 0; border-radius: 4px; transition: width .3s; background: radial-gradient(90% 190% at 0% 120%, #b01a20 0%, #5c0f13 35%, #1a0a0b 68%, #0e0e0e 100%); }
+.dett-hero { border-radius: 18px; padding: 16px 16px 14px; color: #fff; margin-bottom: 12px; background: radial-gradient(90% 190% at 0% 120%, #b01a20 0%, #5c0f13 35%, #1a0a0b 68%, #0e0e0e 100%); }
+.dett-hero-nome { font-family: 'Bebas Neue', sans-serif; font-size: 32px; line-height: 1.05; letter-spacing: 0.02em; margin: 0; overflow-wrap: anywhere; }
+.dett-hero-stats { display: flex; gap: 8px; margin-top: 12px; }
+.dett-hero-stats .hs { flex: 1; min-width: 0; background: rgba(255,255,255,.1); border-radius: 12px; padding: 8px 10px; }
+.dett-hero-stats .hs-prog { flex: 2; }
+.hs-l { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
+.hs-v { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: .02em; line-height: 1.15; }
+.hs-prog .hs-v { font-size: 22px; }
+
+.video-btns { margin: 0 0 10px; }
+.btn-video { background: radial-gradient(90% 190% at 0% 120%, #b01a20 0%, #5c0f13 35%, #1a0a0b 68%, #0e0e0e 100%); height: 46px; padding: 0; border-radius: 14px; font: 700 14px 'Inter', sans-serif; gap: 10px; }
+.btn-video svg { flex-shrink: 0; }
+
+#screen-dettaglio .desc-toggle { margin: 0 0 12px 2px; }
+#screen-dettaglio .desc-hint { color: #b01a20; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+#screen-dettaglio .chevron { border-color: #b01a20; }
+
+#screen-dettaglio .sets-inputs, #screen-dettaglio .superset-block { counter-reset: serie; }
+#screen-dettaglio .set-row { justify-content: flex-start; gap: 10px; background: var(--surface-1); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; counter-increment: serie; }
+#screen-dettaglio .set-row::before { content: counter(serie); width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 20px; background: radial-gradient(90% 190% at 0% 120%, #b01a20 0%, #5c0f13 45%, #1a0a0b 100%); }
+#screen-dettaglio .set-row::after { content: ""; width: 22px; flex-shrink: 0; text-align: center; color: #1f9d55; font-weight: 800; font-size: 18px; }
+#screen-dettaglio .set-row.ok::after { content: "\2713"; }
+#screen-dettaglio .set-label { flex: 1; font-size: 14px; color: var(--text-secondary); }
+#screen-dettaglio .set-input-group { gap: 5px; }
+#screen-dettaglio .set-input-group input[type="text"] { width: 56px; text-align: center; font-weight: 800; padding: 10px 4px; background: #fff; }
+#screen-dettaglio .set-unit { font-size: 12px; }
+
+.timer-row { margin-bottom: 10px; }
+.timer-btn { background: #fff; color: #b01a20; border: 2px solid #b01a20; border-radius: 14px; padding: 14px; font: 700 15px 'Inter', sans-serif; letter-spacing: normal; gap: 10px; }
+.timer-btn.attivo { background: radial-gradient(90% 190% at 0% 120%, #b01a20 0%, #5c0f13 45%, #1a0a0b 100%); color: #fff; border-color: #5c0f13; }
+@keyframes lampeggioTimer {
+  0%, 100% { background: #fff; border-color: #b01a20; color: #b01a20; transform: scale(1); }
+  50% { background: #b01a20; border-color: #b01a20; color: #fff; transform: scale(1.03); }
+}
+.timer-stop-btn { border-radius: 14px; }
+.timer-stop-btn.attivo { background: #b01a20; border-color: #b01a20; }
+.nav-esercizio-row { margin-top: 10px; }
+.btn-indietro { flex: none; width: 64px; border-radius: 14px; }
+.btn-avanti { flex: 1; background: #111; border-radius: 14px; padding: 16px; font: 700 15px 'Inter', sans-serif; letter-spacing: normal; }

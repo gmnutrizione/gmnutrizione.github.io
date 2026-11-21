@@ -1163,6 +1163,9 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape") chiudiVideo(); });
 
+const VIDEO_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="3.5"/><path d="M10 9.2v5.6l4.8-2.8z" fill="#fff"/></svg>';
+const CLOCK_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9M9.5 2.5h5"/></svg>';
+
 function apriDettaglio(ex, giorno, gruppo) {
   const nomeGrezzo = ex.Esercizio || ex.esercizio;
   const subNomi = nomeGrezzo.split("+").map(s => s.trim()).filter(Boolean);
@@ -1184,7 +1187,18 @@ function apriDettaglio(ex, giorno, gruppo) {
     valori: []
   };
 
-  document.getElementById("detail-name-top").textContent = isTecnica ? "Esercizi" : nomeGrezzo;
+  document.getElementById("detail-name-top").textContent = isTecnica ? "Esercizi" : (gruppo || nomeGrezzo);
+  document.getElementById("dett-hero").style.display = isTecnica ? "none" : "block";
+  // posizione dell'esercizio nell'allenamento: "2 di 7" + barra di completamento
+  try {
+    const flatPos = listaFlatGiorno(giorno);
+    const iPos = flatPos.findIndex(it => it.gruppo === gruppo && (it.nome === nomeGrezzo || it.nome === (ex.Esercizio || "")));
+    const posEl = document.getElementById("dett-pos"), fillEl = document.getElementById("dett-progress-fill");
+    if (iPos >= 0 && flatPos.length) {
+      posEl.textContent = (iPos + 1) + " di " + flatPos.length;
+      fillEl.style.width = Math.round(((iPos + 1) / flatPos.length) * 100) + "%";
+    } else { posEl.textContent = ""; fillEl.style.width = "0%"; }
+  } catch (e) {}
 
   // immagini di partenza e arrivo (dall'archivio, una volta per esercizio); se mancano, eventuale video
   const infoPrimo = archivio[subNomi[0].trim()] || { video: "", descrizione: "" };
@@ -1212,7 +1226,7 @@ function apriDettaglio(ex, giorno, gruppo) {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "btn-video";
-      b.innerHTML = '<span class="btn-video-ico">&#9654;</span> ' + (subNomi.length > 1 ? "Video: " + escHtml(x.nome) : "Guarda il video");
+      b.innerHTML = VIDEO_SVG + "<span>" + (subNomi.length > 1 ? "Video: " + escHtml(x.nome) : "Guarda il video") + "</span>";
       b.addEventListener("click", () => apriVideo(x.url, x.nome));
       wrapVid.appendChild(b);
     });
@@ -1232,21 +1246,16 @@ function apriDettaglio(ex, giorno, gruppo) {
   if (!isTecnica) {
     const info = infoPrimo;
     const variante = ex.Variante ? " (" + ex.Variante + ")" : "";
-    document.getElementById("detail-name-top").textContent = nomeGrezzo + variante;
     document.getElementById("detail-name").textContent = nomeGrezzo + variante;
     document.getElementById("desc-text").textContent = info.descrizione || "Nessuna descrizione disponibile.";
     document.getElementById("desc-text").style.display = "none";
     document.getElementById("desc-chevron").classList.remove("open");
-    const setsEl = document.getElementById("detail-sets-reps");
     const progSchema = (ex.ProgSchema || "").trim();
-    if (progSchema) {
-      setsEl.textContent = "Progressione: " + progSchema.replace(/\s*→\s*/, " → ");
-      setsEl.classList.add("sets-reps-prog");
-    } else {
-      setsEl.textContent = currentDettaglio.serie + " x " + currentDettaglio.ripetizioni;
-      setsEl.classList.remove("sets-reps-prog");
-    }
-    document.getElementById("rec-static").textContent = "Rec " + ((ex.Recupero || "").trim() || (currentDettaglio.recupero + "''"));
+    const recTxt = (ex.Recupero || "").trim() || (currentDettaglio.recupero + "''");
+    const stat = (l, v, cls) => '<div class="hs' + (cls ? " " + cls : "") + '"><span class="hs-l">' + l + '</span><b class="hs-v">' + escHtml(String(v)) + "</b></div>";
+    document.getElementById("dett-hero-stats").innerHTML = progSchema
+      ? stat("Progressione", progSchema.replace(/\s*→\s*/, " → "), "hs-prog") + stat("Recupero", recTxt)
+      : stat("Serie", currentDettaglio.serie) + stat("Rep", currentDettaglio.ripetizioni) + stat("Recupero", recTxt);
 
     const nota = notaColonnaSessione(ex, currentSessione);
     const notaBanner = document.getElementById("nota-banner");
@@ -1320,7 +1329,7 @@ function renderSuperset() {
       const valoreRep = savedRep[i - 1] || "";
       const valoreKg = savedKg[i - 1] !== undefined ? savedKg[i - 1] : (kgSuggerito || "");
       righeHtml += `
-        <div class="set-row">
+        <div class="set-row" data-t="${valoreRep ? "1" : ""}">
           <span class="set-label">Serie ${i}</span>
           <div class="set-input-group">
             <input type="text" inputmode="decimal" placeholder="0" class="kg-input" data-sub="${idx}" data-idx="${i - 1}" value="${valoreKg}">
@@ -1354,6 +1363,7 @@ function renderSuperset() {
   container.querySelectorAll("input").forEach(inp => {
     inp.addEventListener("input", salvaValoriSuperset);
   });
+  aggiornaSpunte();
 
   container.querySelectorAll(".superset-desc-toggle").forEach(toggle => {
     toggle.addEventListener("click", () => {
@@ -1548,6 +1558,7 @@ function renderSetsInputs() {
   for (let i = 1; i <= currentDettaglio.serie; i++) {
     const row = document.createElement("div");
     row.className = "set-row";
+    row.dataset.t = (savedRep[i - 1] !== undefined && savedRep[i - 1] !== "") ? "1" : "";
 
     if (isCorpoLibero) {
       const unita = isSecondi ? "sec" : "rep";
@@ -1579,7 +1590,22 @@ function renderSetsInputs() {
   wrap.querySelectorAll("input[type=text]").forEach(inp => {
     inp.addEventListener("input", salvaValoriCorrenti);
   });
+  aggiornaSpunte();
 }
+
+// spunta verde su ogni serie compilata (kg e rep inseriti)
+function aggiornaSpunte() {
+  document.querySelectorAll("#screen-dettaglio .set-row").forEach(row => {
+    const campi = [...row.querySelectorAll("input[type=text]")];
+    row.classList.toggle("ok", row.dataset.t === "1" && campi.length > 0 && campi.every(c => c.value.trim() !== ""));
+  });
+}
+document.addEventListener("input", e => {
+  const row = e.target.closest && e.target.closest("#screen-dettaglio .set-row");
+  if (!row) return;
+  row.dataset.t = "1";
+  aggiornaSpunte();
+});
 
 // ============================================================
 // SALVATAGGIO AUTOMATICO DELL'ESERCIZIO COMPLETATO
@@ -1679,7 +1705,7 @@ function setupRecTimer(secondiTotali) {
   }
 
   function mostraIdle() {
-    btn.innerHTML = "Avvia timer";
+    btn.innerHTML = CLOCK_SVG + "<span>Avvia timer</span>";
     btn.classList.remove("attivo");
     stopBtn.style.display = "none";
     stopBtn.classList.remove("attivo");

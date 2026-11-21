@@ -301,25 +301,26 @@ html:not(.pronto) #app{visibility:hidden}</style>
       <div class="top-bar">
         <span class="back-arrow" data-back="screen-esercizi">&#8592;</span>
         <p class="page-title-inline" id="detail-name-top">Esercizio</p>
+        <span class="dett-pos" id="dett-pos"></span>
       </div>
+      <div class="dett-progress"><div class="dett-progress-fill" id="dett-progress-fill"></div></div>
       <span class="chip-tecnica" id="chip-tecnica" style="display:none;"></span>
-      <div class="video-box" id="video-box"></div>
+      <div class="dett-hero" id="dett-hero">
+        <p class="dett-hero-nome" id="detail-name"></p>
+        <div class="dett-hero-stats" id="dett-hero-stats"></div>
+      </div>
       <div class="video-btns" id="video-btns"></div>
+      <div class="video-box" id="video-box"></div>
 
       <!-- esercizio singolo -->
       <div id="single-exercise-body">
         <div class="desc-toggle" id="desc-toggle">
-          <p class="detail-name" id="detail-name"></p>
           <span class="desc-hint-wrap">
             <span class="desc-hint">Descrizione</span>
             <span class="chevron" id="desc-chevron"></span>
           </span>
         </div>
         <div class="desc-text" id="desc-text"></div>
-        <div class="sets-rec-row">
-          <p class="sets-reps" id="detail-sets-reps"></p>
-          <p class="rec-static" id="rec-static"></p>
-        </div>
         <div class="nota-banner" id="nota-banner" style="display:none;"></div>
         <div class="prog-box" id="prog-box" style="display:none;"></div>
         <div class="sets-inputs" id="sets-inputs"></div>
