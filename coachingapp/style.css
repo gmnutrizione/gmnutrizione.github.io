@@ -629,3 +629,7 @@ body {
 .nav-esercizio-row { margin-top: 10px; }
 .btn-indietro { flex: none; width: 64px; border-radius: 14px; }
 .btn-avanti { flex: 1; background: #111; border-radius: 14px; padding: 16px; font: 700 15px 'Inter', sans-serif; letter-spacing: normal; }
+
+/* ---- schermata fatica percepita e commento ---- */
+.rpe-option.selezionato { background: radial-gradient(90% 190% at 0% 120%, #b01a20 0%, #5c0f13 45%, #1a0a0b 100%); color: #fff; border-color: #5c0f13; font-weight: 800; }
+#prossimo-btn { background: radial-gradient(90% 190% at 0% 120%, #b01a20 0%, #5c0f13 35%, #1a0a0b 68%, #0e0e0e 100%); color: #fff; border: 0; border-radius: 14px; }
